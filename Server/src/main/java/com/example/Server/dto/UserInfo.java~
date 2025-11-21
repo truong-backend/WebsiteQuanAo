@@ -1,0 +1,4 @@
+package com.example.Server.dto;
+
+public class UserInfo {
+}
