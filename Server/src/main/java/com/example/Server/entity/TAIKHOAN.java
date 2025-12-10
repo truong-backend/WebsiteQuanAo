@@ -9,9 +9,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "UserInfo")
-public class UserInfo {
-
+@Table(name = "TAIKHOAN")
+public class TAIKHOAN {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -19,5 +18,4 @@ public class UserInfo {
     private String email;
     private String password;
     private String roles;
-
 }
