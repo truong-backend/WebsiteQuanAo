@@ -39,32 +39,52 @@ public class SecurityConfig {
      * Main security configuration
      * Defines endpoint access rules and JWT filter setup
      */
+//    @Bean
+//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+//        http
+//                // Disable CSRF (not needed for stateless JWT)
+//                .csrf(csrf -> csrf.disable())
+//
+//                // Configure endpoint authorization
+//                .authorizeHttpRequests(auth -> auth
+//                        // Public endpoints
+//                        .requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/generateToken", "/swagger-ui/**","/swagger-ui.html", "/v3/api-docs/**","/api/danhmuc/**").permitAll()
+//
+//                        // Role-based endpoints
+//                        .requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
+//                        .requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
+//
+//                        // All other endpoints require authentication
+//                        .anyRequest().authenticated()
+//                )
+//
+//                // Stateless session (required for JWT)
+//                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//
+//                // Set custom authentication provider
+//                .authenticationProvider(authenticationProvider(null))
+//
+//                // Add JWT filter before Spring Security's default filter
+//                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+//
+//        return http.build();
+//    }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF (not needed for stateless JWT)
+                // Disable CSRF
                 .csrf(csrf -> csrf.disable())
 
-                // Configure endpoint authorization
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/auth/welcome", "/auth/addNewUser", "/auth/generateToken", "/swagger-ui/**","/swagger-ui.html", "/v3/api-docs/**").permitAll()
-
-                        // Role-based endpoints
-                        .requestMatchers("/auth/user/**").hasAuthority("ROLE_USER")
-                        .requestMatchers("/auth/admin/**").hasAuthority("ROLE_ADMIN")
-
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()   // ⭐ Cho phép tất cả request
                 )
 
-                // Stateless session (required for JWT)
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Set custom authentication provider
+                // Không cần authenticationProvider nữa nhưng có cũng không sao
                 .authenticationProvider(authenticationProvider(null))
 
-                // Add JWT filter before Spring Security's default filter
+                // JWT filter sẽ không chạy xác thực vì không có yêu cầu authenticated()
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
