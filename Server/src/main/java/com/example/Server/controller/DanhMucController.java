@@ -1,9 +1,12 @@
 package com.example.Server.controller;
 
 import com.example.Server.dto.DANHMUC.DanhMucDTO;
+import com.example.Server.dto.DANHMUC.DanhMucRequest;
+import com.example.Server.dto.DANHMUC.DanhMucResponse;
 import com.example.Server.entity.DANHMUC;
 import com.example.Server.mapper.DanhmucMapper;
 import com.example.Server.service.DanhmucService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,44 +16,33 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/danhmuc")
+@RequiredArgsConstructor
 public class DanhMucController {
 
-    @Autowired
-    private DanhmucService danhmucService;
-
-    @Autowired
-    private DanhmucMapper danhmucMapper;
+    private final DanhmucService danhmucService;
+    private final DanhmucMapper danhmucMapper;
 
     @GetMapping
-    public List<DanhMucDTO> getAll() {
-        List<DANHMUC> danhMucs = danhmucService.getAll(); // Lấy danh sách entity
-        List<DanhMucDTO> dtos = new ArrayList<>(); // List DTO trả về
-
-        for (DANHMUC entity : danhMucs) {
-            DanhMucDTO dto = danhmucMapper.toDTO(entity); // map entity -> DTO
-            dtos.add(dto); // thêm vào list
-        }
-
-        return dtos;
+    public List<DanhMucResponse> getAll() {
+        return danhmucService.getAll().stream()
+                .map(danhmucMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public DanhMucDTO getById(@PathVariable Long id) {
+    public DanhMucResponse getById(@PathVariable Long id) {
         return danhmucService.getById(id);
     }
 
     @PostMapping
-    public DanhMucDTO create(@RequestBody DanhMucDTO dto) {
-        DANHMUC entity = danhmucMapper.toEntity(dto);
-        DANHMUC saved = danhmucService.create(entity);
-        return danhmucMapper.toDTO(saved);
+    public DanhMucResponse create(@RequestBody DanhMucRequest request) {
+        return danhmucService.create(request);
     }
 
     @PutMapping("/{id}")
-    public DanhMucDTO update(@PathVariable Long id, @RequestBody DanhMucDTO dto) {
-        DANHMUC entity = danhmucMapper.toEntity(dto);
-        DANHMUC updated = danhmucService.update(id, entity);
-        return danhmucMapper.toDTO(updated);
+    public DanhMucResponse update(@PathVariable Long id,
+                                  @RequestBody DanhMucRequest request) {
+        return danhmucService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
