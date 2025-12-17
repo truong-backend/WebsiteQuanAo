@@ -1,7 +1,7 @@
 package com.example.Server.service;
 
 
-import com.example.Server.entity.TAIKHOAN;
+import com.example.Server.entity.Account;
 import com.example.Server.repository.UserInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,13 +32,13 @@ public class UserInfoService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Fetch user from the database by email (username)
-        Optional<TAIKHOAN> userInfo = repository.findByEmail(username);
+        Optional<Account> userInfo = repository.findByEmail(username);
 
         if (userInfo.isEmpty()) {
             throw new UsernameNotFoundException("User not found with email: " + username);
         }
 
-        TAIKHOAN user = userInfo.get();
+        Account user = userInfo.get();
         return new User(user.getEmail(), user.getPassword(), List.of(user.getRoles().split(","))
                 .stream()
                 .map(SimpleGrantedAuthority::new)
@@ -46,7 +46,7 @@ public class UserInfoService implements UserDetailsService {
     }
 
     // Add any additional methods for registering or managing users
-    public String addUser(TAIKHOAN userInfo) {
+    public String addUser(Account userInfo) {
         // Encrypt password before saving
         userInfo.setPassword(encoder.encode(userInfo.getPassword()));
         repository.save(userInfo);
