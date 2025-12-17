@@ -1,0 +1,126 @@
+@startuml
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) <i>x</i>
+
+skinparam linetype ortho
+skinparam roundcorner 5
+
+entity "THANHTOAN" as THANHTO {
+  primary_key(maphuongthuc) : VARCHAR
+  --
+  tenphuongthuc : VARCHAR
+}
+
+entity "BANNER" as BANNER {
+  primary_key(mabanner) : VARCHAR
+  --
+  tenbanner : VARCHAR
+  duongdan : VARCHAR
+}
+
+entity "KHUYENMAI" as KHUYENMAI {
+  primary_key(makhuyenmai) : VARCHAR
+  --
+  tenkhuyenmai : VARCHAR
+  phantram : DECIMAL
+}
+
+entity "TAIKHOAN" as TAIKHOAN {
+  primary_key(tentaikhoan) : VARCHAR
+  --
+  matkhau : VARCHAR
+  quyen : VARCHAR
+  trangthai : BOOL
+}
+
+entity "MAU" as MAU {
+  primary_key(mamau) : VARCHAR
+  --
+  tenmau : VARCHAR
+}
+
+entity "THUONGHIEU" as THUONGHIEU {
+  primary_key(mathuonghieu) : VARCHAR
+  --
+  tenthuonghieu : VARCHAR
+}
+
+entity "DONHANG" as DONHANG {
+  primary_key(madonhang) : VARCHAR
+  --
+  foreign_key(trangthai) : ENUM
+  foreign_key(mataikhoan) : VARCHAR
+}
+
+entity "DANHMUC" as DANHMUC {
+  primary_key(madanhmuc) : VARCHAR
+  --
+  tendanhmuc : VARCHAR
+  foreign_key(madanhmuc_cha) : VARCHAR
+}
+
+entity "THELOAI" as THELOAI {
+  primary_key(maloai) : VARCHAR
+  --
+  tenloai : VARCHAR
+}
+
+entity "DANHMUC_THELOAI" as DANHMUC_THELOAI {
+  foreign_key(maloai) : VARCHAR
+  foreign_key(madanhmuc) : VARCHAR
+}
+
+entity "SANPHAM" as SANPHAM {
+  primary_key(masanpham) : VARCHAR
+  --
+  foreign_key(tendanhmuc) : VARCHAR
+  foreign_key(madanhmuc) : VARCHAR
+  foreign_key(maloai) : VARCHAR
+  foreign_key(mathuonghieu) : VARCHAR
+}
+
+entity "NHANXET" as NHANXET {
+  primary_key(manhanxet) : VARCHAR
+  --
+  noidung : TEXT
+  trangthai : BOOL
+  foreign_key(mabienthe) : VARCHAR
+}
+
+entity "BIENTHE" as BIENTHE {
+  primary_key(mabienthe) : VARCHAR
+  --
+  tenbienthe : VARCHAR
+  soluongton : INT
+  kichthuoc : VARCHAR
+  giabienthe : DECIMAL
+  foreign_key(mamau) : VARCHAR
+  foreign_key(masanpham) : VARCHAR
+}
+
+entity "HOADON" as HOADON {
+  primary_key(mahoadon) : VARCHAR
+  --
+  foreign_key(trangthai) : BOOL
+  foreign_key(madonhang) : VARCHAR
+}
+
+' Relationships
+DONHANG ||--o{ HOADON : "có"
+DONHANG }o--|| TAIKHOAN : "thuộc về"
+
+DANHMUC ||--o{ SANPHAM : "chứa"
+THELOAI ||--o{ SANPHAM : "phân loại"
+THUONGHIEU ||--o{ SANPHAM : "thuộc"
+
+DANHMUC ||--o{ DANHMUC_THELOAI : "liên kết"
+THELOAI ||--o{ DANHMUC_THELOAI : "liên kết"
+
+DANHMUC ||--o{ DANHMUC : "danh mục con"
+
+SANPHAM ||--o{ BIENTHE : "có"
+MAU ||--o{ BIENTHE : "có màu"
+
+BIENTHE ||--o{ NHANXET : "được đánh giá"
+
+@enduml

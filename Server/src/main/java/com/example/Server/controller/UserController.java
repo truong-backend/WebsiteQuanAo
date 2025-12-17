@@ -1,7 +1,7 @@
 package com.example.Server.controller;
 
 import com.example.Server.dto.AuthRequest;
-import com.example.Server.entity.TAIKHOAN;
+import com.example.Server.entity.Account;
 import com.example.Server.service.JwtService;
 import com.example.Server.service.UserInfoService;
 
@@ -34,7 +34,7 @@ public class UserController {
     }
 
     @PostMapping("/addNewUser")
-    public String addNewUser(@RequestBody TAIKHOAN userInfo) {
+    public String addNewUser(@RequestBody Account userInfo) {
         return service.addUser(userInfo);
     }
 

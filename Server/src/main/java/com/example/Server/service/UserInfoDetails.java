@@ -2,7 +2,7 @@ package com.example.Server.service;
 
 
 
-import com.example.Server.entity.TAIKHOAN;
+import com.example.Server.entity.Account;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,7 +18,7 @@ public class UserInfoDetails implements UserDetails {
     private String password;
     private List<GrantedAuthority> authorities;
 
-    public UserInfoDetails(TAIKHOAN userInfo) {
+    public UserInfoDetails(Account userInfo) {
         this.username = userInfo.getEmail(); // Use email as username
         this.password = userInfo.getPassword();
         this.authorities = List.of(userInfo.getRoles().split(","))
