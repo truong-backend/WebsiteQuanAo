@@ -5,6 +5,7 @@ import com.example.Server.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,10 +24,11 @@ public class Payment {
     private PaymentType type; // Loại thanh toán
 
     @Column(name = "pay_time")
-    private LocalDateTime payTime; // Giờ thanh toán (có thể null)
+    private Instant payTime; // Giờ thanh toán (có thể null)
 
     /* ===== KHÓA NGOẠI ORDER ===== */
-    @ManyToOne
-    @JoinColumn(name = "order_id")
+    @OneToOne(mappedBy = "payment")
     private Order order;
+
+
 }

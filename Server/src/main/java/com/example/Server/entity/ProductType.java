@@ -4,20 +4,26 @@ package com.example.Server.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "product_type")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductType {
-
     @Id
-    @Column(name = "id", length = 36)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "category_id")
+    private Long productId;
 
-    @Column(name = "type", length = 255, nullable = false)
-    private String type;
+    @Column(name = "category_name", nullable = false)
+    private String productName;
 
-    @Column(name = "subtype", length = 255, nullable = false)
-    private String subtype;
+    @ManyToOne
+    @JoinColumn(name = "parent_category_id")
+    private ProductType parentProduct;
+
+    @OneToMany(mappedBy = "productType")
+    private List<Product> products;
 }

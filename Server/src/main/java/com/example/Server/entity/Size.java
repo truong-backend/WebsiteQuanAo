@@ -3,6 +3,8 @@ package com.example.Server.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "size")
 @Data
@@ -16,4 +18,7 @@ public class Size {
 
     @Column(name = "name", length = 255, nullable = false, unique = true)
     private String name;
+
+    @OneToMany(mappedBy = "size")
+    private List<ProductVariant> productVariants;
 }
