@@ -3,6 +3,8 @@ package com.example.Server.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "products")
 @Data
@@ -35,4 +37,7 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "product_type_id", nullable = false)
     private ProductType productType;
+
+    @OneToMany(mappedBy = "product")
+    private List<ProductVariant> variants;
 }

@@ -17,7 +17,6 @@ public class CartItem {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
-    // ===== Khóa ngoại =====
 
     @ManyToOne
     @JoinColumn(name = "cart_id", nullable = false)

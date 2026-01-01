@@ -34,8 +34,13 @@ public class Order {
     private OrderStatus status;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private Account user;
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @OneToOne
+    @JoinColumn(name = "payment_id")
+    private Payment payment;
+
 
 }
 
