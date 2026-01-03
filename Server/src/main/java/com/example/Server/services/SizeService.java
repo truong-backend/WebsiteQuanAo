@@ -1,8 +1,6 @@
 package com.example.Server.services;
 
-import com.example.Server.dto.request.Payment.PaymentRequest;
 import com.example.Server.dto.request.size.SizeRequest;
-import com.example.Server.entity.Payment;
 import com.example.Server.entity.Size;
 import com.example.Server.repository.SizeRepository;
 import org.springframework.stereotype.Service;
@@ -25,10 +23,10 @@ public class SizeService {
 
     public Boolean Create(SizeRequest sizeRequest) {
         if (!sizeRepository.existsById(sizeRequest.getId())) {
-            Size payment = new Size();
-            payment.setId(sizeRequest.getId());
-            payment.setName(sizeRequest.getName());
-            sizeRepository.save(payment);
+            Size size = new Size();
+            size.setId(sizeRequest.getId());
+            size.setName(sizeRequest.getName());
+            sizeRepository.save(size);
             return true;
         }else{
             return false;

@@ -1,15 +1,10 @@
 package com.example.Server.services;
 
-import com.example.Server.dto.request.Payment.PaymentRequest;
-import com.example.Server.dto.request.color.ColorRequest;
-import com.example.Server.entity.Color;
+import com.example.Server.dto.request.payment.PaymentRequest;
 import com.example.Server.entity.Payment;
-import com.example.Server.enums.PaymentType;
-import com.example.Server.repository.ColorRepository;
 import com.example.Server.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
