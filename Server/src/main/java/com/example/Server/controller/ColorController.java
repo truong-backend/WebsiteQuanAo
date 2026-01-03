@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping("/color")
+@RequestMapping("/Color")
 @RestController
 public class ColorController {
     private final ColorService colorService;

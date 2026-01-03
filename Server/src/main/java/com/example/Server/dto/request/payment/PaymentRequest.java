@@ -1,4 +1,4 @@
-package com.example.Server.dto.request.Payment;
+package com.example.Server.dto.request.payment;
 
 import com.example.Server.enums.PaymentType;
 import lombok.AllArgsConstructor;
@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor

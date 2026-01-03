@@ -1,9 +1,9 @@
 package com.example.Server.controller;
 
 
-import com.example.Server.dto.request.Payment.PaymentRequest;
 import com.example.Server.dto.request.size.SizeRequest;
-import com.example.Server.entity.Payment;
+import com.example.Server.dto.request.size.SizeRequest;
+import com.example.Server.entity.Size;
 import com.example.Server.entity.Size;
 import com.example.Server.services.SizeService;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,24 +21,24 @@ public class SizeController {
     }
 
     @GetMapping("/all")
-    public List<Size> getAllPayments() {
+    public List<Size> getAllSizes() {
         return sizeService.findAll();
     }
 
     @Transactional
     @PostMapping("/save")
-    public Boolean savePayment( SizeRequest sizeRequest) {
+    public Boolean saveSize( SizeRequest sizeRequest) {
         return sizeService.Create(sizeRequest);
     }
 
     @Transactional
     @PutMapping("/update")
-    public Boolean updatePayment( SizeRequest sizeRequest) {
+    public Boolean updateSize( SizeRequest sizeRequest) {
         return sizeService.Update(sizeRequest);
     }
     @Transactional
     @DeleteMapping("/delete")
-    public Boolean deletePayment(String id) {
+    public Boolean deleteSize(String id) {
         return sizeService.Delete(id);
     }
 }

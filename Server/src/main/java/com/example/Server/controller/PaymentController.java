@@ -1,9 +1,7 @@
 package com.example.Server.controller;
 
 
-import com.example.Server.dto.request.Payment.PaymentRequest;
-import com.example.Server.dto.request.color.ColorRequest;
-import com.example.Server.entity.Color;
+import com.example.Server.dto.request.payment.PaymentRequest;
 import com.example.Server.entity.Payment;
 import com.example.Server.services.PaymentService;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RequestMapping("/payment")
+@RequestMapping("/Payment")
 @RestController
 public class PaymentController {
     private final PaymentService paymentService;
