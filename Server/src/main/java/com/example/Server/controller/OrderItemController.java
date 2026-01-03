@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RequestMapping("/OderItem")
+@RestController
 public class OrderItemController {
     private final OderItemService oderItemService;
     public OrderItemController(OderItemService oderItemService) {
