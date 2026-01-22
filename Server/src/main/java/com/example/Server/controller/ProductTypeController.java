@@ -1,7 +1,6 @@
 package com.example.Server.controller;
 
 import com.example.Server.dto.request.productType.ProductTypeRequest;
-import com.example.Server.dto.request.size.SizeRequest;
 import com.example.Server.entity.ProductType;
 import com.example.Server.services.ProductTypeService;
 import org.springframework.web.bind.annotation.*;

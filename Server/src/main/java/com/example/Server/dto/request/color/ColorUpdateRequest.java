@@ -1,5 +1,4 @@
-package com.example.Server.dto.request.size;
-
+package com.example.Server.dto.request.color;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,7 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SizeRequest {
-    private String id;
+public class ColorUpdateRequest {
     private String name;
 }

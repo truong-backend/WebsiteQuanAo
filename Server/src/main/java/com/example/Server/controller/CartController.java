@@ -1,9 +1,7 @@
 package com.example.Server.controller;
 
 import com.example.Server.dto.request.cart.CartRequest;
-import com.example.Server.dto.request.category.CategoryRequest;
 import com.example.Server.entity.Cart;
-import com.example.Server.entity.Category;
 import com.example.Server.services.CartService;
 
 import org.springframework.transaction.annotation.Transactional;
