@@ -31,22 +31,27 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/swagger-ui/**",
-                                "/Cart/**",
-                                "/CartItem/**",
-                                "/Category/**",
-                                "/Color/**",
-                                "/Oder/**",
-                                "/OderItem/**",
-                                "/Payment/**",
-                                "/Product/**",
-                                "/ProductType/**",
-                                "/ProductVariant/**",
-                                "/Size/**"
-                                ).permitAll()
+                        .requestMatchers(
+                                "/auth/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs/swagger-config",
+                                "/carts/**",
+                                "/cart-items/**",
+                                "/categories/**",
+                                "/colors/**",
+                                "/orders/**",
+                                "/order-items/**",
+                                "/payments/**",
+                                "/products/**",
+                                "/product-types/**",
+                                "/product-variants/**",
+                                "/sizes/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
 
@@ -66,8 +71,8 @@ public class SecurityConfiguration {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:8005"));
-        configuration.setAllowedMethods(List.of("GET","POST"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

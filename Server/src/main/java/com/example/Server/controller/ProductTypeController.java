@@ -1,43 +1,105 @@
 package com.example.Server.controller;
 
-import com.example.Server.dto.request.productType.ProductTypeRequest;
-import com.example.Server.dto.request.size.SizeRequest;
-import com.example.Server.entity.ProductType;
+import com.example.Server.dto.request.productType.ProductTypeCreateRequest;
+import com.example.Server.dto.request.productType.ProductTypeUpdateRequest;
+import com.example.Server.dto.response.productType.ProductTypeResponse;
 import com.example.Server.services.ProductTypeService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Set;
 
-@RequestMapping("/ProductType")
+/**
+ * REST Controller for ProductType management
+ * Base path: /product-types
+ */
 @RestController
-public class ProductTypeController
-{
+@RequestMapping("/product-types")
+public class ProductTypeController {
+
     private final ProductTypeService productTypeService;
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "productId",
+            "productName"
+    );
 
     public ProductTypeController(ProductTypeService productTypeService) {
         this.productTypeService = productTypeService;
     }
 
-    @GetMapping("/all")
-    public List<ProductType> getAllSizes() {
-        return productTypeService.findAll();
+    /**
+     * Get paginated product types with filter and search
+     * GET /product-types
+     */
+    @GetMapping
+    public ResponseEntity<Page<ProductTypeResponse>> getProductTypes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "productId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            sortBy = "productId";
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(productTypeService.findAll(pageable, search));
     }
 
-    @Transactional
-    @PostMapping("/save")
-    public Boolean saveSize( ProductTypeRequest productTypeRequest) {
-        return productTypeService.Create(productTypeRequest);
+    /**
+     * Create product type
+     * POST /product-types
+     */
+    @PostMapping
+    public ResponseEntity<ProductTypeResponse> createProductType(
+            @Valid @RequestBody ProductTypeCreateRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(productTypeService.create(request));
     }
 
-    @Transactional
-    @PutMapping("/update")
-    public Boolean updateSize( ProductTypeRequest productTypeRequest) {
-        return productTypeService.Update(productTypeRequest);
+    /**
+     * Update product type
+     * PUT /product-types/{id}
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductTypeResponse> updateProductType(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductTypeUpdateRequest request
+    ) {
+        return ResponseEntity.ok(productTypeService.update(id, request));
     }
-    @Transactional
-    @DeleteMapping("/delete")
-    public Boolean deleteSize(Long id) {
-        return productTypeService.Delete(id);
+
+    /**
+     * Delete product type
+     * DELETE /product-types/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProductType(@PathVariable Long id) {
+        productTypeService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get product type by id
+     * GET /product-types/{id}
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductTypeResponse> getProductTypeById(@PathVariable Long id) {
+        return ResponseEntity.ok(productTypeService.getById(id));
     }
 }

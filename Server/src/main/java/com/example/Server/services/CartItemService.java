@@ -1,57 +1,126 @@
 package com.example.Server.services;
 
-import com.example.Server.dto.request.cartItem.CartItemRequest;
-import com.example.Server.dto.request.color.ColorRequest;
+import com.example.Server.dto.request.cartItem.CartItemCreateRequest;
+import com.example.Server.dto.request.cartItem.CartItemUpdateRequest;
+import com.example.Server.dto.response.cartItem.CartItemResponse;
+import com.example.Server.entity.Cart;
 import com.example.Server.entity.CartItem;
-import com.example.Server.entity.Color;
+import com.example.Server.entity.ProductVariant;
+import com.example.Server.exception.ResourceAlreadyExistsException;
+import com.example.Server.exception.ResourceNotFoundException;
+import com.example.Server.mapper.CartItemMapper;
 import com.example.Server.repository.CartItemRepository;
+import com.example.Server.repository.CartRepository;
+import com.example.Server.repository.ProductVariantRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
+@Transactional
 public class CartItemService {
+
     private final CartItemRepository cartItemRepository;
-    public CartItemService(CartItemRepository cartItemRepository) {
+    private final CartRepository cartRepository;
+    private final ProductVariantRepository productVariantRepository;
+
+    public CartItemService(
+            CartItemRepository cartItemRepository,
+            CartRepository cartRepository,
+            ProductVariantRepository productVariantRepository
+    ) {
         this.cartItemRepository = cartItemRepository;
+        this.cartRepository = cartRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
-    public List<CartItem> findAll() {
-        return cartItemRepository.findAll();
-    }
+    /**
+     * Find all cart items with pagination and optional filter by cartId
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<CartItemResponse> findAll(Pageable pageable, String cartId) {
+        Specification<CartItem> spec = (root, query, cb) -> cb.conjunction();
 
-    public Boolean Create(CartItemRequest cartItemRequest) {
-        if (!cartItemRepository.existsById(cartItemRequest.getId())) {
-            CartItem cartItem = new CartItem();
-            cartItem.setId(cartItemRequest.getId());
-            cartItem.setQuantity(cartItemRequest.getQuantity());
-            cartItem.setCart(cartItemRequest.getCart());
-            cartItemRepository.save(cartItem);
-            return true;
-        }else{
-            return false;
+        if (cartId != null && !cartId.trim().isEmpty()) {
+            String cid = cartId.trim();
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("cart").get("id"), cid)
+            );
         }
+
+        return cartItemRepository
+                .findAll(spec, pageable)
+                .map(CartItemMapper::toResponse);
     }
 
-    public Boolean  Update( CartItemRequest cartItemRequest) {
-        if (cartItemRepository.existsById(cartItemRequest.getId())) {
-            Optional<CartItem> cartItem = cartItemRepository.findById(cartItemRequest.getId());
-            cartItem.get().setQuantity(cartItemRequest.getQuantity());
-            cartItem.get().setCart(cartItemRequest.getCart());
-            cartItemRepository.save(cartItem.get());
-            return true;
-        }else{
-            return false;
+    /**
+     * Create a new cart item
+     */
+    public CartItemResponse create(CartItemCreateRequest request) {
+        Cart cart = cartRepository.findById(request.getCartId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cart", "id", request.getCartId()));
+        ProductVariant productVariant = productVariantRepository.findById(request.getProductVariantId())
+                .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", "id", request.getProductVariantId()));
+
+        if (cartItemRepository.existsByCart_IdAndProductVariant_Id(request.getCartId(), request.getProductVariantId())) {
+            throw new ResourceAlreadyExistsException(
+                    "CartItem",
+                    "cartId + productVariantId",
+                    request.getCartId() + ", " + request.getProductVariantId()
+            );
         }
-    }
 
-    public Boolean Delete(String id) {
+        String id = request.getId() != null && !request.getId().trim().isEmpty()
+                ? request.getId().trim()
+                : UUID.randomUUID().toString();
+
         if (cartItemRepository.existsById(id)) {
-            cartItemRepository.deleteById(id);
-            return true;
-        }else{
-            return false;
+            throw new ResourceAlreadyExistsException("CartItem", "id", id);
         }
+
+        CartItem cartItem = new CartItem();
+        cartItem.setId(id);
+        cartItem.setQuantity(request.getQuantity());
+        cartItem.setCart(cart);
+        cartItem.setProductVariant(productVariant);
+
+        CartItem saved = cartItemRepository.save(cartItem);
+        return CartItemMapper.toResponse(saved);
+    }
+
+    /**
+     * Update an existing cart item
+     */
+    public CartItemResponse update(String id, CartItemUpdateRequest request) {
+        CartItem cartItem = cartItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", id));
+
+        cartItem.setQuantity(request.getQuantity());
+
+        CartItem saved = cartItemRepository.save(cartItem);
+        return CartItemMapper.toResponse(saved);
+    }
+
+    /**
+     * Delete a cart item by ID
+     */
+    public void delete(String id) {
+        CartItem cartItem = cartItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", id));
+        cartItemRepository.delete(cartItem);
+    }
+
+    /**
+     * Get cart item by ID
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public CartItemResponse getById(String id) {
+        CartItem cartItem = cartItemRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", "id", id));
+        return CartItemMapper.toResponse(cartItem);
     }
 }

@@ -1,56 +1,140 @@
 package com.example.Server.services;
 
-import com.example.Server.dto.request.size.SizeRequest;
+import com.example.Server.dto.request.size.SizeCreateRequest;
+import com.example.Server.dto.request.size.SizeUpdateRequest;
+import com.example.Server.dto.response.size.SizeResponse;
 import com.example.Server.entity.Size;
+import com.example.Server.exception.InvalidOperationException;
+import com.example.Server.exception.ResourceAlreadyExistsException;
+import com.example.Server.exception.ResourceNotFoundException;
+import com.example.Server.mapper.SizeMapper;
 import com.example.Server.repository.SizeRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
+@Transactional
 public class SizeService {
+
     private final SizeRepository sizeRepository;
 
     public SizeService(SizeRepository sizeRepository) {
         this.sizeRepository = sizeRepository;
     }
 
+    /**
+     * Find all sizes with pagination, search, and filtering
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<SizeResponse> findAll(
+            Pageable pageable,
+            String search
+    ) {
+        Specification<Size> spec = (root, query, cb) -> cb.conjunction();
 
-    public List<Size> findAll() {
-        return sizeRepository.findAll();
+        if (search != null && !search.trim().isEmpty()) {
+            String keyword = "%" + search.trim().toLowerCase() + "%";
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), keyword)
+            );
+        }
+
+        return sizeRepository
+                .findAll(spec, pageable)
+                .map(SizeMapper::toResponse);
     }
 
-    public Boolean Create(SizeRequest sizeRequest) {
-        if (!sizeRepository.existsById(sizeRequest.getId())) {
-            Size size = new Size();
-            size.setId(sizeRequest.getId());
-            size.setName(sizeRequest.getName());
-            sizeRepository.save(size);
-            return true;
-        }else{
-            return false;
+    /**
+     * Create a new size
+     */
+    public SizeResponse create(SizeCreateRequest request) {
+        String sizeName = normalizeName(request.getName());
+
+        if (sizeRepository.existsByName(sizeName)) {
+            throw new ResourceAlreadyExistsException(
+                    "Size",
+                    "name",
+                    sizeName
+            );
         }
+
+        Size size = new Size();
+        size.setId(request.getId());
+        size.setName(sizeName);
+
+        Size saved = sizeRepository.save(size);
+        return SizeMapper.toResponse(saved);
     }
 
-    public Boolean Update( SizeRequest sizeRequest) {
-        if (sizeRepository.existsById(sizeRequest.getId())) {
-            Optional<Size> sizeEntity = sizeRepository.findById(sizeRequest.getId());
-            sizeEntity.get().setId(sizeRequest.getId());
-            sizeEntity.get().setName(sizeRequest.getName());
-            sizeRepository.save(sizeEntity.get());
-            return true;
-        }else{
-            return false;
+    /**
+     * Update an existing size
+     */
+    public SizeResponse update(String id, SizeUpdateRequest request) {
+        Size size = sizeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Size",
+                        "id",
+                        id
+                ));
+
+        String sizeName = normalizeName(request.getName());
+
+        if (sizeRepository.existsByNameAndIdNot(sizeName, id)) {
+            throw new ResourceAlreadyExistsException(
+                    "Size",
+                    "name",
+                    sizeName
+            );
         }
+
+        size.setName(sizeName);
+
+        Size saved = sizeRepository.save(size);
+        return SizeMapper.toResponse(saved);
     }
 
-    public Boolean Delete(String id) {
-        if (sizeRepository.existsById(id)) {
-            sizeRepository.deleteById(id);
-            return true;
-        }else{
-            return false;
+    /**
+     * Delete a size by ID
+     */
+    public void delete(String id) {
+        Size size = sizeRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Size", "id", id)
+                );
+
+        if (size.getProductVariants() != null
+                && !size.getProductVariants().isEmpty()) {
+            throw new InvalidOperationException(
+                    "Cannot delete size that is being used in product variants. Please remove or reassign product variants first."
+            );
         }
+
+        sizeRepository.delete(size);
+    }
+
+    /**
+     * Get size by ID
+     */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public SizeResponse getById(String id) {
+        Size size = sizeRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Size", "id", id)
+                );
+        return SizeMapper.toResponse(size);
+    }
+
+    /**
+     * Normalize size name (trim + single space)
+     */
+    private String normalizeName(String name) {
+        return name == null
+                ? null
+                : name.trim().replaceAll("\\s+", " ");
     }
 }
