@@ -1,5 +1,6 @@
 package com.example.Server.controller;
 
+import com.example.Server.dto.response.account.AccountResponse;
 import com.example.Server.entity.Account;
 import com.example.Server.dto.request.auth.AuthRequest;
 import com.example.Server.dto.request.register.RegisterAccount;
@@ -25,8 +26,8 @@ public class AuthenticationController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<Account> register(@RequestBody RegisterAccount registerUserDto) {
-        Account registeredUser = authenticationService.signup(registerUserDto);
+    public ResponseEntity<AccountResponse> register(@RequestBody RegisterAccount registerUserDto) {
+        AccountResponse registeredUser = authenticationService.signup(registerUserDto);
 
         return ResponseEntity.ok(registeredUser);
     }
