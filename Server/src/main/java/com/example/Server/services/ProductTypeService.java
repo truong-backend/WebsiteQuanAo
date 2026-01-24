@@ -50,13 +50,13 @@ public class ProductTypeService {
         ProductType pt = new ProductType();
         pt.setProductName(normalize(request.getProductName()));
 
-        if (request.getParentProductId() != null) {
-            ProductType parent = productTypeRepository.findById(request.getParentProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getParentProductId()));
-            pt.setParentProduct(parent);
-        } else {
-            pt.setParentProduct(null);
-        }
+//        if (request.getParentProductId() != null) {
+//            ProductType parent = productTypeRepository.findById(request.getParentProductId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getParentProductId()));
+//            pt.setParentProduct(parent);
+//        } else {
+//            pt.setParentProduct(null);
+//        }
 
         ProductType saved = productTypeRepository.save(pt);
         return ProductTypeMapper.toResponse(saved);
@@ -71,16 +71,16 @@ public class ProductTypeService {
 
         pt.setProductName(normalize(request.getProductName()));
 
-        if (request.getParentProductId() != null) {
-            if (request.getParentProductId().equals(id)) {
-                throw new InvalidOperationException("Product type cannot be its own parent.");
-            }
-            ProductType parent = productTypeRepository.findById(request.getParentProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getParentProductId()));
-            pt.setParentProduct(parent);
-        } else {
-            pt.setParentProduct(null);
-        }
+//        if (request.getParentProductId() != null) {
+//            if (request.getParentProductId().equals(id)) {
+//                throw new InvalidOperationException("Product type cannot be its own parent.");
+//            }
+//            ProductType parent = productTypeRepository.findById(request.getParentProductId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getParentProductId()));
+//            pt.setParentProduct(parent);
+//        } else {
+//            pt.setParentProduct(null);
+//        }
 
         ProductType saved = productTypeRepository.save(pt);
         return ProductTypeMapper.toResponse(saved);
@@ -93,11 +93,11 @@ public class ProductTypeService {
         ProductType pt = productTypeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", id));
 
-        if (pt.getProducts() != null && !pt.getProducts().isEmpty()) {
-            throw new InvalidOperationException(
-                    "Cannot delete product type that has products. Please remove or reassign products first."
-            );
-        }
+//        if (pt.getProducts() != null && !pt.getProducts().isEmpty()) {
+//            throw new InvalidOperationException(
+//                    "Cannot delete product type that has products. Please remove or reassign products first."
+//            );
+//        }
 
         productTypeRepository.delete(pt);
     }

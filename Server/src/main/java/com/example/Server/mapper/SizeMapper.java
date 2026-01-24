@@ -1,5 +1,6 @@
 package com.example.Server.mapper;
 
+import com.example.Server.dto.response.size.SizeOptionResponse;
 import com.example.Server.dto.response.size.SizeResponse;
 import com.example.Server.entity.Size;
 
@@ -40,4 +41,16 @@ public class SizeMapper {
                 .collect(Collectors.toList());
     }
 
+    public static SizeOptionResponse toOptionResponse(Size size) {
+        SizeOptionResponse response = new SizeOptionResponse();
+        response.setSizeId(size.getId());
+        response.setSizeName(size.getName());
+        return response;
+    }
+
+    public static List<SizeOptionResponse> toOptionResponseList(List<Size> sizes) {
+        return sizes.stream()
+                .map(SizeMapper::toOptionResponse)
+                .collect(Collectors.toList());
+    }
 }

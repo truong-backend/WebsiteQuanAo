@@ -13,5 +13,7 @@ public class RegisterAccount {
 
     private String password;
 
-    private String fullName;
+    private String name;
+
+//    private String roles;
 }

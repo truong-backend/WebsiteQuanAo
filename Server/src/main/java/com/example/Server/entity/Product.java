@@ -35,8 +35,8 @@ public class Product {
     private String hoverImg;
 
     @ManyToOne
-    @JoinColumn(name = "product_type_id", nullable = false)
-    private ProductType productType;
+    @JoinColumn(name = "parent_category_id", nullable = false)
+    private Category parentCategory;
 
     @OneToMany(mappedBy = "product")
     private List<ProductVariant> variants;

@@ -1,5 +1,7 @@
 package com.example.Server.mapper;
 
+import com.example.Server.dto.response.product.ProductListItemResponse;
+import com.example.Server.dto.response.product.ProductOptionResponse;
 import com.example.Server.dto.response.product.ProductResponse;
 import com.example.Server.entity.Product;
 
@@ -28,7 +30,7 @@ public class ProductMapper {
         response.setPath(product.getPath());
         response.setImg(product.getImg());
         response.setHoverImg(product.getHoverImg());
-        response.setProductTypeId(product.getProductType() != null ? product.getProductType().getProductId() : null);
+        response.setProductTypeId(product.getParentCategory() != null ? product.getParentCategory().getCategoryId() : null);
 
         return response;
     }
@@ -44,5 +46,38 @@ public class ProductMapper {
         return products.stream()
                 .map(ProductMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    public static ProductOptionResponse toOptionResponse(Product product) {
+        ProductOptionResponse response = new ProductOptionResponse();
+        response.setProductId(product.getId());
+        response.setProductName(product.getName());
+        return response;
+    }
+
+    public static List<ProductOptionResponse> toOptionResponseList(List<Product> products) {
+        return products.stream()
+                .map(ProductMapper::toOptionResponse)
+                .collect(Collectors.toList());
+    }
+
+    public static ProductListItemResponse toListItemResponse(Product product) {
+        if (product == null) {
+            return null;
+        }
+
+        ProductListItemResponse response = new ProductListItemResponse();
+        response.setId(product.getId());
+        response.setName(product.getName());
+        response.setPrice(product.getPrice());
+        response.setImg(product.getImg());
+        response.setDescription(product.getDescription());
+
+        if (product.getParentCategory() != null) {
+            response.setCategoryId(Math.toIntExact(product.getParentCategory().getCategoryId()));
+            response.setCategoryName(product.getParentCategory().getCategoryName());
+        }
+
+        return response;
     }
 }

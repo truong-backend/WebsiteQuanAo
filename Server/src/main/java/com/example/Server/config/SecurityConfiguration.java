@@ -2,6 +2,7 @@ package com.example.Server.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,6 +18,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
+
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -31,15 +33,34 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {})
+                // CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // Tắt CSRF (bắt buộc với REST + upload)
                 .csrf(csrf -> csrf.disable())
 
+                // Không dùng session
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Phân quyền
                 .authorizeHttpRequests(auth -> auth
+                        // AUTH + SWAGGER
                         .requestMatchers(
                                 "/auth/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs/swagger-config",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // UPLOAD ẢNH (POST + GET + DELETE)
+                        .requestMatchers(HttpMethod.POST, "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/uploads/**").permitAll()  // ← CHỖ NÀY THÊM VÀO
+                        .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
+
+                        // CÁC API KHÁC
+                        .requestMatchers(
                                 "/carts/**",
                                 "/cart-items/**",
                                 "/categories/**",
@@ -50,34 +71,36 @@ public class SecurityConfiguration {
                                 "/products/**",
                                 "/product-types/**",
                                 "/product-variants/**",
-                                "/sizes/**"
+                                "/sizes/**",
+                                "/accounts/**"
+
                         ).permitAll()
+
+                        // Còn lại phải đăng nhập
                         .anyRequest().authenticated()
                 )
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
+                // Provider + JWT filter
                 .authenticationProvider(authenticationProvider)
-
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-
+    /**
+     * CORS CONFIG
+     */
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE"));
-        configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration("/**",configuration);
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }

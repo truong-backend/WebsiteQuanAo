@@ -87,9 +87,7 @@ public class ProductVariantService {
             );
         }
 
-        String id = request.getId() != null && !request.getId().trim().isEmpty()
-                ? request.getId().trim()
-                : UUID.randomUUID().toString();
+        String id =  UUID.randomUUID().toString();
 
         if (productVariantRepository.existsById(id)) {
             throw new ResourceAlreadyExistsException("ProductVariant", "id", id);

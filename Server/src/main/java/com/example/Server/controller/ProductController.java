@@ -2,6 +2,8 @@ package com.example.Server.controller;
 
 import com.example.Server.dto.request.product.ProductCreateRequest;
 import com.example.Server.dto.request.product.ProductUpdateRequest;
+import com.example.Server.dto.response.product.ProductListItemResponse;
+import com.example.Server.dto.response.product.ProductOptionResponse;
 import com.example.Server.dto.response.product.ProductResponse;
 import com.example.Server.services.ProductService;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,6 +65,31 @@ public class ProductController {
         return ResponseEntity.ok(productService.findAll(pageable, search));
     }
 
+    @GetMapping("/listing")
+    public ResponseEntity<Page<ProductListItemResponse>> getProductsForListing(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            sortBy = "createdAt";
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        return ResponseEntity.ok(
+                productService.findAllWithFilters(pageable, search, categoryId, minPrice, maxPrice)
+        );
+    }
     /**
      * Create product
      * POST /products
@@ -104,5 +132,10 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable String id) {
         return ResponseEntity.ok(productService.getById(id));
+    }
+
+    @GetMapping("/options")
+    public ResponseEntity<List<ProductOptionResponse>> getProductOptions() {
+        return ResponseEntity.ok(productService.getAllProductOptions());
     }
 }

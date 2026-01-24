@@ -2,6 +2,7 @@ package com.example.Server.services;
 
 import com.example.Server.dto.request.color.ColorCreateRequest;
 import com.example.Server.dto.request.color.ColorUpdateRequest;
+import com.example.Server.dto.response.color.ColorOptionResponse;
 import com.example.Server.dto.response.color.ColorResponse;
 import com.example.Server.entity.Color;
 import com.example.Server.exception.InvalidOperationException;
@@ -14,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -28,6 +31,13 @@ public class ColorService {
     /**
      * Find all colors with pagination, search, and filtering
      */
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<ColorOptionResponse> getAllColorOptions() {
+        return ColorMapper.toOptionResponseList(
+                colorRepository.findAll()
+        );
+    }
     @Transactional(Transactional.TxType.SUPPORTS)
     public Page<ColorResponse> findAll(
             Pageable pageable,

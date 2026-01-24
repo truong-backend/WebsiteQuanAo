@@ -2,6 +2,7 @@ package com.example.Server.services;
 
 import com.example.Server.dto.request.size.SizeCreateRequest;
 import com.example.Server.dto.request.size.SizeUpdateRequest;
+import com.example.Server.dto.response.size.SizeOptionResponse;
 import com.example.Server.dto.response.size.SizeResponse;
 import com.example.Server.entity.Size;
 import com.example.Server.exception.InvalidOperationException;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,6 +29,13 @@ public class SizeService {
         this.sizeRepository = sizeRepository;
     }
 
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<SizeOptionResponse> getAllSizeOptions() {
+        return SizeMapper.toOptionResponseList(
+                sizeRepository.findAll()
+        );
+    }
     /**
      * Find all sizes with pagination, search, and filtering
      */

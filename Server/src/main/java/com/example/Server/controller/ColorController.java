@@ -2,6 +2,7 @@ package com.example.Server.controller;
 
 import com.example.Server.dto.request.color.ColorCreateRequest;
 import com.example.Server.dto.request.color.ColorUpdateRequest;
+import com.example.Server.dto.response.color.ColorOptionResponse;
 import com.example.Server.dto.response.color.ColorResponse;
 import com.example.Server.services.ColorService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,6 +37,11 @@ public class ColorController {
      * Get paginated colors with filter and search
      * GET /colors
      */
+
+    @GetMapping("/options")
+    public ResponseEntity<List<ColorOptionResponse>> getColorOptions() {
+        return ResponseEntity.ok(colorService.getAllColorOptions());
+    }
     @GetMapping
     public ResponseEntity<Page<ColorResponse>> getColors(
             @RequestParam(defaultValue = "0") int page,

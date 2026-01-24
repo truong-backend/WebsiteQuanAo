@@ -1,5 +1,6 @@
 package com.example.Server.mapper;
 
+import com.example.Server.dto.response.color.ColorOptionResponse;
 import com.example.Server.dto.response.color.ColorResponse;
 import com.example.Server.entity.Color;
 
@@ -40,4 +41,16 @@ public class ColorMapper {
                 .collect(Collectors.toList());
     }
 
+    public static ColorOptionResponse toOptionResponse(Color color) {
+        ColorOptionResponse response = new ColorOptionResponse();
+        response.setColorCode(color.getCode());
+        response.setColorName(color.getName());
+        return response;
+    }
+
+    public static List<ColorOptionResponse> toOptionResponseList(List<Color> colors) {
+        return colors.stream()
+                .map(ColorMapper::toOptionResponse)
+                .collect(Collectors.toList());
+    }
 }

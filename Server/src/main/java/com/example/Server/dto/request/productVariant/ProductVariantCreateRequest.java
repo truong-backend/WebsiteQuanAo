@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProductVariantCreateRequest {
 
-    private String id;
+//    private String id;
 
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be >= 0")

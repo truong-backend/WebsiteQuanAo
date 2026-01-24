@@ -20,10 +20,10 @@ public class ProductType {
     @Column(name = "category_name", nullable = false)
     private String productName;
 
-    @ManyToOne
-    @JoinColumn(name = "parent_category_id")
-    private ProductType parentProduct;
+//    @ManyToOne
+//    @JoinColumn(name = "parent_category_id")
+//    private ProductType parentProduct;
 
-    @OneToMany(mappedBy = "productType")
-    private List<Product> products;
+//    @OneToMany(mappedBy = "productType")
+//    private List<Product> products;
 }

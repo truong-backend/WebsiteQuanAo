@@ -13,6 +13,8 @@ public class ProductVariantResponse {
     private Integer quantity;
     private String img;
     private String productId;
+    private String productName;
     private String colorCode;
+    private String colorName;
     private String sizeId;
 }

@@ -2,13 +2,17 @@ package com.example.Server.services;
 
 import com.example.Server.dto.request.product.ProductCreateRequest;
 import com.example.Server.dto.request.product.ProductUpdateRequest;
+import com.example.Server.dto.response.product.ProductListItemResponse;
+import com.example.Server.dto.response.product.ProductOptionResponse;
 import com.example.Server.dto.response.product.ProductResponse;
+import com.example.Server.entity.Category;
 import com.example.Server.entity.Product;
 import com.example.Server.entity.ProductType;
 import com.example.Server.exception.InvalidOperationException;
 import com.example.Server.exception.ResourceAlreadyExistsException;
 import com.example.Server.exception.ResourceNotFoundException;
 import com.example.Server.mapper.ProductMapper;
+import com.example.Server.repository.CategoryRepository;
 import com.example.Server.repository.ProductRepository;
 import com.example.Server.repository.ProductTypeRepository;
 import jakarta.transaction.Transactional;
@@ -17,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,13 +30,24 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductTypeRepository productTypeRepository;
+    private final CategoryRepository categoryRepository;
+    private final UploadService uploadService;
 
     public ProductService(
             ProductRepository productRepository,
-            ProductTypeRepository productTypeRepository
-    ) {
+            ProductTypeRepository productTypeRepository,
+            CategoryRepository categoryRepository, UploadService uploadService) {
         this.productRepository = productRepository;
         this.productTypeRepository = productTypeRepository;
+        this.categoryRepository = categoryRepository;
+        this.uploadService = uploadService;
+    }
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<ProductOptionResponse> getAllProductOptions() {
+        return ProductMapper.toOptionResponseList(
+                productRepository.findAll()
+        );
     }
 
     /**
@@ -59,14 +75,64 @@ public class ProductService {
                 .map(ProductMapper::toResponse);
     }
 
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<ProductListItemResponse> findAllWithFilters(
+            Pageable pageable,
+            String search,
+            Integer categoryId,
+            Double minPrice,
+            Double maxPrice
+    ) {
+        Specification<Product> spec = (root, query, cb) -> cb.conjunction();
+
+        // Search filter
+        if (search != null && !search.trim().isEmpty()) {
+            String keyword = "%" + search.trim().toLowerCase() + "%";
+            spec = spec.and((root, query, cb) ->
+                    cb.or(
+                            cb.like(cb.lower(root.get("name")), keyword),
+                            cb.like(cb.lower(root.get("description")), keyword)
+                    )
+            );
+        }
+
+        // Category filter
+        if (categoryId != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("parentCategory").get("categoryId"), categoryId)
+            );
+        }
+
+        // Price range filter
+        if (minPrice != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.greaterThanOrEqualTo(root.get("price"), minPrice)
+            );
+        }
+
+        if (maxPrice != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.lessThanOrEqualTo(root.get("price"), maxPrice)
+            );
+        }
+
+        return productRepository
+                .findAll(spec, pageable)
+                .map(ProductMapper::toListItemResponse);
+    }
     /**
      * Create a new product
      */
     public ProductResponse create(ProductCreateRequest request) {
-        ProductType productType = productTypeRepository.findById(request.getProductTypeId())
-                .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getProductTypeId()));
 
-        String id = request.getId() != null && !request.getId().trim().isEmpty()
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Category", "id", request.getCategoryId()
+                        )
+                );
+
+        String id = (request.getId() != null && !request.getId().isBlank())
                 ? request.getId().trim()
                 : UUID.randomUUID().toString();
 
@@ -81,11 +147,16 @@ public class ProductService {
         product.setPrice(request.getPrice());
         product.setPath(request.getPath().trim());
         product.setImg(request.getImg().trim());
-        product.setHoverImg(request.getHoverImg() != null && !request.getHoverImg().trim().isEmpty() ? request.getHoverImg().trim() : null);
-        product.setProductType(productType);
+        product.setHoverImg(
+                request.getHoverImg() != null && !request.getHoverImg().isBlank()
+                        ? request.getHoverImg().trim()
+                        : null
+        );
+        product.setParentCategory(category);
 
-        Product saved = productRepository.save(product);
-        return ProductMapper.toResponse(saved);
+        return ProductMapper.toResponse(
+                productRepository.save(product)
+        );
     }
 
     /**
@@ -95,8 +166,8 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
-        ProductType productType = productTypeRepository.findById(request.getProductTypeId())
-                .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getProductTypeId()));
+//        ProductType productType = productTypeRepository.findById(request.getProductTypeId())
+//                .orElseThrow(() -> new ResourceNotFoundException("ProductType", "id", request.getProductTypeId()));
 
         product.setName(normalize(request.getName()));
         product.setDescription(normalize(request.getDescription()));
@@ -104,7 +175,7 @@ public class ProductService {
         product.setPath(request.getPath().trim());
         product.setImg(request.getImg().trim());
         product.setHoverImg(request.getHoverImg() != null && !request.getHoverImg().trim().isEmpty() ? request.getHoverImg().trim() : null);
-        product.setProductType(productType);
+//        product.setProductType(productType);
 
         Product saved = productRepository.save(product);
         return ProductMapper.toResponse(saved);
@@ -115,13 +186,19 @@ public class ProductService {
      */
     public void delete(String id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Product", "id", id)
+                );
 
         if (product.getVariants() != null && !product.getVariants().isEmpty()) {
             throw new InvalidOperationException(
-                    "Cannot delete product that has variants. Please remove or reassign product variants first."
+                    "Cannot delete product that has variants"
             );
         }
+
+        String imagePath = product.getImg();
+
+        uploadService.deleteImage(imagePath);
 
         productRepository.delete(product);
     }

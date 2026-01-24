@@ -2,7 +2,9 @@ package com.example.Server.services;
 
 import com.example.Server.dto.request.auth.AuthRequest;
 import com.example.Server.dto.request.register.RegisterAccount;
+import com.example.Server.dto.response.account.AccountResponse;
 import com.example.Server.entity.Account;
+import com.example.Server.mapper.AccountMapper;
 import com.example.Server.repository.AccountRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,14 +29,16 @@ public class AuthenticationService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Account signup(RegisterAccount input) {
+    public AccountResponse signup(RegisterAccount input) {
         Account user = new Account();
-        user.setName(input.getFullName());
+        user.setName(input.getName());
         user.setEmail(input.getEmail());
         user.setPassword(passwordEncoder.encode(input.getPassword()));
+        user.setRoles("ROLE_USER");
 
+        userRepository.save(user);
 
-        return userRepository.save(user);
+        return AccountMapper.toResponse(user);
     }
 
     public Account authenticate(AuthRequest input) {

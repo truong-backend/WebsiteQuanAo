@@ -23,7 +23,7 @@ public class ProductTypeMapper {
         ProductTypeResponse response = new ProductTypeResponse();
         response.setProductId(pt.getProductId());
         response.setProductName(pt.getProductName());
-        response.setParentProductId(pt.getParentProduct() != null ? pt.getParentProduct().getProductId() : null);
+//        response.setParentProductId(pt.getParentProduct() != null ? pt.getParentProduct().getProductId() : null);
 
         return response;
     }

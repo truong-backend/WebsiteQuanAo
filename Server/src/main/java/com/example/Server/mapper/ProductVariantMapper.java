@@ -25,7 +25,9 @@ public class ProductVariantMapper {
         response.setQuantity(pv.getQuantity());
         response.setImg(pv.getImg());
         response.setProductId(pv.getProduct() != null ? pv.getProduct().getId() : null);
+        response.setProductName(pv.getProduct().getName());
         response.setColorCode(pv.getColor() != null ? pv.getColor().getCode() : null);
+        response.setColorName(pv.getColor() != null ? pv.getColor().getName() : null);
         response.setSizeId(pv.getSize() != null ? pv.getSize().getId() : null);
 
         return response;

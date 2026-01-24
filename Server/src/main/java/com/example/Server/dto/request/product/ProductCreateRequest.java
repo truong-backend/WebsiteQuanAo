@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ProductCreateRequest {
 
+    // FE không bắt nhập, BE tự sinh nếu null
     private String id;
 
     @NotBlank(message = "Name is required")
@@ -32,6 +33,6 @@ public class ProductCreateRequest {
 
     private String hoverImg;
 
-    @NotNull(message = "Product type ID is required")
-    private Long productTypeId;
+    @NotNull(message = "Category ID is required")
+    private Long categoryId;
 }

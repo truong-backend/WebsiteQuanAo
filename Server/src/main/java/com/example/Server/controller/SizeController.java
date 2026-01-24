@@ -2,6 +2,7 @@ package com.example.Server.controller;
 
 import com.example.Server.dto.request.size.SizeCreateRequest;
 import com.example.Server.dto.request.size.SizeUpdateRequest;
+import com.example.Server.dto.response.size.SizeOptionResponse;
 import com.example.Server.dto.response.size.SizeResponse;
 import com.example.Server.services.SizeService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -100,6 +102,10 @@ public class SizeController {
      * Get size by id
      * GET /sizes/{id}
      */
+    @GetMapping("/options")
+    public ResponseEntity<List<SizeOptionResponse>> getSizeOptions() {
+        return ResponseEntity.ok(sizeService.getAllSizeOptions());
+    }
     @GetMapping("/{id}")
     public ResponseEntity<SizeResponse> getSizeById(
             @PathVariable String id
