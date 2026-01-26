@@ -9,7 +9,7 @@ export interface SelectOption {
 export interface FormField<T extends Record<string, unknown>> {
   name: keyof T;
   label: string;
-  type: "text" | "select" | "number" | "email" | "textarea";
+  type: "text" | "select" | "number" | "email" | "textarea" | "password";
   placeholder?: string;
   required?: boolean;
   options?: SelectOption[];
