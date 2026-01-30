@@ -4,6 +4,8 @@ import ColorPage from "./page/Admin/Color/ColorPage";
 import ProductPage from "./page/Admin/Product/ProductPage";
 import ProductVariantPage from "./page/Admin/ProductVariant/ProductVariantPage";
 import SizePage from "./page/Admin/Size/SizePage";
+import OrderPage from "./page/Admin/Order/OrderPage";
+
 function App() {
   return (
     <>
@@ -14,7 +16,8 @@ function App() {
         {/* <ColorPage/> */}
         {/* <AccountPage /> */}
         {/* <ProductPage /> lỖI */}
-        <ProductVariantPage />
+        {/* <ProductVariantPage /> */}
+        <OrderPage />
     </>
   );
 }
