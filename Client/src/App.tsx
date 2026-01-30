@@ -2,6 +2,7 @@ import AccountPage from "./page/Admin/Accout/AccountPage";
 import CategoryPage from "./page/Admin/Category/CategoryPage";
 import ColorPage from "./page/Admin/Color/ColorPage";
 import ProductPage from "./page/Admin/Product/ProductPage";
+import ProductVariantPage from "./page/Admin/ProductVariant/ProductVariantPage";
 import SizePage from "./page/Admin/Size/SizePage";
 function App() {
   return (
@@ -9,11 +10,11 @@ function App() {
       {/* <Header /> */}
       {/* <AdminDashboard /> */}
        {/* <CategoryPage /> */}
-       {/* <SizeFormCreate /> */}
        {/* <SizePage/> */}
         {/* <ColorPage/> */}
         {/* <AccountPage /> */}
-        <ProductPage />
+        {/* <ProductPage /> lỖI */}
+        <ProductVariantPage />
     </>
   );
 }
