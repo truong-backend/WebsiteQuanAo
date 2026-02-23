@@ -28,14 +28,7 @@ function CategoryFormUpdate({ id, onSuccess }: CategoryFormUpdateProps) {
       name: "parentCategoryId",
       label: "Danh mục cha",
       type: "select",
-      loadOptions: async () => {
-        const categories = await categoryService.getAllCategoryOptions();
-        return categories.map((c) => ({
-          value: c.categoryId,
-          label: c.categoryName,
-          key: c.categoryId.toString(),
-        }));
-      },
+      loadOptions: () => categoryService.getCategorySelectOptions()
     },
   ];
 

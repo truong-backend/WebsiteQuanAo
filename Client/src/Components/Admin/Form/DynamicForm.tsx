@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
+import { Form, Input, Select, Button, message } from "antd";
+// import type { FormInstance } from "antd";
+import { Upload } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import type { UploadFile } from "antd";
+
+const { TextArea } = Input;
 
 export interface SelectOption {
   value: string | number;
-  label: string;
+  label: string | number;
   [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface FormField<T extends Record<string, unknown>> {
   name: keyof T;
   label: string;
-  type: "text" | "select" | "number" | "email" | "textarea" | "password";
+  type:
+    | "text"
+    | "select"
+    | "number"
+    | "email"
+    | "textarea"
+    | "password"
+    | "image";
   placeholder?: string;
   required?: boolean;
   options?: SelectOption[];
@@ -17,6 +31,7 @@ export interface FormField<T extends Record<string, unknown>> {
   optionValue?: string;
   optionLabel?: string;
   disabled?: boolean;
+  uploadType?: string;
 }
 
 interface DynamicFormProps<T extends Record<string, unknown>> {
@@ -26,7 +41,7 @@ interface DynamicFormProps<T extends Record<string, unknown>> {
   loadingText?: string;
   onSuccess?: () => void;
   successMessage?: string;
-  
+
   mode?: "create" | "update";
   initialData?: T;
   loadData?: () => Promise<T>;
@@ -43,15 +58,55 @@ function DynamicForm<T extends Record<string, unknown>>({
   initialData,
   loadData,
 }: DynamicFormProps<T>) {
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [form] = Form.useForm();
   const [selectOptions, setSelectOptions] = useState<
     Record<string, SelectOption[]>
   >({});
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
+  const [fileList, setFileList] = useState<Record<string, UploadFile[]>>({});
 
   const defaultSubmitText = mode === "update" ? "Cập nhật" : "Lưu";
   const finalSubmitText = submitButtonText || defaultSubmitText;
+
+  // Helper function để extract fileName từ URL
+  const getFileNameFromUrl = (url: string): string => {
+    try {
+      // Lấy phần cuối cùng của URL (sau dấu / cuối cùng)
+      const parts = url.split("/");
+      return parts[parts.length - 1];
+    } catch {
+      return "";
+    }
+  };
+
+  // Function để xóa file trên server
+  const deleteImageOnServer = async (imageUrl: string): Promise<boolean> => {
+    try {
+      const fileName = getFileNameFromUrl(imageUrl);
+      if (!fileName) {
+        console.error("Cannot extract filename from URL");
+        return false;
+      }
+
+      const response = await fetch(
+        `http://localhost:8080/uploads/images?fileName=${encodeURIComponent(fileName)}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (response.ok) {
+        return true;
+      } else {
+        console.error("Delete failed:", await response.text());
+        return false;
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -67,15 +122,29 @@ function DynamicForm<T extends Record<string, unknown>>({
           }
 
           if (data) {
-            const stringData: Record<string, string> = {};
-            Object.keys(data).forEach((key) => {
-              const value = data[key];
-              stringData[key] = value !== null && value !== undefined ? String(value) : "";
+            form.setFieldsValue(data);
+
+            // Set fileList cho các image fields nếu có URL
+            const newFileList: Record<string, UploadFile[]> = {};
+            fields.forEach((field) => {
+              if (field.type === "image" && data[field.name]) {
+                const imageUrl = data[field.name] as string;
+                newFileList[field.name as string] = [
+                  {
+                    uid: "-1",
+                    name: getFileNameFromUrl(imageUrl) || "image.png",
+                    status: "done",
+                    url: imageUrl,
+                  },
+                ];
+              }
             });
-            setFormData(stringData);
+            setFileList(newFileList);
           }
         } catch (error) {
-          alert(error instanceof Error ? error.message : "Không thể load dữ liệu");
+          message.error(
+            error instanceof Error ? error.message : "Không thể load dữ liệu",
+          );
         } finally {
           setLoadingData(false);
         }
@@ -83,7 +152,7 @@ function DynamicForm<T extends Record<string, unknown>>({
     };
 
     loadInitialData();
-  }, [mode, initialData, loadData]);
+  }, [mode, initialData, loadData, form]);
 
   useEffect(() => {
     fields.forEach((field) => {
@@ -91,31 +160,31 @@ function DynamicForm<T extends Record<string, unknown>>({
         field
           .loadOptions()
           .then((data) => {
-            setSelectOptions((prev) => ({ ...prev, [field.name as string]: data }));
+            setSelectOptions((prev) => ({
+              ...prev,
+              [field.name as string]: data,
+            }));
           })
           .catch((error) => {
-            alert(error instanceof Error ? error.message : "Có lỗi xảy ra");
+            message.error(
+              error instanceof Error ? error.message : "Có lỗi xảy ra",
+            );
           });
       }
     });
   }, [fields]);
 
-  const handleChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: T) => {
     setLoading(true);
 
     try {
       const transformedData: Record<string, unknown> = {};
       fields.forEach((field) => {
-        const value = formData[field.name as string] || "";
-        if (field.type === "number" || field.type === "select") {
+        const value = values[field.name];
+        if (field.type === "number") {
           transformedData[field.name as string] = value ? Number(value) : null;
         } else {
-          transformedData[field.name as string] = value;
+          transformedData[field.name as string] = value ?? null;
         }
       });
 
@@ -125,76 +194,166 @@ function DynamicForm<T extends Record<string, unknown>>({
         onSuccess();
       }
 
-      alert(successMessage);
+      message.success(successMessage);
 
       if (mode === "create") {
-        setFormData({});
+        form.resetFields();
+        setFileList({});
       }
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Có lỗi xảy ra");
+      message.error(error instanceof Error ? error.message : "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
   };
 
   const renderField = (field: FormField<T>) => {
-    const value = formData[field.name as string] || "";
-
     switch (field.type) {
       case "select": {
-        const options = field.options || selectOptions[field.name as string] || [];
+        const options =
+          field.options || selectOptions[field.name as string] || [];
+        const antdOptions = options.map((option) => {
+          const optionValue = field.optionValue
+            ? option[field.optionValue]
+            : option.value;
+          const optionLabel = field.optionLabel
+            ? option[field.optionLabel]
+            : option.label;
+          return {
+            value: optionValue as string | number,
+            label: optionLabel,
+          };
+        });
+
         return (
-          <select
-            value={value}
-            onChange={(e) => handleChange(field.name as string, e.target.value)}
+          <Select
+            placeholder={field.placeholder || "Chọn"}
             disabled={field.disabled || loadingData}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
-          >
-            <option value="">-- {field.placeholder || "Chọn"} --</option>
-            {options.map((option) => {
-              const optionValue = field.optionValue
-                ? option[field.optionValue]
-                : option.value;
-              const optionLabel = field.optionLabel
-                ? option[field.optionLabel]
-                : option.label;
-              return (
-                <option
-                  key={String(optionValue)}
-                  value={optionValue as string | number}
-                >
-                  {optionLabel}
-                </option>
-              );
-            })}
-          </select>
+            options={antdOptions}
+            allowClear
+          />
         );
       }
 
       case "textarea": {
         return (
-          <textarea
-            value={value}
-            onChange={(e) => handleChange(field.name as string, e.target.value)}
+          <TextArea
             placeholder={field.placeholder}
-            required={field.required}
             disabled={field.disabled || loadingData}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
             rows={4}
           />
         );
       }
 
+      case "number": {
+        return (
+          <Input
+            type="number"
+            placeholder={field.placeholder}
+            disabled={field.disabled || loadingData}
+          />
+        );
+      }
+
+      case "email": {
+        return (
+          <Input
+            type="email"
+            placeholder={field.placeholder}
+            disabled={field.disabled || loadingData}
+          />
+        );
+      }
+
+      case "password": {
+        return (
+          <Input.Password
+            placeholder={field.placeholder}
+            disabled={field.disabled || loadingData}
+          />
+        );
+      }
+
+      case "image": {
+        const fieldName = field.name as string;
+        const currentFileList = fileList[fieldName] || [];
+
+        return (
+          <>
+            <Upload
+              name="file"
+              action="http://localhost:8080/uploads/image"
+              listType="picture-card"
+              maxCount={1}
+              accept="image/*"
+              fileList={currentFileList}
+              onChange={(info) => {
+                // Cập nhật fileList state
+                setFileList((prev) => ({
+                  ...prev,
+                  [fieldName]: info.fileList,
+                }));
+
+                if (info.file.status === "done") {
+                  const imageUrl = info.file.response?.url;
+                  if (imageUrl) {
+                    form.setFieldValue(fieldName, imageUrl);
+                    message.success("Upload ảnh thành công");
+                  }
+                } else if (info.file.status === "error") {
+                  message.error("Upload ảnh thất bại");
+                }
+              }}
+              onRemove={async (file) => {
+                // Lấy URL của ảnh cần xóa
+                const imageUrl = file.url || form.getFieldValue(fieldName);
+
+                if (imageUrl) {
+                  // Xóa file trên server
+                  const deleted = await deleteImageOnServer(imageUrl);
+                  if (deleted) {
+                    message.success("Đã xóa ảnh");
+                  } else {
+                    message.warning(
+                      "Đã xóa ảnh khỏi form (không xóa được file trên server)",
+                    );
+                  }
+                }
+
+                // Xóa URL khỏi form
+                form.setFieldValue(fieldName, null);
+
+                // Cập nhật fileList
+                setFileList((prev) => ({
+                  ...prev,
+                  [fieldName]: [],
+                }));
+
+                return true; // Cho phép xóa khỏi UI
+              }}
+            >
+              {currentFileList.length === 0 && (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Upload</div>
+                </div>
+              )}
+            </Upload>
+
+            {/* hidden input để submit URL */}
+            <Form.Item name={fieldName} hidden>
+              <Input />
+            </Form.Item>
+          </>
+        );
+      }
+
       default: {
         return (
-          <input
-            type={field.type}
-            value={value}
-            onChange={(e) => handleChange(field.name as string, e.target.value)}
+          <Input
+            type="text"
             placeholder={field.placeholder}
-            required={field.required}
             disabled={field.disabled || loadingData}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
           />
         );
       }
@@ -202,27 +361,41 @@ function DynamicForm<T extends Record<string, unknown>>({
   };
 
   if (loadingData) {
-    return <div className="text-center py-4 text-gray-400">Đang tải dữ liệu...</div>;
+    return (
+      <div style={{ textAlign: "center", padding: "16px", color: "#999" }}>
+        Đang tải dữ liệu...
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSubmit}
+      disabled={loading || loadingData}
+    >
       {fields.map((field) => (
-        <div key={field.name as string}>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            {field.label}:
-          </label>
+        <Form.Item
+          key={field.name as string}
+          name={field.name as string}
+          label={field.label}
+          rules={[
+            {
+              required: field.required,
+              message: `Vui lòng nhập ${field.label.toLowerCase()}`,
+            },
+          ]}
+        >
           {renderField(field)}
-        </div>
+        </Form.Item>
       ))}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors"
-      >
-        {loading ? loadingText : finalSubmitText}
-      </button>
-    </form>
+      <Form.Item>
+        <Button type="primary" htmlType="submit" loading={loading} block>
+          {loading ? loadingText : finalSubmitText}
+        </Button>
+      </Form.Item>
+    </Form>
   );
 }
 

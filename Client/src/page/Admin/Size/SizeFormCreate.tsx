@@ -11,14 +11,14 @@ function SizeFormCreate({ onSuccess }: SizeFormCreateProps) {
   const fields: FormField<SizeCreateRequest>[] = [
     {
       name: "id",
-      label: "Tên danh mục",
+      label: "Mã kích thước",
       type: "text",
-      placeholder: "Nhập tên danh mục",
+      placeholder: "Nhập mã kích thước",
       required: true,
     },
     {
       name: "name",
-      label: "Danh mục cha",
+      label: "Tên kích thước",
       type: "text",
       required: true,
     },

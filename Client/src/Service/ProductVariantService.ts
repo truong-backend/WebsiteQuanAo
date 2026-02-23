@@ -4,7 +4,7 @@ import type { ProductVariantCreateRequest } from "../type/ProductVariant/Product
 import type { ProductVariantUpdateRequest } from "../type/ProductVariant/ProductVariantUpdateRequest";
 import type { ProductVariantResponse } from "../type/ProductVariant/ProductVariantResponse";
 import type { ProductVariantResponsePageResponse } from "../type/ProductVariant/ProductVariantResponse";
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 
 /**
  * Service layer for product variant operations
@@ -25,10 +25,16 @@ export const ProductVariantService = {
     size = 10,
     search?: string,
     sortBy = "id",
-    sortDir: "asc" | "desc" = "asc"
+    sortDir: "asc" | "desc" = "asc",
   ): Promise<ProductVariantResponsePageResponse> => {
     try {
-      return await productVariantApi.getAll(page, size, search, sortBy, sortDir);
+      return await productVariantApi.getAll(
+        page,
+        size,
+        search,
+        sortBy,
+        sortDir,
+      );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ErrorResponse;
@@ -44,7 +50,7 @@ export const ProductVariantService = {
    * @returns Created product variant
    */
   createProductVariant: async (
-    payload: ProductVariantCreateRequest
+    payload: ProductVariantCreateRequest,
   ): Promise<ProductVariantResponse> => {
     try {
       return await productVariantApi.create(payload);
@@ -55,19 +61,20 @@ export const ProductVariantService = {
         // 409 Conflict - Duplicate variant (same product + color + size)
         if (error.response.status === 409) {
           throw new Error(
-            errData.message || "Biến thể sản phẩm đã tồn tại (trùng sản phẩm + màu + size)"
+            errData.message ||
+              "Biến thể sản phẩm đã tồn tại (trùng sản phẩm + màu + size)",
           );
         }
 
         // 404 Not Found - Product, Color, or Size not found
         if (error.response.status === 404) {
           throw new Error(
-            errData.message || "Sản phẩm, màu sắc hoặc kích cỡ không tồn tại"
+            errData.message || "Sản phẩm, màu sắc hoặc kích cỡ không tồn tại",
           );
         }
 
         throw new Error(
-          errData.message || "Có lỗi xảy ra khi tạo biến thể sản phẩm"
+          errData.message || "Có lỗi xảy ra khi tạo biến thể sản phẩm",
         );
       }
       throw new Error("Không thể kết nối đến server");
@@ -82,7 +89,7 @@ export const ProductVariantService = {
    */
   updateProductVariant: async (
     id: string,
-    payload: ProductVariantUpdateRequest
+    payload: ProductVariantUpdateRequest,
   ): Promise<ProductVariantResponse> => {
     try {
       return await productVariantApi.update(id, payload);
@@ -93,7 +100,7 @@ export const ProductVariantService = {
         // 404 Not Found
         if (error.response.status === 404) {
           throw new Error(
-            errData.message || "Không tìm thấy biến thể sản phẩm"
+            errData.message || "Không tìm thấy biến thể sản phẩm",
           );
         }
 
@@ -101,7 +108,7 @@ export const ProductVariantService = {
         if (error.response.status === 409) {
           throw new Error(
             errData.message ||
-              "Biến thể sản phẩm đã tồn tại (trùng sản phẩm + màu + size)"
+              "Biến thể sản phẩm đã tồn tại (trùng sản phẩm + màu + size)",
           );
         }
 
@@ -111,7 +118,7 @@ export const ProductVariantService = {
         }
 
         throw new Error(
-          errData.message || "Có lỗi xảy ra khi cập nhật biến thể"
+          errData.message || "Có lỗi xảy ra khi cập nhật biến thể",
         );
       }
       throw new Error("Không thể kết nối đến server");
@@ -123,7 +130,9 @@ export const ProductVariantService = {
    * @param id - Product variant ID
    * @returns Product variant data
    */
-  getProductVariantById: async (id: string): Promise<ProductVariantResponse> => {
+  getProductVariantById: async (
+    id: string,
+  ): Promise<ProductVariantResponse> => {
     try {
       return await productVariantApi.getById(id);
     } catch (error) {
@@ -135,7 +144,7 @@ export const ProductVariantService = {
         }
 
         throw new Error(
-          errData.message || "Có lỗi xảy ra khi lấy biến thể sản phẩm"
+          errData.message || "Có lỗi xảy ra khi lấy biến thể sản phẩm",
         );
       }
       throw new Error("Không thể kết nối đến server");
@@ -163,7 +172,7 @@ export const ProductVariantService = {
         if (error.response.status === 400) {
           throw new Error(
             errData.message ||
-              "Không thể xóa biến thể đang có trong giỏ hàng hoặc đơn hàng"
+              "Không thể xóa biến thể đang có trong giỏ hàng hoặc đơn hàng",
           );
         }
 

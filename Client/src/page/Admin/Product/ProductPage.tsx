@@ -8,10 +8,6 @@ import type {
 import { ProductService } from "../../../Service/ProductService";
 import ProductFormCreate from "./ProductFormCreate";
 import ProductFormUpdate from "./ProductFormUpdate";
-import { SearchBox } from "../../../Components/Admin/Search/SearchBox";
-import { SortControl } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortOption } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortParams } from "../../../Components/Admin/SortControl/SortControl";
 import type { ProductResponse } from "../../../type/product/ProductResponse";
 
 const ProductPage: React.FC = () => {
@@ -22,18 +18,9 @@ const ProductPage: React.FC = () => {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(10);
-
-  // Search, Sort, Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [productTypeId, setProductTypeId] = useState<number | undefined>();
-  const [sortBy, setSortBy] = useState("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null,
+  );
 
   const fetchProducts = async () => {
     try {
@@ -41,16 +28,15 @@ const ProductPage: React.FC = () => {
       setError(null);
 
       const response = await ProductService.getProductsPaged(
-        currentPage,
-        pageSize,
-        searchQuery || undefined,
-        productTypeId,
-        sortBy,
-        sortDir
+        0,
+        1000, // Get all for client-side filtering
+        undefined,
+        undefined,
+        "name",
+        "asc",
       );
 
       setProducts(response.content);
-      setTotalPages(response.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -58,28 +44,13 @@ const ProductPage: React.FC = () => {
     }
   };
 
-  // Re-fetch when params change
   useEffect(() => {
     fetchProducts();
-  }, [currentPage, searchQuery, productTypeId, sortBy, sortDir]);
-
-  // Reset to page 0 when search/sort/filter changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchQuery, productTypeId, sortBy, sortDir]);
+  }, []);
 
   // ============================================
   // HANDLERS
   // ============================================
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const handleSortChange = (params: SortParams) => {
-    setSortBy(params.sortBy);
-    setSortDir(params.sortDir);
-  };
 
   const handleDelete = async (item: ProductResponse) => {
     if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${item.name}"?`)) {
@@ -111,15 +82,9 @@ const ProductPage: React.FC = () => {
     fetchProducts();
   };
 
-  // ============================================
-  // CONFIG FOR GENERIC COMPONENTS
-  // ============================================
-
-  const sortOptions: SortOption[] = [
-    { value: "name", label: "Tên" },
-    { value: "price", label: "Giá" },
-    { value: "id", label: "ID" },
-  ];
+  const handleSearch = (searchText: string) => {
+    console.log('Searching for:', searchText);
+  };
 
   // ============================================
   // TABLE CONFIG
@@ -127,39 +92,39 @@ const ProductPage: React.FC = () => {
 
   const columns: Column<ProductResponse>[] = [
     {
-      key: "id",
-      label: "ID",
-    },
-    {
       key: "name",
       label: "Tên sản phẩm",
+      sortable: true,
+      searchable: true,
+      width: 250,
     },
     {
       key: "price",
       label: "Giá",
-      render: (item) => `${item.price.toLocaleString('vi-VN')} ₫`,
+      sortable: true,
+      width: 150,
+      render: (item) => `${item.price.toLocaleString("vi-VN")} ₫`,
     },
     {
       key: "img",
       label: "Hình ảnh",
+      width: 200,
       render: (item) => (
-        <img 
-          src={item.img} 
-          alt={item.name} 
-          className="w-16 h-16 object-cover rounded"
+        <img
+          src={`http://localhost:8080${item.img}`}
+          alt={item.name}
+          className="w-32 h-20 object-cover rounded-lg border shadow-sm"
           onError={(e) => {
-            e.currentTarget.src = 'https://via.placeholder.com/64?text=No+Image';
+            e.currentTarget.src =
+              "https://via.placeholder.com/128?text=No+Image";
           }}
         />
       ),
     },
     {
-      key: "productTypeId",
-      label: "Loại SP",
-    },
-    {
       key: "description",
       label: "Mô tả",
+      searchable: true,
       render: (item) => (
         <span className="line-clamp-2" title={item.description}>
           {item.description}
@@ -226,78 +191,25 @@ const ProductPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Search, Sort, Filter Bar */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Search */}
-        <div className="flex-1">
-          <SearchBox
-            onSearch={handleSearch}
-            placeholder="Tìm kiếm theo tên sản phẩm..."
-            debounceMs={500}
-          />
-        </div>
-
-        {/* Product Type Filter */}
-        <div className="flex-shrink-0">
-          <input
-            type="number"
-            className="border px-3 py-2 rounded h-full w-full md:w-40"
-            placeholder="Lọc theo loại SP"
-            onChange={(e) => setProductTypeId(e.target.value ? Number(e.target.value) : undefined)}
-            value={productTypeId || ""}
-          />
-        </div>
-
-        {/* Sort */}
-        <div className="flex-shrink-0">
-          <SortControl
-            options={sortOptions}
-            onSortChange={handleSortChange}
-            defaultSortBy="name"
-            defaultSortDir="asc"
-          />
-        </div>
-      </div>
-
-      {loading && products.length > 0 && (
-        <div className="mb-4 text-center text-sm text-gray-500">
-          Đang tải...
-        </div>
-      )}
-
-      {/* Table */}
+      {/* Table with built-in search, sort, filter */}
       <DynamicList
         data={products}
         columns={columns}
         actions={actions}
         keyExtractor={(item) => item.id}
         emptyMessage="Không tìm thấy sản phẩm nào"
+        loading={loading}
+        showGlobalSearch={true}
+        searchPlaceholder="Tìm kiếm theo tên hoặc mô tả sản phẩm..."
+        onSearch={handleSearch}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20', '50'],
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} của ${total} sản phẩm`,
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-            disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang trước
-          </button>
-          <span className="px-4 py-2">
-            Trang {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang sau
-          </button>
-        </div>
-      )}
 
       {/* Create Modal */}
       {showCreateModal && (

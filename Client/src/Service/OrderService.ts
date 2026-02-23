@@ -5,7 +5,7 @@ import type { OrderUpdateRequest } from "../type/Orders/OrderUpdateRequest";
 import type { OrderResponse } from "../type/Orders/OrderResponse";
 import type { OrderResponsePageResponse } from "../type/Orders/OrderResponse";
 import type { OrderStatus } from "../type/Orders/OrderStatus";
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 
 /**
  * Service layer for order operations
@@ -34,7 +34,7 @@ export const OrderService = {
     status?: OrderStatus,
     startDate?: string,
     endDate?: string,
-    accountId?: number
+    accountId?: number,
   ): Promise<OrderResponsePageResponse> => {
     try {
       return await orderApi.getOrdersFiltered(
@@ -46,7 +46,7 @@ export const OrderService = {
         status,
         startDate,
         endDate,
-        accountId
+        accountId,
       );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -77,7 +77,8 @@ export const OrderService = {
         // 404 Not Found - Account or Payment not found
         if (error.response.status === 404) {
           throw new Error(
-            errData.message || "Tài khoản hoặc phương thức thanh toán không tồn tại"
+            errData.message ||
+              "Tài khoản hoặc phương thức thanh toán không tồn tại",
           );
         }
 
@@ -95,7 +96,7 @@ export const OrderService = {
    */
   updateOrder: async (
     id: string,
-    payload: OrderUpdateRequest
+    payload: OrderUpdateRequest,
   ): Promise<OrderResponse> => {
     try {
       return await orderApi.update(id, payload);
@@ -113,7 +114,9 @@ export const OrderService = {
           throw new Error(errData.message || "Thao tác không hợp lệ");
         }
 
-        throw new Error(errData.message || "Có lỗi xảy ra khi cập nhật đơn hàng");
+        throw new Error(
+          errData.message || "Có lỗi xảy ra khi cập nhật đơn hàng",
+        );
       }
       throw new Error("Không thể kết nối đến server");
     }
@@ -162,7 +165,7 @@ export const OrderService = {
         if (error.response.status === 400) {
           throw new Error(
             errData.message ||
-              "Không thể xóa đơn hàng đang có sản phẩm. Vui lòng xóa các sản phẩm trong đơn hàng trước."
+              "Không thể xóa đơn hàng đang có sản phẩm. Vui lòng xóa các sản phẩm trong đơn hàng trước.",
           );
         }
 

@@ -39,21 +39,21 @@ function ProductFormUpdate({ id, onSuccess }: ProductFormUpdateProps) {
     {
       name: "path",
       label: "Đường dẫn",
-      type: "text",
+      type: "image",
       placeholder: "Nhập đường dẫn (path)",
       required: true,
     },
     {
       name: "img",
       label: "URL hình ảnh",
-      type: "text",
+      type: "image",
       placeholder: "Nhập URL hình ảnh chính",
       required: true,
     },
     {
       name: "hoverImg",
       label: "URL hình ảnh hover",
-      type: "text",
+      type: "image",
       placeholder: "Nhập URL hình ảnh hover (tùy chọn)",
     },
     {

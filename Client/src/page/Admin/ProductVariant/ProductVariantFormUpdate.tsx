@@ -8,6 +8,7 @@ import type { ProductVariantUpdateRequest } from "../../../type/ProductVariant/P
 import { ProductService } from "../../../Service/ProductService";
 import { ColorService } from "../../../Service/ColorService";
 import { SizeService } from "../../../Service/SizeService";
+import { categoryService } from "../../../Service/categoryService";
 
 interface ProductVariantFormUpdateProps {
   id: string;
@@ -16,9 +17,6 @@ interface ProductVariantFormUpdateProps {
 
 function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdateProps) {
   const [initialData, setInitialData] = useState<ProductVariantUpdateRequest | null>(null);
-  const [products, setProducts] = useState<Array<{ value: string; label: string }>>([]);
-  const [colors, setColors] = useState<Array<{ value: string; label: string }>>([]);
-  const [sizes, setSizes] = useState<Array<{ value: string; label: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   const fields: FormField<ProductVariantUpdateRequest>[] = [
@@ -26,7 +24,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "productId",
       label: "Sản phẩm",
       type: "select",
-      options: products,
+      loadOptions: () => ProductService.getProductSelectOptions(),
       placeholder: "Chọn sản phẩm",
       required: true,
     },
@@ -34,7 +32,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "colorCode",
       label: "Màu sắc",
       type: "select",
-      options: colors,
+      loadOptions: () => ColorService.getColorSelectOptions(),
       placeholder: "Chọn màu",
       required: true,
     },
@@ -42,7 +40,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "sizeId",
       label: "Kích cỡ",
       type: "select",
-      options: sizes,
+      loadOptions: () => SizeService.getSizeSelectOptions(),
       placeholder: "Chọn size",
       required: true,
     },
@@ -69,11 +67,8 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
         setLoading(true);
 
         // Fetch variant data and dropdown options in parallel
-        const [variant, productsData, colorsData, sizesData] = await Promise.all([
+        const [variant] = await Promise.all([
           ProductVariantService.getProductVariantById(id),
-          ProductService.getProductsPaged(0, 100),
-          ColorService.getColorsPaged(0, 100),
-          SizeService.getSizesPaged(0, 100),
         ]);
 
         if (!variant) return;
@@ -85,27 +80,6 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
           colorCode: variant.colorCode,
           sizeId: variant.sizeId,
         });
-
-        setProducts(
-          productsData.content.map((p) => ({
-            value: p.id,
-            label: p.name,
-          }))
-        );
-
-        setColors(
-          colorsData.content.map((c) => ({
-            value: c.code,
-            label: c.name,
-          }))
-        );
-
-        setSizes(
-          sizesData.content.map((s) => ({
-            value: s.id,
-            label: s.name,
-          }))
-        );
       } catch (err) {
         console.error("Error fetching data:", err);
         alert("Không thể tải dữ liệu biến thể sản phẩm");

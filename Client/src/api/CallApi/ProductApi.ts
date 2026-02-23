@@ -1,8 +1,10 @@
 // src/api/CallApi/ProductApi.ts
-import { BaseApi } from "../BaseApi/baseApi";
+import { BaseApi, type PageResponse } from "../BaseApi/baseApi";
 import type { ProductResponse } from "../../type/product/ProductResponse.ts";
 import type { ProductCreateRequest } from "../../type/product/ProductCreateRequest.ts";
 import type { ProductUpdateRequest } from "../../type/product/ProductUpdateRequest.ts";
+import type { ProductOption } from "../../type/product/ProductOption.ts";
+import type { ProductListItem } from "../../type/product/ProductListItem.ts";
 
 class ProductApi extends BaseApi<
   ProductResponse,
@@ -20,7 +22,7 @@ class ProductApi extends BaseApi<
     search?: string,
     productTypeId?: number,
     sortBy = "name",
-    sortDir: "asc" | "desc" = "asc"
+    sortDir: "asc" | "desc" = "asc",
   ) {
     const params: Record<string, string | number> = {
       page,
@@ -38,6 +40,37 @@ class ProductApi extends BaseApi<
     }
 
     return this.axiosInstance.get("", { params });
+  }
+
+  // src/api/ProductApi.ts
+
+  async getAllProductOptions(): Promise<ProductOption[]> {
+    return this.customGet<ProductOption[]>("/options");
+  }
+
+  async getProductsForListing(
+    page: number = 0,
+    size: number = 12,
+    searchQuery?: string,
+    categoryId?: number,
+    minPrice?: number,
+    maxPrice?: number,
+    sortBy: string = 'createdAt',
+    sortDir: 'asc' | 'desc' = 'desc'
+  ): Promise<PageResponse<ProductListItem>> {
+    const params: Record<string, string | number> = {
+      page,
+      size,
+      sortBy,
+      sortDir,
+    };
+    
+    if (searchQuery) params.search = searchQuery;
+    if (categoryId) params.categoryId = categoryId;
+    if (minPrice !== undefined) params.minPrice = minPrice;
+    if (maxPrice !== undefined) params.maxPrice = maxPrice;
+
+    return this.customGet<PageResponse<ProductListItem>>('/listing', { params });
   }
 }
 

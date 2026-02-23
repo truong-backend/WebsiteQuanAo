@@ -5,7 +5,9 @@ import type { SizeCreateRequest } from "../type/size/SizeCreateRequest";
 import type { SizeUpdateRequest } from "../type/size/SizeUpdateRequest";
 import type { SizesResponse } from "../type/size/SizesResponse";
 import type { SizeResponsePageResponse } from "../type/size/SizesResponse";
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
+import type { SizeOption } from "../type/size/SizeOption";
+import type { SelectOption } from "../type/common/error/select/SelectOption";
 
 /**
  * Service layer for category operations
@@ -27,7 +29,7 @@ export const SizeService = {
     size = 10,
     search?: string,
     sortBy = "categoryId",
-    sortDir: "asc" | "desc" = "asc"
+    sortDir: "asc" | "desc" = "asc",
   ): Promise<SizeResponsePageResponse> => {
     try {
       return await sizeApi.getAll(page, size, search, sortBy, sortDir);
@@ -71,7 +73,7 @@ export const SizeService = {
    */
   updateSize: async (
     Id: string,
-    payload: SizeUpdateRequest
+    payload: SizeUpdateRequest,
   ): Promise<SizesResponse> => {
     try {
       return await sizeApi.update(Id, payload);
@@ -87,7 +89,7 @@ export const SizeService = {
         // 409 Conflict - Duplicate name or circular relationship
         if (error.response.status === 409) {
           throw new Error(
-            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp"
+            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp",
           );
         }
 
@@ -144,11 +146,29 @@ export const SizeService = {
         // 409 Conflict - Has children
         if (error.response.status === 409) {
           throw new Error(
-            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước."
+            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước.",
           );
         }
 
         throw new Error(errData.message || "Có lỗi xảy ra khi xóa");
+      }
+      throw new Error("Không thể kết nối đến server");
+    }
+  },
+  getSizeSelectOptions: async (): Promise<SelectOption[]> => {
+    try {
+      const data: SizeOption[] = await sizeApi.getAllSizeOptions();
+
+      return data.map((item) => ({
+        value: item.sizeId,
+        label: item.sizeName,
+      }));
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const errData = error.response.data as ErrorResponse;
+        throw new Error(
+          errData.message || "Không thể lấy danh sách kích thước",
+        );
       }
       throw new Error("Không thể kết nối đến server");
     }

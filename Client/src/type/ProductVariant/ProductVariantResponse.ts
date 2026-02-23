@@ -5,7 +5,9 @@ export interface ProductVariantResponse {
   quantity: number;
   img: string;
   productId: string;
+  productName: string;
   colorCode: string;
+  colorName: string;
   sizeId: string;
 }
 

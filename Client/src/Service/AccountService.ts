@@ -1,7 +1,7 @@
 // src/Service/AccountService.ts
 import axios from "axios";
 import { accountApi } from "../api/CallApi/AccoutApi";
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 import type { AccountCreateRequest } from "../type/account/AccountCreateRequest";
 import type { AccountUpdateRequest } from "../type/account/AccountUpdateRequest";
 import type { AccountResponsePageResponse } from "../type/account/AccountResponse";
@@ -13,7 +13,7 @@ export const AccountService = {
     search?: string,
     role?: string,
     sortBy = "email",
-    sortDir: "asc" | "desc" = "asc"
+    sortDir: "asc" | "desc" = "asc",
   ): Promise<AccountResponsePageResponse> => {
     try {
       const res = await accountApi.searchAndFilter(
@@ -22,14 +22,14 @@ export const AccountService = {
         search,
         role,
         sortBy,
-        sortDir
+        sortDir,
       );
       return res.data;
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(
           (error.response.data as ErrorResponse).message ||
-            "Không thể tải danh sách tài khoản"
+            "Không thể tải danh sách tài khoản",
         );
       }
       throw new Error("Không thể kết nối server");
@@ -43,7 +43,7 @@ export const AccountService = {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(
           (error.response.data as ErrorResponse).message ||
-            "Tạo tài khoản thất bại"
+            "Tạo tài khoản thất bại",
         );
       }
       throw new Error("Không thể kết nối server");

@@ -8,12 +8,8 @@ import type {
 import { AccountService } from "../../../Service/AccountService";
 import AccountFormCreate from "./AccountFormCreate";
 import AccountFormUpdate from "./AccountFormUpdate";
-// Import generic components
-import { SearchBox } from "../../../Components/Admin/Search/SearchBox";
-import { SortControl } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortOption } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortParams } from "../../../Components/Admin/SortControl/SortControl";
 import type { AccountResponse } from "../../../type/account/AccountResponse";
+import { Tag } from "antd";
 
 const AccountPage: React.FC = () => {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
@@ -23,35 +19,26 @@ const AccountPage: React.FC = () => {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(10);
-
-  // Search, Sort, Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [role, setRole] = useState<string | undefined>();
-  const [sortBy, setSortBy] = useState("email");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    null
+  );
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      // Fetch all accounts - filtering, sorting will be done by DynamicList
       const response = await AccountService.getAccountsPaged(
-        currentPage,
-        pageSize,
-        searchQuery || undefined,
-        role,
-        sortBy,
-        sortDir
+        0,
+        1000, // Get all accounts for client-side filtering
+        undefined,
+        undefined,
+        "email",
+        "asc"
       );
 
       setAccounts(response.content);
-      setTotalPages(response.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -59,28 +46,13 @@ const AccountPage: React.FC = () => {
     }
   };
 
-  // Re-fetch when params change
   useEffect(() => {
     fetchAccounts();
-  }, [currentPage, searchQuery, role, sortBy, sortDir]);
-
-  // Reset to page 0 when search/sort/filter changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchQuery, role, sortBy, sortDir]);
+  }, []);
 
   // ============================================
   // HANDLERS
   // ============================================
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const handleSortChange = (params: SortParams) => {
-    setSortBy(params.sortBy);
-    setSortDir(params.sortDir);
-  };
 
   const handleDelete = async (item: AccountResponse) => {
     if (!confirm(`Bạn có chắc muốn xóa tài khoản "${item.email}"?`)) {
@@ -112,14 +84,9 @@ const AccountPage: React.FC = () => {
     fetchAccounts();
   };
 
-  // ============================================
-  // CONFIG FOR GENERIC COMPONENTS
-  // ============================================
-
-  const sortOptions: SortOption[] = [
-    { value: "email", label: "Email" },
-    { value: "name", label: "Tên" },
-  ];
+  const handleSearch = (searchText: string) => {
+    console.log("Searching for:", searchText);
+  };
 
   // ============================================
   // TABLE CONFIG
@@ -127,20 +94,40 @@ const AccountPage: React.FC = () => {
 
   const columns: Column<AccountResponse>[] = [
     {
-      key: "id",
-      label: "ID",
-    },
-    {
       key: "name",
       label: "Tên",
+      sortable: true,
+      searchable: true,
+      width: 200,
     },
     {
       key: "email",
       label: "Email",
+      sortable: true,
+      searchable: true,
+      width: 250,
     },
     {
       key: "roles",
       label: "Role",
+      filterable: true,
+      filterOptions: [
+        { text: "USER", value: "USER" },
+        { text: "ADMIN", value: "ADMIN" },
+      ],
+      width: 150,
+      render: (item) => {
+        const roleColors: Record<string, string> = {
+          ADMIN: "red",
+          USER: "blue",
+          MODERATOR: "green",
+        };
+        return (
+          <Tag color={roleColors[item.roles] || "default"}>
+            {item.roles}
+          </Tag>
+        );
+      },
     },
   ];
 
@@ -202,80 +189,25 @@ const AccountPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Search, Sort, Filter Bar */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Search - takes more space */}
-        <div className="flex-1">
-          <SearchBox
-            onSearch={handleSearch}
-            placeholder="Tìm kiếm theo email hoặc tên..."
-            debounceMs={500}
-          />
-        </div>
-
-        {/* Role Filter */}
-        <div className="flex-shrink-0">
-          <select
-            className="border px-3 py-2 rounded h-full"
-            onChange={(e) => setRole(e.target.value || undefined)}
-            value={role || ""}
-          >
-            <option value="">Tất cả role</option>
-            <option value="USER">USER</option>
-            <option value="ADMIN">ADMIN</option>
-          </select>
-        </div>
-
-        {/* Sort */}
-        <div className="flex-shrink-0">
-          <SortControl
-            options={sortOptions}
-            onSortChange={handleSortChange}
-            defaultSortBy="email"
-            defaultSortDir="asc"
-          />
-        </div>
-      </div>
-
-      {loading && accounts.length > 0 && (
-        <div className="mb-4 text-center text-sm text-gray-500">
-          Đang tải...
-        </div>
-      )}
-
-      {/* Table */}
+      {/* Table with built-in search, sort, filter */}
       <DynamicList
         data={accounts}
         columns={columns}
         actions={actions}
         keyExtractor={(item) => item.id}
         emptyMessage="Không tìm thấy tài khoản nào"
+        loading={loading}
+        showGlobalSearch={true}
+        searchPlaceholder="Tìm kiếm theo email hoặc tên..."
+        onSearch={handleSearch}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ["5", "10", "20", "50"],
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} của ${total} tài khoản`,
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-            disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang trước
-          </button>
-          <span className="px-4 py-2">
-            Trang {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang sau
-          </button>
-        </div>
-      )}
 
       {/* Create Modal */}
       {showCreateModal && (

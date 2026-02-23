@@ -9,12 +9,6 @@ import type { SizesResponse } from "../../../type/size/SizesResponse";
 import SizeFormCreate from "./SizeFormCreate";
 import SizeFormUpdate from "./SizeFormUpdate";
 
-// Import generic components
-import { SearchBox } from "../../../Components/Admin/Search/SearchBox";
-import { SortControl } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortOption } from "../../../Components/Admin/SortControl/SortControl";
-import type { SortParams } from "../../../Components/Admin/SortControl/SortControl";
-
 const SizePage: React.FC = () => {
   const [sizes, setSizes] = useState<SizesResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,31 +19,20 @@ const SizePage: React.FC = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(10);
-
-  // Search, Sort, Filter states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("categoryId");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
   const fetchSizes = async () => {
     try {
       setLoading(true);
       setError(null);
 
       const response = await SizeService.getSizesPaged(
-        currentPage,
-        pageSize,
-        searchQuery || undefined,
-        sortBy,
-        sortDir
+        0,
+        1000, // Get all for client-side filtering
+        undefined,
+        "id",
+        "asc"
       );
 
       setSizes(response.content);
-      setTotalPages(response.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -57,38 +40,22 @@ const SizePage: React.FC = () => {
     }
   };
 
-  // Re-fetch when params change
   useEffect(() => {
     fetchSizes();
-  }, [currentPage, searchQuery, sortBy, sortDir]);
-
-  // Reset to page 0 when search/sort/filter changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchQuery, sortBy, sortDir]);
+  }, []);
 
   // ============================================
   // HANDLERS
   // ============================================
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const handleSortChange = (params: SortParams) => {
-    setSortBy(params.sortBy);
-    setSortDir(params.sortDir);
-  };
-
-
   const handleDelete = async (item: SizesResponse) => {
-    if (!confirm(`Bạn có chắc muốn xóa danh mục "${item.name}"?`)) {
+    if (!confirm(`Bạn có chắc muốn xóa kích thước "${item.name}"?`)) {
       return;
     }
 
     try {
       await SizeService.deleteSize(item.id);
-      alert("Xóa danh mục thành công");
+      alert("Xóa kích thước thành công");
       fetchSizes();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa");
@@ -111,17 +78,9 @@ const SizePage: React.FC = () => {
     fetchSizes();
   };
 
-  // ============================================
-  // CONFIG FOR GENERIC COMPONENTS
-  // ============================================
-
-  const sortOptions: SortOption[] = [
-    { value: "categoryId", label: "Mã danh mục" },
-    { value: "categoryName", label: "Tên danh mục" },
-    // { value: 'parentCategoryId', label: 'Danh mục cha' }
-  ];
-
-
+  const handleSearch = (searchText: string) => {
+    console.log('Searching for:', searchText);
+  };
 
   // ============================================
   // TABLE CONFIG
@@ -130,11 +89,17 @@ const SizePage: React.FC = () => {
   const columns: Column<SizesResponse>[] = [
     {
       key: "id",
-      label: "ID",
+      label: "Mã kích thước",
+      sortable: true,
+      searchable: true,
+      width: 150,
     },
     {
       key: "name",
-      label: "Tên danh mục",
+      label: "Tên kích thước",
+      sortable: true,
+      searchable: true,
+      width: 200,
     },
   ];
 
@@ -187,85 +152,41 @@ const SizePage: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Quản lý danh mục</h2>
+        <h2 className="text-2xl font-bold">Quản lý kích thước</h2>
         <button
           onClick={() => setShowCreateModal(true)}
           className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-medium"
         >
-          + Tạo danh mục mới
+          + Tạo kích thước mới
         </button>
       </div>
 
-      {/* Search, Sort, Filter Bar */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Search - takes more space */}
-        <div className="flex-1">
-          <SearchBox
-            onSearch={handleSearch}
-            placeholder="Tìm kiếm theo tên danh mục..."
-            debounceMs={500}
-          />
-        </div>
-
-        {/* Sort */}
-        <div className="flex-shrink-0">
-          <SortControl
-            options={sortOptions}
-            onSortChange={handleSortChange}
-            defaultSortBy="categoryId"
-            defaultSortDir="asc"
-          />
-        </div>
-
-      </div>
-
-
-      {loading && sizes.length > 0 && (
-        <div className="mb-4 text-center text-sm text-gray-500">
-          Đang tải...
-        </div>
-      )}
-
-      {/* Table */}
+      {/* Table with built-in search, sort, filter */}
       <DynamicList
         data={sizes}
         columns={columns}
         actions={actions}
         keyExtractor={(item) => item.id}
-        emptyMessage="Không tìm thấy danh mục nào"
+        emptyMessage="Không tìm thấy kích thước nào"
+        loading={loading}
+        showGlobalSearch={true}
+        searchPlaceholder="Tìm kiếm theo mã hoặc tên kích thước..."
+        onSearch={handleSearch}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20', '50'],
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} của ${total} kích thước`,
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-            disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang trước
-          </button>
-          <span className="px-4 py-2">
-            Trang {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang sau
-          </button>
-        </div>
-      )}
 
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Tạo danh mục mới</h3>
+              <h3 className="text-xl font-bold">Tạo kích thước mới</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -283,7 +204,7 @@ const SizePage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Cập nhật danh mục</h3>
+              <h3 className="text-xl font-bold">Cập nhật kích thước</h3>
               <button
                 onClick={() => {
                   setShowUpdateModal(false);

@@ -5,7 +5,9 @@ import type { ColorCreateRequest } from "../type/Color/ColorCreateRequest";
 import type { ColorUpdateRequest } from "../type/Color/ColorUpdateRequest";
 import type { ColorResponse } from "../type/Color/ColorResponse";
 import type { ColorResponsePageResponse } from "../type/Color/ColorResponse";
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
+import type { ColorOption } from "../type/Color/ColorOption";
+import type { SelectOption } from "../type/common/error/select/SelectOption";
 
 /**
  * Service layer for category operations
@@ -27,7 +29,7 @@ export const ColorService = {
     size = 10,
     search?: string,
     sortBy = "code",
-    sortDir: "asc" | "desc" = "asc"
+    sortDir: "asc" | "desc" = "asc",
   ): Promise<ColorResponsePageResponse> => {
     try {
       return await colorApi.getAll(page, size, search, sortBy, sortDir);
@@ -71,7 +73,7 @@ export const ColorService = {
    */
   updateColor: async (
     Id: string,
-    payload: ColorUpdateRequest
+    payload: ColorUpdateRequest,
   ): Promise<ColorResponse> => {
     try {
       return await colorApi.update(Id, payload);
@@ -87,7 +89,7 @@ export const ColorService = {
         // 409 Conflict - Duplicate name or circular relationship
         if (error.response.status === 409) {
           throw new Error(
-            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp"
+            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp",
           );
         }
 
@@ -144,11 +146,27 @@ export const ColorService = {
         // 409 Conflict - Has children
         if (error.response.status === 409) {
           throw new Error(
-            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước."
+            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước.",
           );
         }
 
         throw new Error(errData.message || "Có lỗi xảy ra khi xóa");
+      }
+      throw new Error("Không thể kết nối đến server");
+    }
+  },
+  getColorSelectOptions: async (): Promise<SelectOption[]> => {
+    try {
+      const data: ColorOption[] = await colorApi.getAllColorOptions();
+
+      return data.map((item) => ({
+        value: item.colorCode,
+        label: item.colorName,
+      }));
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        const errData = error.response.data as ErrorResponse;
+        throw new Error(errData.message || "Không thể lấy danh sách màu");
       }
       throw new Error("Không thể kết nối đến server");
     }

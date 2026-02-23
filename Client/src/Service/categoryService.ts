@@ -1,11 +1,11 @@
 // src/services/categoryService.ts
 import axios from "axios";
 import { categoryApi } from "../api/CallApi/categoryApi";
-import type { CategoryRequest } from "../type/categotry/CategoryRequest";
-import type { CategoryOption } from "../type/categotry/CategoryOption"
-import type { CategoryHeader } from "../type/categotry/CategoryHeader"
-import type { ErrorResponse } from "../type/common/ErrorResponse";
+import type { CategoryCreateAndUpdateRequest } from "../type/categotry/CategoryCreateAndUpdateRequest";
+import type { CategoryOption } from "../type/categotry/CategoryOption";
+import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 import type { CategoryResponsePageResponse } from "../type/categotry/CategoryResponse";
+import type { SelectOption } from "../type/common/error/select/SelectOption";
 
 /**
  * Service layer for category operations
@@ -28,7 +28,7 @@ export const categoryService = {
     search?: string,
     sortBy = "categoryId",
     sortDir: "asc" | "desc" = "asc",
-    parentId?: number
+    parentId?: number,
   ): Promise<CategoryResponsePageResponse> => {
     try {
       return await categoryApi.getAllCategories(
@@ -37,7 +37,7 @@ export const categoryService = {
         search,
         sortBy,
         sortDir,
-        parentId
+        parentId,
       );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -49,27 +49,13 @@ export const categoryService = {
   },
 
   /**
-   * Get category tree (root categories with nested children)
-   * @returns Array of root categories
-   */
-  getCategoryTree: async (): Promise<CategoryHeader[]> => {
-    try {
-      return await categoryApi.getCategoryTree();
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
-        throw new Error(errData.message || "Có lỗi xảy ra khi lấy cây danh mục");
-      }
-      throw new Error("Không thể kết nối đến server");
-    }
-  },
-
-  /**
    * Create a new category
    * @param payload - Category creation data
    * @returns Created category with children structure
    */
-  createCategory: async (payload: CategoryRequest): Promise<CategoryRequest> => {
+  createCategory: async (
+    payload: CategoryCreateAndUpdateRequest,
+  ): Promise<void> => {
     try {
       return await categoryApi.createCategory(payload);
     } catch (error) {
@@ -100,8 +86,8 @@ export const categoryService = {
    */
   updateCategory: async (
     categoryId: number,
-    payload: CategoryRequest
-  ): Promise<CategoryHeader> => {
+    payload: CategoryCreateAndUpdateRequest,
+  ): Promise<CategoryCreateAndUpdateRequest> => {
     try {
       return await categoryApi.updateCategory(categoryId, payload);
     } catch (error) {
@@ -116,15 +102,13 @@ export const categoryService = {
         // 409 Conflict - Duplicate name or circular relationship
         if (error.response.status === 409) {
           throw new Error(
-            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp"
+            errData.message || "Tên danh mục đã tồn tại hoặc tạo vòng lặp",
           );
         }
 
         // 400 Bad Request - Invalid operation (e.g., self-parent)
         if (error.response.status === 400) {
-          throw new Error(
-            errData.message || "Thao tác không hợp lệ"
-          );
+          throw new Error(errData.message || "Thao tác không hợp lệ");
         }
 
         throw new Error(errData.message || "Có lỗi xảy ra khi cập nhật");
@@ -138,7 +122,9 @@ export const categoryService = {
    * @param categoryId - Category ID
    * @returns Category request DTO (for editing forms)
    */
-  getCategoryById: async (categoryId: number): Promise<CategoryRequest> => {
+  getCategoryById: async (
+    categoryId: number,
+  ): Promise<CategoryCreateAndUpdateRequest> => {
     try {
       return await categoryApi.getCategoryById(categoryId);
     } catch (error) {
@@ -175,7 +161,7 @@ export const categoryService = {
         // 409 Conflict - Has children
         if (error.response.status === 409) {
           throw new Error(
-            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước."
+            "Không thể xóa danh mục có danh mục con. Vui lòng xóa hoặc gán lại danh mục con trước.",
           );
         }
 
@@ -190,9 +176,14 @@ export const categoryService = {
    * Used for dropdowns and select inputs
    * @returns Array of category options
    */
-  getAllCategoryOptions: async (): Promise<CategoryOption[]> => {
+  getCategorySelectOptions: async (): Promise<SelectOption[]> => {
     try {
-      return await categoryApi.getAllCategoryOptions();
+      const data: CategoryOption[] = await categoryApi.getAllCategoryOptions();
+
+      return data.map((item) => ({
+        value: item.categoryId,
+        label: item.categoryName,
+      }));
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ErrorResponse;
@@ -213,7 +204,9 @@ export const categoryService = {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         const errData = error.response.data as ErrorResponse;
-        throw new Error(errData.message || "Không thể lấy danh sách danh mục gốc");
+        throw new Error(
+          errData.message || "Không thể lấy danh sách danh mục gốc",
+        );
       }
       throw new Error("Không thể kết nối đến server");
     }

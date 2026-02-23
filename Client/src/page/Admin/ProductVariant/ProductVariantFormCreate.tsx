@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import DynamicForm from "../../../Components/Admin/Form/DynamicForm";
 import type { FormField } from "../../../Components/Admin/Form/DynamicForm";
 import { ProductVariantService } from "../../../Service/ProductVariantService";
@@ -13,69 +13,25 @@ interface ProductVariantFormCreateProps {
   onSuccess?: () => void;
 }
 
-function ProductVariantFormCreate({ onSuccess }: ProductVariantFormCreateProps) {
-  const [products, setProducts] = useState<Array<{ value: string; label: string }>>([]);
-  const [colors, setColors] = useState<Array<{ value: string; label: string }>>([]);
-  const [sizes, setSizes] = useState<Array<{ value: string; label: string }>>([]);
-  const [loading, setLoading] = useState(true);
+function ProductVariantFormCreate({
+  onSuccess,
+}: ProductVariantFormCreateProps) {
 
-  // Fetch dropdown options on mount
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch products, colors, sizes
-        const [productsData, colorsData, sizesData] = await Promise.all([
-          ProductService.getProductsPaged(0, 100), // Get first 100 products
-          ColorService.getColorsPaged(0, 100),
-          SizeService.getSizesPaged(0, 100),
-        ]);
-
-        setProducts(
-          productsData.content.map((p) => ({
-            value: p.id,
-            label: p.name,
-          }))
-        );
-
-        setColors(
-          colorsData.content.map((c) => ({
-            value: c.code,
-            label: c.name,
-          }))
-        );
-
-        setSizes(
-          sizesData.content.map((s) => ({
-            value: s.id,
-            label: s.name,
-          }))
-        );
-      } catch (err) {
-        console.error("Error fetching options:", err);
-        alert("Không thể tải dữ liệu dropdown");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOptions();
-  }, []);
+  // ✅ Khai báo loading
+  const [loading, setLoading] = useState(false);
 
   const fields: FormField<ProductVariantCreateRequest>[] = [
-    {
-      name: "id",
-      label: "ID (tùy chọn)",
-      type: "text",
-      placeholder: "Để trống để tự động tạo UUID",
-      required: false,
-    },
     {
       name: "productId",
       label: "Sản phẩm",
       type: "select",
-      options: products,
+      loadOptions: async () => {
+        const products = await ProductService.getProductSelectOptions();
+        return products.map((product) => ({
+          value: product.value,
+          label: product.label,
+        }));
+      },
       placeholder: "Chọn sản phẩm",
       required: true,
     },
@@ -83,7 +39,7 @@ function ProductVariantFormCreate({ onSuccess }: ProductVariantFormCreateProps) 
       name: "colorCode",
       label: "Màu sắc",
       type: "select",
-      options: colors,
+      loadOptions: () => ColorService.getColorSelectOptions(),
       placeholder: "Chọn màu",
       required: true,
     },
@@ -91,7 +47,7 @@ function ProductVariantFormCreate({ onSuccess }: ProductVariantFormCreateProps) 
       name: "sizeId",
       label: "Kích cỡ",
       type: "select",
-      options: sizes,
+      loadOptions: () => SizeService.getSizeSelectOptions(),
       placeholder: "Chọn size",
       required: true,
     },
@@ -101,33 +57,40 @@ function ProductVariantFormCreate({ onSuccess }: ProductVariantFormCreateProps) 
       type: "number",
       placeholder: "Nhập số lượng",
       required: true,
-      min: 0,
     },
     {
       name: "img",
       label: "URL hình ảnh",
-      type: "text",
+      type: "image",
       placeholder: "Nhập URL hình ảnh",
       required: true,
     },
   ];
 
+  // ✅ Sử dụng loading khi submit
   const handleSubmit = async (data: ProductVariantCreateRequest) => {
-    await ProductVariantService.createProductVariant({
-      id: data.id || undefined, // Convert empty string to undefined
-      quantity: data.quantity,
-      img: data.img,
-      productId: data.productId,
-      colorCode: data.colorCode,
-      sizeId: data.sizeId,
-    });
+    try {
+      setLoading(true);
+
+      await ProductVariantService.createProductVariant({
+        quantity: data.quantity,
+        img: data.img,
+        productId: data.productId,
+        colorCode: data.colorCode,
+        sizeId: data.sizeId,
+      });
+
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // ✅ Hiển thị spinner khi đang submit
   if (loading) {
     return (
       <div className="text-center py-4">
         <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-        <p className="mt-2 text-gray-600">Đang tải dữ liệu...</p>
+        <p className="mt-2 text-gray-600">Đang xử lý...</p>
       </div>
     );
   }

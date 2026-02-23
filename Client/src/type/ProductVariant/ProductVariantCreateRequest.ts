@@ -1,5 +1,5 @@
 export interface ProductVariantCreateRequest extends Record<string, unknown> {
-  id?: string; 
+  // id?: string; 
   quantity: number;
   img: string;
   productId: string;

@@ -5,15 +5,6 @@ import { categoryService } from '../../../Service/categoryService';
 import type { CategoryResponse } from '../../../type/categotry/CategoryResponse';
 import CategoryFormCreate from './CategoryFormCreate';
 import CategoryFormUpdate from './CategoryFormUpdate';
-
-// Import generic components
-import { SearchBox } from '../../../Components/Admin/Search/SearchBox';
-import { SortControl } from '../../../Components/Admin/SortControl/SortControl';
-import type { SortOption } from '../../../Components/Admin/SortControl/SortControl';
-import type { SortParams } from '../../../Components/Admin/SortControl/SortControl';
-
-import { FilterControl } from '../../../Components/Admin/FilterControl/FilterControl';
-import type { FilterField } from '../../../Components/Admin/FilterControl/FilterControl';
 import type { CategoryOption } from '../../../type/categotry/CategoryOption';
 
 const CategoryPage: React.FC = () => {
@@ -26,50 +17,39 @@ const CategoryPage: React.FC = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(10);
-
-  // Search, Sort, Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('categoryId');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [filters, setFilters] = useState<Record<string, string | number | boolean>>({});
-
   // Category options for filter dropdown
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
 
   // Load category options for filter
-useEffect(() => {
-  const loadCategoryOptions = async () => {
-    try {
-      const options = await categoryService.getRootCategoryOptions();
-      setCategoryOptions(options);
-    } catch (err) {
-      console.error('Không thể tải danh sách danh mục cha:', err);
-    }
-  };
+  useEffect(() => {
+    const loadCategoryOptions = async () => {
+      try {
+        const options = await categoryService.getRootCategoryOptions();
+        setCategoryOptions(options);
+      } catch (err) {
+        console.error('Không thể tải danh sách danh mục cha:', err);
+      }
+    };
 
-  loadCategoryOptions();
-}, []);
-  // Fetch categories with all params
+    loadCategoryOptions();
+  }, []);
+
+  // Fetch categories
   const fetchCategories = async () => {
     try {
       setLoading(true);
       setError(null);
       
       const response = await categoryService.getCategoriesPaged(
-        currentPage,
-        pageSize,
-        searchQuery || undefined,
-        sortBy,
-        sortDir,
-        filters.parentId ? Number(filters.parentId) : undefined
+        0,
+        1000, // Get all for client-side filtering
+        undefined,
+        'categoryName',
+        'asc',
+        undefined
       );
       
       setCategories(response.content);
-      setTotalPages(response.totalPages);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
     } finally {
@@ -77,36 +57,13 @@ useEffect(() => {
     }
   };
 
-  // Re-fetch when params change
   useEffect(() => {
     fetchCategories();
-  }, [currentPage, searchQuery, sortBy, sortDir, filters]);
-
-  // Reset to page 0 when search/sort/filter changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchQuery, sortBy, sortDir, filters]);
+  }, []);
 
   // ============================================
   // HANDLERS
   // ============================================
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const handleSortChange = (params: SortParams) => {
-    setSortBy(params.sortBy);
-    setSortDir(params.sortDir);
-  };
-
-  const handleFilterChange = (newFilters: Record<string, string | number | boolean>) => {
-    setFilters(newFilters);
-  };
-
-  const handleFilterReset = () => {
-    setFilters({});
-  };
 
   const handleDelete = async (item: CategoryResponse) => {
     if (!confirm(`Bạn có chắc muốn xóa danh mục "${item.categoryName}"?`)) {
@@ -138,34 +95,9 @@ useEffect(() => {
     fetchCategories();
   };
 
-  // ============================================
-  // CONFIG FOR GENERIC COMPONENTS
-  // ============================================
-
-  const sortOptions: SortOption[] = [
-    { value: 'categoryId', label: 'Mã danh mục' },
-    { value: 'categoryName', label: 'Tên danh mục' },
-    // { value: 'parentCategoryId', label: 'Danh mục cha' }
-  ];
-
-const filterFields: FilterField[] = [
-  {
-    name: 'parentId',
-    label: 'Danh mục cha',
-    type: 'select',
-    options: [
-      {
-        value: '',
-        label: 'Tất cả'
-      },
-      ...categoryOptions.map(cat => ({
-        value: cat.categoryId,
-        label: cat.categoryName
-      }))
-    ]
-  }
-];
-
+  const handleSearch = (searchText: string) => {
+    console.log('Searching for:', searchText);
+  };
 
   // ============================================
   // TABLE CONFIG
@@ -173,16 +105,24 @@ const filterFields: FilterField[] = [
 
   const columns: Column<CategoryResponse>[] = [
     { 
-      key: 'categoryId', 
-      label: 'ID' 
-    },
-    { 
       key: 'categoryName', 
-      label: 'Tên danh mục' 
+      label: 'Tên danh mục',
+      sortable: true,
+      searchable: true,
+      width: 250,
     },
     {
       key: 'parentCategoryName',
       label: 'Danh mục cha',
+      filterable: true,
+      filterOptions: [
+        { text: 'Không có', value: '' },
+        ...categoryOptions.map(cat => ({
+          text: cat.categoryName,
+          value: cat.categoryName
+        }))
+      ],
+      width: 200,
       render: (item) => (
         <span className={item.parentCategoryName ? 'text-gray-700' : 'text-gray-400 italic'}>
           {item.parentCategoryName || 'Không có'}
@@ -249,112 +189,25 @@ const filterFields: FilterField[] = [
         </button>
       </div>
 
-      {/* Search, Sort, Filter Bar */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Search - takes more space */}
-        <div className="flex-1">
-          <SearchBox
-            onSearch={handleSearch}
-            placeholder="Tìm kiếm theo tên danh mục..."
-            debounceMs={500}
-          />
-        </div>
-
-        {/* Sort */}
-        <div className="flex-shrink-0">
-          <SortControl
-            options={sortOptions}
-            onSortChange={handleSortChange}
-            defaultSortBy="categoryId"
-            defaultSortDir="asc"
-          />
-        </div>
-
-        {/* Filter */}
-        <div className="flex-shrink-0">
-          <FilterControl
-            fields={filterFields}
-            onFilterChange={handleFilterChange}
-            onReset={handleFilterReset}
-          />
-        </div>
-      </div>
-
-      {/* Active Filters Display */}
-      {Object.keys(filters).length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2 items-center">
-          <span className="text-sm font-medium text-gray-700">Bộ lọc đang áp dụng:</span>
-          {Object.entries(filters).map(([key, value]) => {
-            const field = filterFields.find(f => f.name === key);
-            const displayValue = field?.options?.find(opt => opt.value === value)?.label || value;
-            
-            return (
-              <span
-                key={key}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-              >
-                <span className="font-medium">{field?.label}:</span>
-                <span>{displayValue}</span>
-                <button
-                  onClick={() => {
-                    const newFilters = { ...filters };
-                    delete newFilters[key];
-                    setFilters(newFilters);
-                  }}
-                  className="ml-1 hover:text-blue-900"
-                >
-                  ✕
-                </button>
-              </span>
-            );
-          })}
-          <button
-            onClick={handleFilterReset}
-            className="text-sm text-gray-600 hover:text-gray-800 underline"
-          >
-            Xóa tất cả
-          </button>
-        </div>
-      )}
-
-      {/* Loading overlay for subsequent fetches */}
-      {loading && categories.length > 0 && (
-        <div className="mb-4 text-center text-sm text-gray-500">
-          Đang tải...
-        </div>
-      )}
-
-      {/* Table */}
+      {/* Table with built-in search, sort, filter */}
       <DynamicList
         data={categories}
         columns={columns}
         actions={actions}
         keyExtractor={(item) => item.categoryId}
         emptyMessage="Không tìm thấy danh mục nào"
+        loading={loading}
+        showGlobalSearch={true}
+        searchPlaceholder="Tìm kiếm theo tên danh mục..."
+        onSearch={handleSearch}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          pageSizeOptions: ['5', '10', '20', '50'],
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} của ${total} danh mục`,
+        }}
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-            disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang trước
-          </button>
-          <span className="px-4 py-2">
-            Trang {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
-            disabled={currentPage >= totalPages - 1}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
-          >
-            Trang sau
-          </button>
-        </div>
-      )}
 
       {/* Create Modal */}
       {showCreateModal && (

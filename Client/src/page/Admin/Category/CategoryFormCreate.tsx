@@ -1,17 +1,14 @@
 import DynamicForm from "../../../Components/Admin/Form/DynamicForm";
 import type { FormField } from "../../../Components/Admin/Form/DynamicForm";
 import { categoryService } from "../../../Service/categoryService";
+import type { CategoryCreateAndUpdateRequest } from "../../../type/categotry/CategoryCreateAndUpdateRequest";
 
 interface CategoryFormCreateProps {
   onSuccess?: () => void;
 }
 
-interface CategoryCreate extends Record<string, unknown> {
-  categoryName: string;
-  parentCategoryId: number | null;
-}
 function CategoryFormCreate({ onSuccess }: CategoryFormCreateProps) {
-  const fields: FormField<CategoryCreate>[] = [
+  const fields: FormField<CategoryCreateAndUpdateRequest>[] = [
     {
       name: "categoryName",
       label: "Tên danh mục",
@@ -23,31 +20,24 @@ function CategoryFormCreate({ onSuccess }: CategoryFormCreateProps) {
       name: "parentCategoryId",
       label: "Danh mục cha",
       type: "select",
-      loadOptions: async () => {
-        const categories = await categoryService.getAllCategoryOptions();
-        return categories.map((c) => ({
-          value: c.categoryId,
-          label: c.categoryName,
-          key: c.categoryId.toString(),
-        }));
-      },
+      loadOptions: () => categoryService.getCategorySelectOptions()
     },
   ];
 
-  const handleSubmit = async (data: CategoryCreate) => {
+  const handleSubmit = async (data: CategoryCreateAndUpdateRequest) => {
     await categoryService.createCategory({
       categoryName: data.categoryName,
-      parentCategoryId: data.parentCategoryId
+      parentCategoryId: data.parentCategoryId,
     });
   };
 
   return (
-    <DynamicForm<CategoryCreate>
+    <DynamicForm<CategoryCreateAndUpdateRequest>
       fields={fields}
       mode="create"
       onSubmit={handleSubmit}
       successMessage="Tạo danh mục thành công"
-      onSuccess={onSuccess} 
+      onSuccess={onSuccess}
     />
   );
 }
