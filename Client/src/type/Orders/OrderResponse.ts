@@ -1,7 +1,7 @@
 import type { PageResponse } from "../../api/BaseApi/baseApi";
 import { OrderStatus } from "./OrderStatus";
 
-export interface OrderResponse {
+export interface OrderResponse extends Record<string, unknown> {
   id: string;
   orderTime: string; // ISO datetime string
   phoneNumber: string;

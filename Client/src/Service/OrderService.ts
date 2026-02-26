@@ -1,11 +1,21 @@
 import axios from "axios";
 import { orderApi } from "../api/CallApi/OrderApi";
 import type { OrderCreateRequest } from "../type/Orders/OrderCreateRequest";
+import type { ClientOrderItem } from "../type/Orders/OrderCreateRequest";
 import type { OrderUpdateRequest } from "../type/Orders/OrderUpdateRequest";
 import type { OrderResponse } from "../type/Orders/OrderResponse";
 import type { OrderResponsePageResponse } from "../type/Orders/OrderResponse";
-import type { OrderStatus } from "../type/Orders/OrderStatus";
-import type { ErrorResponse } from "../type/common/error/ErrorResponse";
+import { OrderStatus } from "../type/Orders/OrderStatus";
+
+/** Lấy message lỗi từ response (hỗ trợ nhiều format backend) */
+function getErrorMessage(data: unknown, fallback: string): string {
+  if (!data || typeof data !== "object") return fallback;
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.message === "string" && obj.message) return obj.message;
+  if (typeof obj.error === "string" && obj.error) return obj.error;
+  if (typeof obj.errorCode === "string" && obj.errorCode) return obj.errorCode;
+  return fallback;
+}
 
 /**
  * Service layer for order operations
@@ -25,6 +35,7 @@ export const OrderService = {
    * @param accountId - Filter by customer/account ID
    * @returns Paginated order response
    */
+  /** GET /orders - khớp server (page, size, search, sortBy, sortDir, status, startDate, endDate, accountId) */
   getOrdersPaged: async (
     page = 0,
     size = 10,
@@ -34,24 +45,19 @@ export const OrderService = {
     status?: OrderStatus,
     startDate?: string,
     endDate?: string,
-    accountId?: number,
+    accountId?: number
   ): Promise<OrderResponsePageResponse> => {
     try {
-      return await orderApi.getOrdersFiltered(
-        page,
-        size,
-        search,
-        sortBy,
-        sortDir,
+      return await orderApi.getOrders(page, size, search, sortBy, sortDir, {
         status,
         startDate,
         endDate,
         accountId,
-      );
+      });
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
-        throw new Error(errData.message || "Không thể tải danh sách đơn hàng");
+        const data = error.response.data;
+        throw new Error(getErrorMessage(data, "Không thể tải danh sách đơn hàng"));
       }
       throw new Error("Không thể kết nối đến server");
     }
@@ -67,25 +73,51 @@ export const OrderService = {
       return await orderApi.create(payload);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
+        const data = error.response.data;
+        const msg = getErrorMessage(data, "Có lỗi xảy ra khi tạo đơn hàng");
 
-        // 409 Conflict - Duplicate order ID
         if (error.response.status === 409) {
-          throw new Error(errData.message || "Mã đơn hàng đã tồn tại");
+          throw new Error(msg || "Mã đơn hàng đã tồn tại");
         }
-
-        // 404 Not Found - Account or Payment not found
         if (error.response.status === 404) {
-          throw new Error(
-            errData.message ||
-              "Tài khoản hoặc phương thức thanh toán không tồn tại",
-          );
+          throw new Error(msg || "Tài khoản hoặc phương thức thanh toán không tồn tại");
         }
-
-        throw new Error(errData.message || "Có lỗi xảy ra khi tạo đơn hàng");
+        if (error.response.status === 400) {
+          throw new Error(msg || "Dữ liệu không hợp lệ. Kiểm tra lại thông tin.");
+        }
+        throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");
     }
+  },
+
+  /**
+   * Tạo đơn hàng từ giỏ hàng. Gửi thông tin đơn + orderItems (server hiện bỏ qua orderItems).
+   * Để thêm chi tiết đơn theo server: tạo đơn xong gọi OrderItemService.create với orderId + productVariantId.
+   */
+  createOrderFromCart: async (
+    cartItems: { id: string; name: string; price: number; quantity: number }[],
+    form: { phoneNumber: string; address: string; note?: string },
+  ): Promise<OrderResponse> => {
+    const now = new Date();
+    // Spring Boot DTO dùng LocalDateTime, nên gửi dạng 'yyyy-MM-ddTHH:mm:ss' (không kèm múi giờ 'Z')
+    const orderTime = now.toISOString().slice(0, 19);
+
+    const orderItems: ClientOrderItem[] = cartItems.map((item) => ({
+      productId: item.id,
+      productName: item.name,
+      quantity: item.quantity,
+      unitPrice: item.price,
+    }));
+    const payload: OrderCreateRequest = {
+      orderTime,
+      phoneNumber: form.phoneNumber,
+      address: form.address,
+      note: form.note,
+      status: OrderStatus.PENDING,
+      orderItems,
+    };
+    return OrderService.createOrder(payload);
   },
 
   /**
@@ -102,43 +134,22 @@ export const OrderService = {
       return await orderApi.update(id, payload);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
-
-        // 404 Not Found
-        if (error.response.status === 404) {
-          throw new Error(errData.message || "Không tìm thấy đơn hàng");
-        }
-
-        // 400 Bad Request - Invalid operation
-        if (error.response.status === 400) {
-          throw new Error(errData.message || "Thao tác không hợp lệ");
-        }
-
-        throw new Error(
-          errData.message || "Có lỗi xảy ra khi cập nhật đơn hàng",
-        );
+        const msg = getErrorMessage(error.response.data, "Có lỗi xảy ra khi cập nhật đơn hàng");
+        if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
+        if (error.response.status === 400) throw new Error(msg || "Thao tác không hợp lệ");
+        throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");
     }
   },
 
-  /**
-   * Get order by ID
-   * @param id - Order ID
-   * @returns Order data
-   */
   getOrderById: async (id: string): Promise<OrderResponse> => {
     try {
       return await orderApi.getById(id);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
-
-        if (error.response.status === 404) {
-          throw new Error("Không tìm thấy đơn hàng");
-        }
-
-        throw new Error(errData.message || "Có lỗi xảy ra khi lấy đơn hàng");
+        if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
+        throw new Error(getErrorMessage(error.response.data, "Có lỗi xảy ra khi lấy đơn hàng"));
       }
       throw new Error("Không thể kết nối đến server");
     }
@@ -154,22 +165,12 @@ export const OrderService = {
       return await orderApi.delete(id);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const errData = error.response.data as ErrorResponse;
-
-        // 404 Not Found
-        if (error.response.status === 404) {
-          throw new Error("Đơn hàng không tồn tại hoặc đã bị xóa");
-        }
-
-        // 400 Bad Request - Cannot delete (has order items)
-        if (error.response.status === 400) {
-          throw new Error(
-            errData.message ||
-              "Không thể xóa đơn hàng đang có sản phẩm. Vui lòng xóa các sản phẩm trong đơn hàng trước.",
-          );
-        }
-
-        throw new Error(errData.message || "Có lỗi xảy ra khi xóa đơn hàng");
+        if (error.response.status === 404) throw new Error("Đơn hàng không tồn tại hoặc đã bị xóa");
+        const msg = getErrorMessage(
+          error.response.data,
+          "Không thể xóa đơn hàng đang có sản phẩm. Vui lòng xóa các sản phẩm trong đơn hàng trước."
+        );
+        throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");
     }

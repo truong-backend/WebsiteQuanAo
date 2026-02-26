@@ -1,10 +1,12 @@
-export enum OrderStatus {
-  PENDING = "PENDING",
-  CONFIRMED = "CONFIRMED",
-  SHIPPING = "SHIPPING",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-}
+export const OrderStatus = {
+  PENDING: "PENDING",
+  CONFIRMED: "CONFIRMED",
+  SHIPPING: "SHIPPING",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+} as const;
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 export const OrderStatusLabels: Record<OrderStatus, string> = {
   [OrderStatus.PENDING]: "Chờ xác nhận",

@@ -9,9 +9,16 @@ import ColorPage from './page/Admin/Color/ColorPage';
 import ProductPage from './page/Admin/Product/ProductPage';
 import ProductVariantPage from './page/Admin/ProductVariant/ProductVariantPage';
 import SizePage from './page/Admin/Size/SizePage';
-// import OrderPage from './page/Admin/Order/OrderPage';
+import OrderPage from './page/Admin/Order/OrderPage';
 import { authService } from './Service/AuthService';
-import ProductListingPage from './page/Admin/Product/ProductListingPage';
+import ProductListingPage from './page/User/ProductListingPage';
+import ProductDetailPage from './page/User/ProductDetailPage';
+import CartPage from './page/User/CartPage';
+import CheckoutPage from './page/User/CheckoutPage';
+import OrderStatusPage from './page/User/OrderStatusPage';
+import OrderInvoicePage from './page/User/OrderInvoicePage';
+import VnpayReturnPage from './page/User/VnpayReturnPage';
+import MomoReturnPage from './page/User/MomoReturnPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -29,7 +36,13 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
 
       <Route path="/products" element={<ProductListingPage />} />
-      <Route path="/products/:id" element={<div>Product Detail Page</div>} />
+      <Route path="/products/:id" element={<ProductDetailPage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/orders/:id" element={<OrderStatusPage />} />
+      <Route path="/orders/:id/invoice" element={<OrderInvoicePage />} />
+      <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
+      <Route path="/payment/momo-return" element={<MomoReturnPage />} />
       {/* Protected Admin Routes */}
       <Route
         path="/admin"
@@ -58,7 +71,7 @@ function App() {
         <Route path="colors" element={<ColorPage />} />
         
         {/* Order Management */}
-        {/* <Route path="orders" element={<OrderPage />} /> */}
+        <Route path="orders" element={<OrderPage />} />
       </Route>
 
       {/* Redirect root to login */}

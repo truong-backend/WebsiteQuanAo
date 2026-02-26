@@ -118,9 +118,9 @@ function OrderFormUpdate({ id, onSuccess }: OrderFormUpdateProps) {
         );
 
         setPayments(
-          paymentsData.content.map((p: any) => ({
+          paymentsData.content.map((p: { id: string; type?: string }) => ({
             value: p.id,
-            label: p.method || `Payment ${p.id}`,
+            label: p.type ? `${p.type} - ${p.id}` : p.id,
           }))
         );
       } catch (err) {

@@ -1,8 +1,8 @@
+import type { PageResponse } from "../BaseApi/baseApi";
 import { BaseApi } from "../BaseApi/baseApi";
 import type { OrderCreateRequest } from "../../type/Orders/OrderCreateRequest";
 import type { OrderUpdateRequest } from "../../type/Orders/OrderUpdateRequest";
-import type { OrderResponse, OrderResponsePageResponse } from "../../type/Orders/OrderResponse";
-import type { OrderStatus } from "../../type/Orders/OrderStatus";
+import type { OrderResponse } from "../../type/Orders/OrderResponse";
 
 class OrderApi extends BaseApi<
   OrderResponse,
@@ -14,51 +14,33 @@ class OrderApi extends BaseApi<
   }
 
   /**
-   * Get orders with advanced filters
-   * @param page - Page number
-   * @param size - Items per page
-   * @param search - Search term
-   * @param sortBy - Field to sort by
-   * @param sortDir - Sort direction
-   * @param status - Filter by order status
-   * @param startDate - Filter by start date (ISO string)
-   * @param endDate - Filter by end date (ISO string)
-   * @param accountId - Filter by account/customer ID
-   * @returns Paginated orders
+   * GET /orders - khớp server: page, size, search, sortBy, sortDir, status, startDate, endDate, accountId
    */
-  async getOrdersFiltered(
+  async getOrders(
     page = 0,
     size = 10,
     search?: string,
-    sortBy?: string,
+    sortBy = "orderTime",
     sortDir: "asc" | "desc" = "desc",
-    status?: OrderStatus,
-    startDate?: string,
-    endDate?: string,
-    accountId?: number
-  ): Promise<OrderResponsePageResponse> {
-    const additionalParams: Record<string, string | number> = {};
-
-    if (status) {
-      additionalParams.status = status;
+    additionalParams?: {
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+      accountId?: number;
     }
-    if (startDate) {
-      additionalParams.startDate = startDate;
-    }
-    if (endDate) {
-      additionalParams.endDate = endDate;
-    }
-    if (accountId !== undefined && accountId !== null) {
-      additionalParams.accountId = accountId;
-    }
-
-    return this.getAll<OrderResponsePageResponse>(
+  ): Promise<PageResponse<OrderResponse>> {
+    const params: Record<string, string | number | boolean> = {};
+    if (additionalParams?.status) params.status = additionalParams.status;
+    if (additionalParams?.startDate) params.startDate = additionalParams.startDate;
+    if (additionalParams?.endDate) params.endDate = additionalParams.endDate;
+    if (additionalParams?.accountId != null) params.accountId = additionalParams.accountId;
+    return this.getAll<PageResponse<OrderResponse>>(
       page,
       size,
       search,
       sortBy,
       sortDir,
-      additionalParams
+      Object.keys(params).length ? params : undefined
     );
   }
 }
