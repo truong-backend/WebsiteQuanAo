@@ -9,6 +9,9 @@ import ColorFormCreate from "./ColorFormCreate";
 import ColorFormUpdate from "./ColorFormUpdate";
 import type { ColorResponse } from "../../../type/Color/ColorResponse";
 
+// Extend ColorResponse so it satisfies DynamicList's Record<string, unknown> constraint
+type ColorRecord = ColorResponse & Record<string, unknown>;
+
 const ColorPage: React.FC = () => {
   const [colors, setColors] = useState<ColorResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,15 +26,13 @@ const ColorPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
       const response = await ColorService.getColorsPaged(
         0,
-        1000, // Get all for client-side filtering
+        1000,
         undefined,
         "code",
         "asc"
       );
-
       setColors(response.content);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
@@ -48,11 +49,8 @@ const ColorPage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: ColorResponse) => {
-    if (!confirm(`Bạn có chắc muốn xóa màu "${item.name}"?`)) {
-      return;
-    }
-
+  const handleDelete = async (item: ColorRecord) => {
+    if (!confirm(`Bạn có chắc muốn xóa màu "${item.name}"?`)) return;
     try {
       await ColorService.deleteColor(item.code);
       alert("Xóa màu thành công");
@@ -62,7 +60,7 @@ const ColorPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: ColorResponse) => {
+  const handleEdit = (item: ColorRecord) => {
     setSelectedColorId(item.code);
     setShowUpdateModal(true);
   };
@@ -79,14 +77,14 @@ const ColorPage: React.FC = () => {
   };
 
   const handleSearch = (searchText: string) => {
-    console.log('Searching for:', searchText);
+    console.log("Searching for:", searchText);
   };
 
   // ============================================
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<ColorResponse>[] = [
+  const columns: Column<ColorRecord>[] = [
     {
       key: "code",
       label: "Mã màu",
@@ -103,7 +101,7 @@ const ColorPage: React.FC = () => {
     },
   ];
 
-  const actions: Action<ColorResponse>[] = [
+  const actions: Action<ColorRecord>[] = [
     {
       label: "Sửa",
       onClick: handleEdit,
@@ -163,10 +161,10 @@ const ColorPage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={colors}
+        data={colors as ColorRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.code}
+        keyExtractor={(item) => item.code as string}
         emptyMessage="Không tìm thấy màu nào"
         loading={loading}
         showGlobalSearch={true}
@@ -175,8 +173,8 @@ const ColorPage: React.FC = () => {
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20', '50'],
-          showTotal: (total, range) =>
+          pageSizeOptions: ["5", "10", "20", "50"],
+          showTotal: (total: number, range: [number, number]) =>
             `${range[0]}-${range[1]} của ${total} màu`,
         }}
       />
@@ -215,10 +213,7 @@ const ColorPage: React.FC = () => {
                 ×
               </button>
             </div>
-            <ColorFormUpdate
-              id={selectedColorId}
-              onSuccess={handleUpdateSuccess}
-            />
+            <ColorFormUpdate id={selectedColorId} onSuccess={handleUpdateSuccess} />
           </div>
         </div>
       )}

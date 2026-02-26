@@ -70,7 +70,7 @@ const CheckoutPage: React.FC = () => {
       <Container maxWidth="md">
         <Typography variant="h4" fontWeight="bold" gutterBottom>Thanh toán</Typography>
         <MuiGrid container spacing={3}>
-          <MuiGrid item xs={12} md={7}>
+          <MuiGrid size={{ xs: 12, md: 7 }}>
             <Paper sx={{ p: 3 }} component="form" onSubmit={handleSubmit}>
               {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
               <TextField label="Số điện thoại" fullWidth required margin="normal" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
@@ -93,7 +93,7 @@ const CheckoutPage: React.FC = () => {
               </Box>
             </Paper>
           </MuiGrid>
-          <MuiGrid item xs={12} md={5}>
+          <MuiGrid size={{ xs: 12, md: 5 }}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>Tóm tắt đơn hàng</Typography>
               {items.map((item) => (

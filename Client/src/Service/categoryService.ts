@@ -4,8 +4,8 @@ import { categoryApi } from "../api/CallApi/categoryApi";
 import type { CategoryCreateAndUpdateRequest } from "../type/categotry/CategoryCreateAndUpdateRequest";
 import type { CategoryOption } from "../type/categotry/CategoryOption";
 import type { ErrorResponse } from "../type/common/error/ErrorResponse";
-import type { CategoryResponsePageResponse } from "../type/categotry/CategoryResponse";
-import type { SelectOption } from "../type/common/error/select/SelectOption";
+import type { CategoryResponse, CategoryResponsePageResponse } from "../type/categotry/CategoryResponse";
+import type { SelectOption } from "../type/common/select/SelectOption";
 
 /**
  * Service layer for category operations
@@ -55,7 +55,7 @@ export const categoryService = {
    */
   createCategory: async (
     payload: CategoryCreateAndUpdateRequest,
-  ): Promise<void> => {
+  ): Promise<CategoryResponse> => {
     try {
       return await categoryApi.createCategory(payload);
     } catch (error) {
@@ -87,7 +87,7 @@ export const categoryService = {
   updateCategory: async (
     categoryId: number,
     payload: CategoryCreateAndUpdateRequest,
-  ): Promise<CategoryCreateAndUpdateRequest> => {
+  ): Promise<CategoryResponse> => {
     try {
       return await categoryApi.updateCategory(categoryId, payload);
     } catch (error) {
@@ -124,7 +124,7 @@ export const categoryService = {
    */
   getCategoryById: async (
     categoryId: number,
-  ): Promise<CategoryCreateAndUpdateRequest> => {
+  ): Promise<CategoryResponse> => {
     try {
       return await categoryApi.getCategoryById(categoryId);
     } catch (error) {

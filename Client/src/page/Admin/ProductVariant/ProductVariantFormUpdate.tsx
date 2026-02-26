@@ -8,7 +8,7 @@ import type { ProductVariantUpdateRequest } from "../../../type/ProductVariant/P
 import { ProductService } from "../../../Service/ProductService";
 import { ColorService } from "../../../Service/ColorService";
 import { SizeService } from "../../../Service/SizeService";
-import { categoryService } from "../../../Service/categoryService";
+import type { SelectOption } from "../../../Components/Admin/Form/DynamicForm";
 
 interface ProductVariantFormUpdateProps {
   id: string;
@@ -24,7 +24,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "productId",
       label: "Sản phẩm",
       type: "select",
-      loadOptions: () => ProductService.getProductSelectOptions(),
+      loadOptions: () => ProductService.getProductSelectOptions() as Promise<SelectOption[]>,
       placeholder: "Chọn sản phẩm",
       required: true,
     },
@@ -32,7 +32,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "colorCode",
       label: "Màu sắc",
       type: "select",
-      loadOptions: () => ColorService.getColorSelectOptions(),
+      loadOptions: () => ColorService.getColorSelectOptions() as Promise<SelectOption[]>,
       placeholder: "Chọn màu",
       required: true,
     },
@@ -40,7 +40,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       name: "sizeId",
       label: "Kích cỡ",
       type: "select",
-      loadOptions: () => SizeService.getSizeSelectOptions(),
+      loadOptions: () => SizeService.getSizeSelectOptions() as Promise<SelectOption[]>,
       placeholder: "Chọn size",
       required: true,
     },
@@ -50,7 +50,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
       type: "number",
       placeholder: "Nhập số lượng",
       required: true,
-      min: 0,
+      // min: 0,
     },
     {
       name: "img",

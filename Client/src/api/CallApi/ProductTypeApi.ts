@@ -1,4 +1,4 @@
-import type { PageResponse } from "../BaseApi/baseApi";
+
 import { BaseApi } from "../BaseApi/baseApi";
 import type { ProductTypeCreateRequest } from "../../type/ProductType/ProductTypeCreateRequest";
 import type { ProductTypeUpdateRequest } from "../../type/ProductType/ProductTypeUpdateRequest";

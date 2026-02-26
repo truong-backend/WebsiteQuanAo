@@ -4,7 +4,7 @@ import { Form, Input, Button, Card, message } from 'antd';
 import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../../Service/AuthService';
-import type { LoginRequest } from '../../../type/auth/LoginRequest';
+import type { LoginRequest } from '../../../type/authcation/LoginRequest';
 // import './LoginPage.css';
 
 const LoginPage: React.FC = () => {

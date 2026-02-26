@@ -7,8 +7,7 @@ import type { SizesResponse } from "../type/size/SizesResponse";
 import type { SizeResponsePageResponse } from "../type/size/SizesResponse";
 import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 import type { SizeOption } from "../type/size/SizeOption";
-import type { SelectOption } from "../type/common/error/select/SelectOption";
-
+import type { SelectOption } from "../type/common/select/SelectOption";
 /**
  * Service layer for category operations
  * Handles business logic and error transformation

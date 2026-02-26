@@ -5,9 +5,13 @@ import type {
   Action,
 } from "../../../Components/Admin/List/DynamicList";
 import { OrderService } from "../../../Service/OrderService";
-import OrderFormCreate from "./OrderFormCreate";
+// import OrderFormCreate from "./OrderFormCreate";
 import OrderFormUpdate from "./OrderFormUpdate";
+import type { FC } from "react";
 import type { OrderResponse } from "../../../type/Orders/OrderResponse";
+
+// Workaround: re-type OrderFormUpdate to ensure props are recognized correctly
+const OrderFormUpdateComponent = OrderFormUpdate as FC<{ id: string; onSuccess?: () => void }>;
 import {
   OrderStatus,
   OrderStatusLabels,
@@ -124,10 +128,10 @@ const OrderPage: React.FC = () => {
     setShowUpdateModal(true);
   };
 
-  const handleCreateSuccess = () => {
-    setShowCreateModal(false);
-    fetchOrders();
-  };
+  // const handleCreateSuccess = () => {
+  //   setShowCreateModal(false);
+  //   fetchOrders();
+  // };
 
   const handleUpdateSuccess = () => {
     setShowUpdateModal(false);
@@ -417,7 +421,7 @@ const OrderPage: React.FC = () => {
                 ×
               </button>
             </div>
-            <OrderFormCreate onSuccess={handleCreateSuccess} />
+            {/* <OrderFormCreate onSuccess={handleCreateSuccess} /> */}
           </div>
         </div>
       )}
@@ -437,7 +441,7 @@ const OrderPage: React.FC = () => {
                 ×
               </button>
             </div>
-            <OrderFormUpdate id={selectedOrderId} onSuccess={handleUpdateSuccess} />
+            <OrderFormUpdateComponent id={selectedOrderId} onSuccess={handleUpdateSuccess} />
           </div>
         </div>
       )}

@@ -7,8 +7,7 @@ import type { ColorResponse } from "../type/Color/ColorResponse";
 import type { ColorResponsePageResponse } from "../type/Color/ColorResponse";
 import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 import type { ColorOption } from "../type/Color/ColorOption";
-import type { SelectOption } from "../type/common/error/select/SelectOption";
-
+import type { SelectOption } from "../type/common/select/SelectOption";
 /**
  * Service layer for category operations
  * Handles business logic and error transformation

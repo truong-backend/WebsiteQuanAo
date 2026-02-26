@@ -56,10 +56,10 @@ const ProductDetailPage: React.FC = () => {
         </Breadcrumbs>
         <Paper sx={{ p: 3 }}>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <Box component="img" src={`http://localhost:8080${product.img}`} alt={product.name} sx={{ width: "100%", borderRadius: 2, objectFit: "cover" }} />
             </Grid>
-            <Grid item xs={12} md={7}>
+            <Grid size={{ xs: 12, md: 7 }}>
               <Typography variant="h4" fontWeight="bold" gutterBottom>{product.name}</Typography>
               <Typography variant="h5" color="error.main" fontWeight="bold" gutterBottom>
                 {product.price.toLocaleString("vi-VN")}₫

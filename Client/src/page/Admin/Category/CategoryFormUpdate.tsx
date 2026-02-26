@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DynamicForm from "../../../Components/Admin/Form/DynamicForm";
-import type { FormField } from "../../../Components/Admin/Form/DynamicForm";
+import type { FormField, SelectOption } from "../../../Components/Admin/Form/DynamicForm";
 import { categoryService } from "../../../Service/categoryService";
 
 interface CategoryFormUpdateProps {
@@ -28,7 +28,7 @@ function CategoryFormUpdate({ id, onSuccess }: CategoryFormUpdateProps) {
       name: "parentCategoryId",
       label: "Danh mục cha",
       type: "select",
-      loadOptions: () => categoryService.getCategorySelectOptions()
+      loadOptions: () => categoryService.getCategorySelectOptions() as Promise<SelectOption[]>
     },
   ];
 

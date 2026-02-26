@@ -11,6 +11,8 @@ import AccountFormUpdate from "./AccountFormUpdate";
 import type { AccountResponse } from "../../../type/account/AccountResponse";
 import { Tag } from "antd";
 
+type AccountRecord = AccountResponse & Record<string, unknown>;
+
 const AccountPage: React.FC = () => {
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +56,7 @@ const AccountPage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: AccountResponse) => {
+  const handleDelete = async (item: AccountRecord) => {
     if (!confirm(`Bạn có chắc muốn xóa tài khoản "${item.email}"?`)) {
       return;
     }
@@ -68,7 +70,7 @@ const AccountPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: AccountResponse) => {
+  const handleEdit = (item: AccountRecord) => {
     setSelectedAccountId(item.id);
     setShowUpdateModal(true);
   };
@@ -92,7 +94,7 @@ const AccountPage: React.FC = () => {
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<AccountResponse>[] = [
+  const columns: Column<AccountRecord>[] = [
     {
       key: "name",
       label: "Tên",
@@ -131,7 +133,7 @@ const AccountPage: React.FC = () => {
     },
   ];
 
-  const actions: Action<AccountResponse>[] = [
+  const actions: Action<AccountRecord>[] = [
     {
       label: "Sửa",
       onClick: handleEdit,
@@ -191,10 +193,10 @@ const AccountPage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={accounts}
+        data={accounts as AccountRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id as string}
         emptyMessage="Không tìm thấy tài khoản nào"
         loading={loading}
         showGlobalSearch={true}

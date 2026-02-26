@@ -94,7 +94,7 @@ const ProductListingPage: React.FC = () => {
       <Container maxWidth="xl">
         <Grid container spacing={3}>
           {/* Sidebar */}
-          <Grid xs={12} md={3}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Paper elevation={2} sx={{ p: 3, position: "sticky", top: 16 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -140,7 +140,7 @@ const ProductListingPage: React.FC = () => {
           </Grid>
 
           {/* Main */}
-          <Grid xs={12} md={9}>
+          <Grid size={{ xs: 12, md: 9 }}>
             <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
                 <Box>
@@ -184,7 +184,7 @@ const ProductListingPage: React.FC = () => {
               <>
                 <Grid container spacing={3}>
                   {products.map((p) => (
-                    <Grid xs={12} sm={6} lg={4} xl={3} key={p.id}>
+                    <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} key={p.id}>
                       <ProductCard product={p} />
                     </Grid>
                   ))}

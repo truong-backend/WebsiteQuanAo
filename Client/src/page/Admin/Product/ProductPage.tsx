@@ -10,6 +10,8 @@ import ProductFormCreate from "./ProductFormCreate";
 import ProductFormUpdate from "./ProductFormUpdate";
 import type { ProductResponse } from "../../../type/product/ProductResponse";
 
+type ProductRecord = ProductResponse & Record<string, unknown>;
+
 const ProductPage: React.FC = () => {
   const [products, setProducts] = useState<ProductResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ const ProductPage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: ProductResponse) => {
+  const handleDelete = async (item: ProductRecord) => {
     if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${item.name}"?`)) {
       return;
     }
@@ -66,7 +68,7 @@ const ProductPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: ProductResponse) => {
+  const handleEdit = (item: ProductRecord) => {
     setSelectedProductId(item.id);
     setShowUpdateModal(true);
   };
@@ -90,7 +92,7 @@ const ProductPage: React.FC = () => {
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<ProductResponse>[] = [
+  const columns: Column<ProductRecord>[] = [
     {
       key: "name",
       label: "Tên sản phẩm",
@@ -133,7 +135,7 @@ const ProductPage: React.FC = () => {
     },
   ];
 
-  const actions: Action<ProductResponse>[] = [
+  const actions: Action<ProductRecord>[] = [
     {
       label: "Sửa",
       onClick: handleEdit,
@@ -193,10 +195,10 @@ const ProductPage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={products}
+        data={products as ProductRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id as string}
         emptyMessage="Không tìm thấy sản phẩm nào"
         loading={loading}
         showGlobalSearch={true}

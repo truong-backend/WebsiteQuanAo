@@ -1,7 +1,7 @@
 import { BaseApi } from "../BaseApi/baseApi";
 import type {CategoryResponse} from "../../type/categotry/CategoryResponse";
-import type { CategoryRequest } from "../../type/categotry/CategoryRequest";
-import type { CategoryHeader } from "../../type/categotry/CategoryHeader";
+import type { CategoryCreateAndUpdateRequest } from "../../type/categotry/CategoryCreateAndUpdateRequest";
+// import type { CategoryHeader } from "../../type/categotry/CategoryHeader";
 import type { CategoryOption } from "../../type/categotry/CategoryOption";
 import type { PageResponse } from "../../api/BaseApi/baseApi";
 /**
@@ -16,10 +16,10 @@ import type { PageResponse } from "../../api/BaseApi/baseApi";
  * - CategoryHeader: Response from create/update (includes children)
  */
 class CategoryApi extends BaseApi<
-  CategoryResponse,      // T - Main entity type
-  CategoryRequest,       // TRequest - Create/Update input DTO
-  CategoryRequest,       // TResponse - Get by ID returns CategoryRequest (for editing)
-  CategoryHeader         // TCreateResponse - Create/Update returns CategoryHeader (with children)
+  CategoryResponse,     // T - Main entity type
+  CategoryCreateAndUpdateRequest      // TRequest - Create/Update input DTO
+  // CategoryRequest,       // TResponse - Get by ID returns CategoryRequest (for editing)
+  // CategoryHeader         // TCreateResponse - Create/Update returns CategoryHeader (with children)
 > {
   constructor() {
     super("categories");
@@ -66,7 +66,7 @@ class CategoryApi extends BaseApi<
    * Endpoint: GET /categories/{id}
    * Matches: getCategoryById() in CategoryController
    */
-  async getCategoryById(categoryId: number): Promise<CategoryRequest> {
+  async getCategoryById(categoryId: number): Promise<CategoryResponse> {
     return this.getById(categoryId);
   }
 
@@ -77,9 +77,9 @@ class CategoryApi extends BaseApi<
    * Endpoint: GET /categories/tree
    * Matches: getCategoryTree() in CategoryController
    */
-  async getCategoryTree(): Promise<CategoryHeader[]> {
-    return this.customGet<CategoryHeader[]>("/tree");
-  }
+  // async getCategoryTree(): Promise<CategoryHeader[]> {
+  //   return this.customGet<CategoryHeader[]>("/tree");
+  // }
 
   /**
    * Create a new category
@@ -89,7 +89,7 @@ class CategoryApi extends BaseApi<
    * Endpoint: POST /categories
    * Matches: createCategory() in CategoryController
    */
-  async createCategory(payload: CategoryRequest): Promise<CategoryHeader> {
+  async createCategory(payload: CategoryCreateAndUpdateRequest): Promise<CategoryResponse> {
     return this.create(payload);
   }
 
@@ -104,8 +104,8 @@ class CategoryApi extends BaseApi<
    */
   async updateCategory(
     id: number,
-    payload: CategoryRequest
-  ): Promise<CategoryHeader> {
+    payload: CategoryCreateAndUpdateRequest
+  ): Promise<CategoryResponse> {
     return this.update(id, payload);
   }
 

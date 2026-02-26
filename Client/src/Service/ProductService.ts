@@ -8,7 +8,7 @@ import type { ProductResponsePageResponse } from "../type/product/ProductRespons
 import type { ProductOption } from "../type/product/ProductOption";
 import type { ProductListItem } from "../type/product/ProductListItem";
 import type { PageResponse } from "../api/BaseApi/baseApi";
-import type { SelectOption } from "../type/common/error/select/SelectOption";
+import type { SelectOption } from "../type/common/select/SelectOption";
 
 export const ProductService = {
   getProductsPaged: async (

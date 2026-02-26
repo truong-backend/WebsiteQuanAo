@@ -1,4 +1,3 @@
-import type { PageResponse } from "../BaseApi/baseApi";
 import { BaseApi } from "../BaseApi/baseApi";
 import type { PaymentCreateRequest } from "../../type/Payment/PaymentCreateRequest";
 import type { PaymentUpdateRequest } from "../../type/Payment/PaymentUpdateRequest";

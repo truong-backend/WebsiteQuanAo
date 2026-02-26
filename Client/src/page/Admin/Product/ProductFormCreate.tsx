@@ -1,5 +1,5 @@
 import DynamicForm from "../../../Components/Admin/Form/DynamicForm";
-import type { FormField } from "../../../Components/Admin/Form/DynamicForm";
+import type { FormField, SelectOption } from "../../../Components/Admin/Form/DynamicForm";
 import { ProductService } from "../../../Service/ProductService";
 import { categoryService } from "../../../Service/categoryService";
 import type { ProductCreateRequest } from "../../../type/product/ProductCreateRequest";
@@ -50,7 +50,7 @@ const fields: FormField<ProductCreateRequest>[] = [
     label: "Danh mục sản phẩm",
     type: "select",
     required: true,
-    loadOptions: () => categoryService.getCategorySelectOptions()
+    loadOptions: () => categoryService.getCategorySelectOptions() as Promise<SelectOption[]>
 
   },
 ];

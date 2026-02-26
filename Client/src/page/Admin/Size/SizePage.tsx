@@ -9,6 +9,8 @@ import type { SizesResponse } from "../../../type/size/SizesResponse";
 import SizeFormCreate from "./SizeFormCreate";
 import SizeFormUpdate from "./SizeFormUpdate";
 
+type SizeRecord = SizesResponse & Record<string, unknown>;
+
 const SizePage: React.FC = () => {
   const [sizes, setSizes] = useState<SizesResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ const SizePage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: SizesResponse) => {
+  const handleDelete = async (item: SizeRecord) => {
     if (!confirm(`Bạn có chắc muốn xóa kích thước "${item.name}"?`)) {
       return;
     }
@@ -62,7 +64,7 @@ const SizePage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: SizesResponse) => {
+  const handleEdit = (item: SizeRecord) => {
     setSelectedSizeId(item.id);
     setShowUpdateModal(true);
   };
@@ -86,7 +88,7 @@ const SizePage: React.FC = () => {
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<SizesResponse>[] = [
+  const columns: Column<SizeRecord>[] = [
     {
       key: "id",
       label: "Mã kích thước",
@@ -103,7 +105,7 @@ const SizePage: React.FC = () => {
     },
   ];
 
-  const actions: Action<SizesResponse>[] = [
+  const actions: Action<SizeRecord>[] = [
     {
       label: "Sửa",
       onClick: handleEdit,
@@ -163,10 +165,10 @@ const SizePage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={sizes}
+        data={sizes as SizeRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id as string}
         emptyMessage="Không tìm thấy kích thước nào"
         loading={loading}
         showGlobalSearch={true}
@@ -176,7 +178,7 @@ const SizePage: React.FC = () => {
           pageSize: 10,
           showSizeChanger: true,
           pageSizeOptions: ['5', '10', '20', '50'],
-          showTotal: (total, range) =>
+          showTotal: (total: number, range: [number, number]) =>
             `${range[0]}-${range[1]} của ${total} kích thước`,
         }}
       />

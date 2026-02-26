@@ -7,6 +7,8 @@ import CategoryFormCreate from './CategoryFormCreate';
 import CategoryFormUpdate from './CategoryFormUpdate';
 import type { CategoryOption } from '../../../type/categotry/CategoryOption';
 
+type CategoryRecord = CategoryResponse & Record<string, unknown>;
+
 const CategoryPage: React.FC = () => {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ const CategoryPage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: CategoryResponse) => {
+  const handleDelete = async (item: CategoryRecord) => {
     if (!confirm(`Bạn có chắc muốn xóa danh mục "${item.categoryName}"?`)) {
       return;
     }
@@ -79,7 +81,7 @@ const CategoryPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: CategoryResponse) => {
+  const handleEdit = (item: CategoryRecord) => {
     setSelectedCategoryId(item.categoryId);
     setShowUpdateModal(true);
   };
@@ -103,7 +105,7 @@ const CategoryPage: React.FC = () => {
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<CategoryResponse>[] = [
+  const columns: Column<CategoryRecord>[] = [
     { 
       key: 'categoryName', 
       label: 'Tên danh mục',
@@ -131,7 +133,7 @@ const CategoryPage: React.FC = () => {
     }
   ];
 
-  const actions: Action<CategoryResponse>[] = [
+  const actions: Action<CategoryRecord>[] = [
     {
       label: 'Sửa',
       onClick: handleEdit,
@@ -191,10 +193,10 @@ const CategoryPage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={categories}
+        data={categories as CategoryRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.categoryId}
+        keyExtractor={(item) => item.categoryId as string | number}
         emptyMessage="Không tìm thấy danh mục nào"
         loading={loading}
         showGlobalSearch={true}

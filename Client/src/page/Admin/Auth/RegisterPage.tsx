@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, MailOutlined, LockOutlined } from '@ant-design/icons';
 import { authService } from '../../../Service/AuthService';
-import type { RegisterRequest } from '../../../type/auth/RegisterRequest';
+import type { RegisterRequest } from '../../../type/authcation/RegisterRequest';
 
 const RegisterPage: React.FC = () => {
   const [form] = Form.useForm();

@@ -1,5 +1,5 @@
 import DynamicForm from "../../../Components/Admin/Form/DynamicForm";
-import type { FormField } from "../../../Components/Admin/Form/DynamicForm";
+import type { FormField, SelectOption } from "../../../Components/Admin/Form/DynamicForm";
 import { categoryService } from "../../../Service/categoryService";
 import type { CategoryCreateAndUpdateRequest } from "../../../type/categotry/CategoryCreateAndUpdateRequest";
 
@@ -20,7 +20,7 @@ function CategoryFormCreate({ onSuccess }: CategoryFormCreateProps) {
       name: "parentCategoryId",
       label: "Danh mục cha",
       type: "select",
-      loadOptions: () => categoryService.getCategorySelectOptions()
+      loadOptions: () => categoryService.getCategorySelectOptions() as Promise<SelectOption[]>
     },
   ];
 

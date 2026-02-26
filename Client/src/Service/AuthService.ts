@@ -1,11 +1,11 @@
 // src/services/authService.ts
 import axios from "axios";
 import { authApi } from "../api/BaseApi/AuthApi";
-import type { LoginRequest } from "../type/auth/LoginRequest";
-import type { LoginResponse } from "../type/auth/LoginResponse";
+import type { LoginRequest } from "../type/authcation/LoginRequest";
+import type { LoginResponse } from "../type/authcation/LoginResponse";
 import type { ErrorResponse } from "../type/common/error/ErrorResponse";
-import type { AccountResponse } from "../type/auth/AccountResponse";
-import type { RegisterRequest } from "../type/auth/RegisterRequest";
+import type { AccountResponse } from "../type/authcation/AccountResponse";
+import type { RegisterRequest } from "../type/authcation/RegisterRequest";
 
 class AuthService {
   async login(request: LoginRequest): Promise<LoginResponse> {

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Form, Input, Select, Button, message } from "antd";
-// import type { FormInstance } from "antd";
 import { Upload } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
@@ -23,7 +22,8 @@ export interface FormField<T extends Record<string, unknown>> {
     | "email"
     | "textarea"
     | "password"
-    | "image";
+    | "image"
+    | "datetime-local";
   placeholder?: string;
   required?: boolean;
   options?: SelectOption[];
@@ -32,6 +32,8 @@ export interface FormField<T extends Record<string, unknown>> {
   optionLabel?: string;
   disabled?: boolean;
   uploadType?: string;
+  maxLength?: number;
+  defaultValue?: string | number | boolean | null;
 }
 
 interface DynamicFormProps<T extends Record<string, unknown>> {
@@ -41,7 +43,6 @@ interface DynamicFormProps<T extends Record<string, unknown>> {
   loadingText?: string;
   onSuccess?: () => void;
   successMessage?: string;
-
   mode?: "create" | "update";
   initialData?: T;
   loadData?: () => Promise<T>;
@@ -59,9 +60,7 @@ function DynamicForm<T extends Record<string, unknown>>({
   loadData,
 }: DynamicFormProps<T>) {
   const [form] = Form.useForm();
-  const [selectOptions, setSelectOptions] = useState<
-    Record<string, SelectOption[]>
-  >({});
+  const [selectOptions, setSelectOptions] = useState<Record<string, SelectOption[]>>({});
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [fileList, setFileList] = useState<Record<string, UploadFile[]>>({});
@@ -69,10 +68,8 @@ function DynamicForm<T extends Record<string, unknown>>({
   const defaultSubmitText = mode === "update" ? "Cập nhật" : "Lưu";
   const finalSubmitText = submitButtonText || defaultSubmitText;
 
-  // Helper function để extract fileName từ URL
   const getFileNameFromUrl = (url: string): string => {
     try {
-      // Lấy phần cuối cùng của URL (sau dấu / cuối cùng)
       const parts = url.split("/");
       return parts[parts.length - 1];
     } catch {
@@ -80,7 +77,6 @@ function DynamicForm<T extends Record<string, unknown>>({
     }
   };
 
-  // Function để xóa file trên server
   const deleteImageOnServer = async (imageUrl: string): Promise<boolean> => {
     try {
       const fileName = getFileNameFromUrl(imageUrl);
@@ -88,20 +84,13 @@ function DynamicForm<T extends Record<string, unknown>>({
         console.error("Cannot extract filename from URL");
         return false;
       }
-
       const response = await fetch(
         `http://localhost:8080/uploads/images?fileName=${encodeURIComponent(fileName)}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" },
       );
-
-      if (response.ok) {
-        return true;
-      } else {
-        console.error("Delete failed:", await response.text());
-        return false;
-      }
+      if (response.ok) return true;
+      console.error("Delete failed:", await response.text());
+      return false;
     } catch (error) {
       console.error("Error deleting image:", error);
       return false;
@@ -114,21 +103,17 @@ function DynamicForm<T extends Record<string, unknown>>({
         setLoadingData(true);
         try {
           let data: T | undefined;
-
           if (loadData) {
             data = await loadData();
           } else if (initialData) {
             data = initialData;
           }
-
           if (data) {
             form.setFieldsValue(data);
-
-            // Set fileList cho các image fields nếu có URL
             const newFileList: Record<string, UploadFile[]> = {};
             fields.forEach((field) => {
-              if (field.type === "image" && data[field.name]) {
-                const imageUrl = data[field.name] as string;
+              if (field.type === "image" && data![field.name]) {
+                const imageUrl = data![field.name] as string;
                 newFileList[field.name as string] = [
                   {
                     uid: "-1",
@@ -142,15 +127,12 @@ function DynamicForm<T extends Record<string, unknown>>({
             setFileList(newFileList);
           }
         } catch (error) {
-          message.error(
-            error instanceof Error ? error.message : "Không thể load dữ liệu",
-          );
+          message.error(error instanceof Error ? error.message : "Không thể load dữ liệu");
         } finally {
           setLoadingData(false);
         }
       }
     };
-
     loadInitialData();
   }, [mode, initialData, loadData, form]);
 
@@ -160,15 +142,10 @@ function DynamicForm<T extends Record<string, unknown>>({
         field
           .loadOptions()
           .then((data) => {
-            setSelectOptions((prev) => ({
-              ...prev,
-              [field.name as string]: data,
-            }));
+            setSelectOptions((prev) => ({ ...prev, [field.name as string]: data }));
           })
           .catch((error) => {
-            message.error(
-              error instanceof Error ? error.message : "Có lỗi xảy ra",
-            );
+            message.error(error instanceof Error ? error.message : "Có lỗi xảy ra");
           });
       }
     });
@@ -176,7 +153,6 @@ function DynamicForm<T extends Record<string, unknown>>({
 
   const handleSubmit = async (values: T) => {
     setLoading(true);
-
     try {
       const transformedData: Record<string, unknown> = {};
       fields.forEach((field) => {
@@ -187,15 +163,9 @@ function DynamicForm<T extends Record<string, unknown>>({
           transformedData[field.name as string] = value ?? null;
         }
       });
-
       await onSubmit(transformedData as T);
-
-      if (onSuccess) {
-        onSuccess();
-      }
-
+      if (onSuccess) onSuccess();
       message.success(successMessage);
-
       if (mode === "create") {
         form.resetFields();
         setFileList({});
@@ -210,21 +180,12 @@ function DynamicForm<T extends Record<string, unknown>>({
   const renderField = (field: FormField<T>) => {
     switch (field.type) {
       case "select": {
-        const options =
-          field.options || selectOptions[field.name as string] || [];
+        const options = field.options || selectOptions[field.name as string] || [];
         const antdOptions = options.map((option) => {
-          const optionValue = field.optionValue
-            ? option[field.optionValue]
-            : option.value;
-          const optionLabel = field.optionLabel
-            ? option[field.optionLabel]
-            : option.label;
-          return {
-            value: optionValue as string | number,
-            label: optionLabel,
-          };
+          const optionValue = field.optionValue ? option[field.optionValue] : option.value;
+          const optionLabel = field.optionLabel ? option[field.optionLabel] : option.label;
+          return { value: optionValue as string | number, label: optionLabel };
         });
-
         return (
           <Select
             placeholder={field.placeholder || "Chọn"}
@@ -240,6 +201,7 @@ function DynamicForm<T extends Record<string, unknown>>({
           <TextArea
             placeholder={field.placeholder}
             disabled={field.disabled || loadingData}
+            maxLength={field.maxLength}
             rows={4}
           />
         );
@@ -274,10 +236,19 @@ function DynamicForm<T extends Record<string, unknown>>({
         );
       }
 
+      case "datetime-local": {
+        return (
+          <Input
+            type="datetime-local"
+            placeholder={field.placeholder}
+            disabled={field.disabled || loadingData}
+          />
+        );
+      }
+
       case "image": {
         const fieldName = field.name as string;
         const currentFileList = fileList[fieldName] || [];
-
         return (
           <>
             <Upload
@@ -288,12 +259,7 @@ function DynamicForm<T extends Record<string, unknown>>({
               accept="image/*"
               fileList={currentFileList}
               onChange={(info) => {
-                // Cập nhật fileList state
-                setFileList((prev) => ({
-                  ...prev,
-                  [fieldName]: info.fileList,
-                }));
-
+                setFileList((prev) => ({ ...prev, [fieldName]: info.fileList }));
                 if (info.file.status === "done") {
                   const imageUrl = info.file.response?.url;
                   if (imageUrl) {
@@ -305,31 +271,18 @@ function DynamicForm<T extends Record<string, unknown>>({
                 }
               }}
               onRemove={async (file) => {
-                // Lấy URL của ảnh cần xóa
                 const imageUrl = file.url || form.getFieldValue(fieldName);
-
                 if (imageUrl) {
-                  // Xóa file trên server
                   const deleted = await deleteImageOnServer(imageUrl);
                   if (deleted) {
                     message.success("Đã xóa ảnh");
                   } else {
-                    message.warning(
-                      "Đã xóa ảnh khỏi form (không xóa được file trên server)",
-                    );
+                    message.warning("Đã xóa ảnh khỏi form (không xóa được file trên server)");
                   }
                 }
-
-                // Xóa URL khỏi form
                 form.setFieldValue(fieldName, null);
-
-                // Cập nhật fileList
-                setFileList((prev) => ({
-                  ...prev,
-                  [fieldName]: [],
-                }));
-
-                return true; // Cho phép xóa khỏi UI
+                setFileList((prev) => ({ ...prev, [fieldName]: [] }));
+                return true;
               }}
             >
               {currentFileList.length === 0 && (
@@ -339,8 +292,6 @@ function DynamicForm<T extends Record<string, unknown>>({
                 </div>
               )}
             </Upload>
-
-            {/* hidden input để submit URL */}
             <Form.Item name={fieldName} hidden>
               <Input />
             </Form.Item>
@@ -354,6 +305,7 @@ function DynamicForm<T extends Record<string, unknown>>({
             type="text"
             placeholder={field.placeholder}
             disabled={field.disabled || loadingData}
+            maxLength={field.maxLength}
           />
         );
       }
@@ -374,6 +326,11 @@ function DynamicForm<T extends Record<string, unknown>>({
       layout="vertical"
       onFinish={handleSubmit}
       disabled={loading || loadingData}
+      initialValues={Object.fromEntries(
+        fields
+          .filter((f) => f.defaultValue !== undefined)
+          .map((f) => [f.name, f.defaultValue])
+      )}
     >
       {fields.map((field) => (
         <Form.Item

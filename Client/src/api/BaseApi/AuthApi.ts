@@ -1,9 +1,9 @@
 // src/api/authApi.ts
 import { BaseApi } from './baseApi';
-import type  {LoginRequest}  from '../../type/auth/LoginRequest';
-import type { LoginResponse } from '../../type/auth/LoginResponse';
-import type { AccountResponse } from '../../type/auth/AccountResponse';
-import type { RegisterRequest } from '../../type/auth/RegisterRequest';
+import type  {LoginRequest}  from '../../type/authcation/LoginRequest';
+import type { LoginResponse } from '../../type/authcation/LoginResponse';
+import type { AccountResponse } from '../../type/authcation/AccountResponse';
+import type { RegisterRequest } from '../../type/authcation/RegisterRequest';
 
 class AuthApi extends BaseApi <LoginRequest, LoginResponse> {
   constructor() {

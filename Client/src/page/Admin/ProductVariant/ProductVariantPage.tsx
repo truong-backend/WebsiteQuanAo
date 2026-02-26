@@ -9,6 +9,9 @@ import ProductVariantFormCreate from "./ProductVariantFormCreate";
 import ProductVariantFormUpdate from "./ProductVariantFormUpdate";
 import type { ProductVariantResponse } from "../../../type/ProductVariant/ProductVariantResponse";
 
+// Extend ProductVariantResponse so it satisfies DynamicList's Record<string, unknown> constraint
+type ProductVariantRecord = ProductVariantResponse & Record<string, unknown>;
+
 const ProductVariantPage: React.FC = () => {
   const [variants, setVariants] = useState<ProductVariantResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,23 +20,19 @@ const ProductVariantPage: React.FC = () => {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    null,
-  );
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   const fetchVariants = async () => {
     try {
       setLoading(true);
       setError(null);
-
       const response = await ProductVariantService.getProductVariantsPaged(
         0,
-        1000, // Get all for client-side filtering
+        1000,
         undefined,
         "id",
         "asc",
       );
-
       setVariants(response.content);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
@@ -50,11 +49,8 @@ const ProductVariantPage: React.FC = () => {
   // HANDLERS
   // ============================================
 
-  const handleDelete = async (item: ProductVariantResponse) => {
-    if (!confirm(`Bạn có chắc muốn xóa biến thể "${item.productName}"?`)) {
-      return;
-    }
-
+  const handleDelete = async (item: ProductVariantRecord) => {
+    if (!confirm(`Bạn có chắc muốn xóa biến thể "${item.productName}"?`)) return;
     try {
       await ProductVariantService.deleteProductVariant(item.id);
       alert("Xóa biến thể thành công");
@@ -64,7 +60,7 @@ const ProductVariantPage: React.FC = () => {
     }
   };
 
-  const handleEdit = (item: ProductVariantResponse) => {
+  const handleEdit = (item: ProductVariantRecord) => {
     setSelectedVariantId(item.id);
     setShowUpdateModal(true);
   };
@@ -81,21 +77,14 @@ const ProductVariantPage: React.FC = () => {
   };
 
   const handleSearch = (searchText: string) => {
-    console.log('Searching for:', searchText);
+    console.log("Searching for:", searchText);
   };
 
   // ============================================
   // TABLE CONFIG
   // ============================================
 
-  const columns: Column<ProductVariantResponse>[] = [
-    // {
-    //   key: "id",
-    //   label: "ID",
-    //   sortable: true,
-    //   searchable: true,
-    //   width: 200,
-    // },
+  const columns: Column<ProductVariantRecord>[] = [
     {
       key: "productName",
       label: "Sản phẩm",
@@ -128,19 +117,17 @@ const ProductVariantPage: React.FC = () => {
       width: 200,
       render: (item) => (
         <img
-          src={`http://localhost:8080${item.img}`}
-          // alt={item.name}
+          src={`http://localhost:8080${item.img as string}`}
           className="w-32 h-20 object-cover rounded-lg border shadow-sm"
           onError={(e) => {
-            e.currentTarget.src =
-              "https://via.placeholder.com/128?text=No+Image";
+            e.currentTarget.src = "https://via.placeholder.com/128?text=No+Image";
           }}
         />
       ),
     },
   ];
 
-  const actions: Action<ProductVariantResponse>[] = [
+  const actions: Action<ProductVariantRecord>[] = [
     {
       label: "Sửa",
       onClick: handleEdit,
@@ -200,10 +187,10 @@ const ProductVariantPage: React.FC = () => {
 
       {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={variants}
+        data={variants as ProductVariantRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id as string}
         emptyMessage="Không tìm thấy biến thể nào"
         loading={loading}
         showGlobalSearch={true}
@@ -212,8 +199,8 @@ const ProductVariantPage: React.FC = () => {
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20', '50'],
-          showTotal: (total, range) =>
+          pageSizeOptions: ["5", "10", "20", "50"],
+          showTotal: (total: number, range: [number, number]) =>
             `${range[0]}-${range[1]} của ${total} biến thể`,
         }}
       />

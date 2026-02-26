@@ -4,7 +4,7 @@ import type { OrderItemCreateRequest } from "../type/Orders/OrderItemCreateReque
 import type { OrderItemUpdateRequest } from "../type/Orders/OrderItemUpdateRequest";
 import type { OrderItemResponse } from "../type/Orders/OrderItemResponse";
 import type { PageResponse } from "../api/BaseApi/baseApi";
-import type { ErrorResponse } from "../type/common/error/ErrorResponse";
+// import type { ErrorResponse } from "../type/common/error/ErrorResponse";
 
 function getMessage(data: unknown, fallback: string): string {
   if (!data || typeof data !== "object") return fallback;
