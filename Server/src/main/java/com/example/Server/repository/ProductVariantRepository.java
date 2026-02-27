@@ -11,4 +11,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     boolean existsByProduct_IdAndColor_CodeAndSize_Id(String productId, String colorCode, String sizeId);
 
     boolean existsByProduct_IdAndColor_CodeAndSize_IdAndIdNot(String productId, String colorCode, String sizeId, String id);
+
+    /** Lấy variant đầu tiên của sản phẩm (theo id) để tạo OrderItem khi client chỉ gửi productId. */
+    java.util.Optional<ProductVariant> findFirstByProduct_IdOrderByIdAsc(String productId);
 }

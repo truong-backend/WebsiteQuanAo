@@ -3,6 +3,7 @@ package com.example.Server.controller;
 import com.example.Server.dto.request.order.OrderCreateRequest;
 import com.example.Server.dto.request.order.OrderUpdateRequest;
 import com.example.Server.dto.response.order.OrderResponse;
+import com.example.Server.enums.OrderStatus;
 import com.example.Server.services.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.*;
@@ -36,7 +37,7 @@ public class OrderController {
 
     /**
      * Get paginated orders with filter and search
-     * GET /orders
+     * GET /orders?page=0&size=10&search=...&sortBy=orderTime&sortDir=desc&status=...&startDate=...&endDate=...&accountId=...
      */
     @GetMapping
     public ResponseEntity<Page<OrderResponse>> getOrders(
@@ -44,7 +45,11 @@ public class OrderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "orderTime") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Integer accountId
     ) {
         if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
             sortBy = "orderTime";
@@ -56,7 +61,7 @@ public class OrderController {
 
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        return ResponseEntity.ok(orderService.findAll(pageable, search));
+        return ResponseEntity.ok(orderService.findAll(pageable, search, status, startDate, endDate, accountId));
     }
 
     /**

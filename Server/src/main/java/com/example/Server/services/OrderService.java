@@ -1,24 +1,36 @@
 package com.example.Server.services;
 
 import com.example.Server.dto.request.order.OrderCreateRequest;
+import java.util.UUID;
+import com.example.Server.dto.request.order.OrderLineRequest;
 import com.example.Server.dto.request.order.OrderUpdateRequest;
 import com.example.Server.dto.response.order.OrderResponse;
 import com.example.Server.entity.Account;
 import com.example.Server.entity.Order;
+import com.example.Server.entity.OrderItem;
 import com.example.Server.entity.Payment;
+import com.example.Server.entity.ProductVariant;
 import com.example.Server.exception.InvalidOperationException;
 import com.example.Server.exception.ResourceAlreadyExistsException;
 import com.example.Server.exception.ResourceNotFoundException;
 import com.example.Server.mapper.OrderMapper;
-import com.example.Server.repository.AccountRepository;
 import com.example.Server.repository.OrderItemRepository;
 import com.example.Server.repository.OrderRepository;
+import com.example.Server.repository.AccountRepository;
 import com.example.Server.repository.PaymentRepository;
+import com.example.Server.repository.ProductVariantRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.example.Server.enums.OrderStatus;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -28,24 +40,28 @@ public class OrderService {
     private final AccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     public OrderService(
             OrderRepository orderRepository,
             AccountRepository accountRepository,
             PaymentRepository paymentRepository,
-            OrderItemRepository orderItemRepository
+            OrderItemRepository orderItemRepository,
+            ProductVariantRepository productVariantRepository
     ) {
         this.orderRepository = orderRepository;
         this.accountRepository = accountRepository;
         this.paymentRepository = paymentRepository;
         this.orderItemRepository = orderItemRepository;
+        this.productVariantRepository = productVariantRepository;
     }
 
     /**
      * Find all orders with pagination, search, and filtering
      */
     @Transactional(Transactional.TxType.SUPPORTS)
-    public Page<OrderResponse> findAll(Pageable pageable, String search) {
+    public Page<OrderResponse> findAll(Pageable pageable, String search,
+                                       OrderStatus status, String startDate, String endDate, Integer accountId) {
         Specification<Order> spec = (root, query, cb) -> cb.conjunction();
 
         if (search != null && !search.trim().isEmpty()) {
@@ -59,6 +75,24 @@ public class OrderService {
                     )
             );
         }
+        if (status != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+        }
+        if (startDate != null && !startDate.isBlank()) {
+            try {
+                LocalDateTime start = LocalDate.parse(startDate.trim()).atStartOfDay();
+                spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("orderTime"), start));
+            } catch (Exception ignored) {}
+        }
+        if (endDate != null && !endDate.isBlank()) {
+            try {
+                LocalDateTime end = LocalDate.parse(endDate.trim()).atTime(LocalTime.MAX);
+                spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("orderTime"), end));
+            } catch (Exception ignored) {}
+        }
+        if (accountId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("account").get("id"), accountId));
+        }
 
         return orderRepository
                 .findAll(spec, pageable)
@@ -69,10 +103,19 @@ public class OrderService {
      * Create a new order
      */
     public OrderResponse create(OrderCreateRequest request) {
-        String orderId = normalizeId(request.getId());
 
-        if (orderRepository.existsById(orderId)) {
-            throw new ResourceAlreadyExistsException("Order", "id", orderId);
+        String orderId = request.getId();
+
+        // ✅ Nếu null hoặc rỗng → tự sinh UUID
+        if (orderId == null || orderId.isBlank()) {
+            orderId = UUID.randomUUID().toString();
+        } else {
+            orderId = orderId.trim();
+
+            // ✅ CHỈ check exists khi id != null
+            if (orderRepository.existsById(orderId)) {
+                throw new ResourceAlreadyExistsException("Order", "id", orderId);
+            }
         }
 
         Order order = new Order();
@@ -131,28 +174,22 @@ public class OrderService {
     }
 
     /**
-     * Delete an order by ID
+     * Delete an order by ID (cascade xóa cả order items)
      */
     public void delete(String id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
-
-        if (orderItemRepository.existsByOrder_Id(id)) {
-            throw new InvalidOperationException(
-                    "Cannot delete order that has order items. Please remove order items first."
-            );
-        }
-
         orderRepository.delete(order);
     }
 
     /**
-     * Get order by ID
+     * Get order by ID (kèm orderItems và thông tin sản phẩm)
      */
     @Transactional(Transactional.TxType.SUPPORTS)
     public OrderResponse getById(String id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+        order.getOrderItems().size(); // trigger lazy load
         return OrderMapper.toResponse(order);
     }
 

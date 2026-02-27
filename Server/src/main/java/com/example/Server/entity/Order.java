@@ -5,13 +5,14 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class Order {
     @Id
     @Column(name = "id", length = 36)
@@ -41,6 +42,7 @@ public class Order {
     @JoinColumn(name = "payment_id")
     private Payment payment;
 
-
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
 }
 

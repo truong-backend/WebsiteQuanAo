@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class OrderMapper {
 
     /**
-     * Convert Order entity to OrderResponse
+     * Convert Order entity to OrderResponse (có thể gồm orderItems nếu đã load)
      */
     public static OrderResponse toResponse(Order order) {
         if (order == null) {
@@ -29,6 +29,9 @@ public class OrderMapper {
         response.setStatus(order.getStatus());
         response.setAccountId(order.getAccount() != null ? order.getAccount().getId() : null);
         response.setPaymentId(order.getPayment() != null ? order.getPayment().getId() : null);
+        response.setOrderItems(order.getOrderItems() != null && !order.getOrderItems().isEmpty()
+                ? OrderItemMapper.toResponses(order.getOrderItems())
+                : Collections.emptyList());
 
         return response;
     }

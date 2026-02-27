@@ -13,4 +13,8 @@ public class OrderItemResponse {
     private Double price;
     private String orderId;
     private String productVariantId;
+    /** Tên sản phẩm (từ Product) để hiển thị hóa đơn. */
+    private String productName;
+    /** Id sản phẩm (Product) để client hiển thị link. */
+    private String productId;
 }

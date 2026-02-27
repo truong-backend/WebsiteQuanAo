@@ -21,7 +21,13 @@ public class OrderItemMapper {
         response.setQuantity(orderItem.getQuantity());
         response.setPrice(orderItem.getPrice());
         response.setOrderId(orderItem.getOrder() != null ? orderItem.getOrder().getId() : null);
-        response.setProductVariantId(orderItem.getProductVariant() != null ? orderItem.getProductVariant().getId() : null);
+        if (orderItem.getProductVariant() != null) {
+            response.setProductVariantId(orderItem.getProductVariant().getId());
+            if (orderItem.getProductVariant().getProduct() != null) {
+                response.setProductName(orderItem.getProductVariant().getProduct().getName());
+                response.setProductId(orderItem.getProductVariant().getProduct().getId());
+            }
+        }
         return response;
     }
 
