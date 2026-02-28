@@ -105,4 +105,16 @@ public class OrderController {
         orderService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Update order status only
+     * PATCH /orders/{id}/status
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderResponse> updateOrderStatus(
+            @PathVariable String id,
+            @RequestParam OrderStatus status
+    ) {
+        return ResponseEntity.ok(orderService.updateStatus(id, status));
+    }
 }

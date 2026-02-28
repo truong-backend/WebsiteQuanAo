@@ -4,6 +4,7 @@ import com.example.Server.dto.request.category.CategoryRequest;
 import com.example.Server.dto.response.category.CategoryHeaderResponse;
 import com.example.Server.dto.response.category.CategoryOptionResponse;
 import com.example.Server.dto.response.category.CategoryResponse;
+import com.example.Server.dto.response.category.NavbarCategoryResponse;
 import com.example.Server.services.CategoryService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.*;
@@ -14,10 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 
-/**
- * REST Controller for Category management
- * Base path: /categories
- */
 @RestController
 @RequestMapping("/categories")
 public class CategoryController {
@@ -64,7 +61,6 @@ public class CategoryController {
             @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(required = false) Long parentId
     ) {
-
         if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
             sortBy = "categoryId";
         }
@@ -114,7 +110,7 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);
-        return ResponseEntity.noContent().build(); // 204
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -137,5 +133,16 @@ public class CategoryController {
         return ResponseEntity.ok(
                 categoryService.getById(id)
         );
+    }
+
+    /**
+     * GET /categories/navbar
+     * Fetch 1 lần duy nhất cho Navbar:
+     * Trả về danh sách root categories, mỗi root có list children (1 level)
+     * Public endpoint — không cần đăng nhập
+     */
+    @GetMapping("/navbar")
+    public ResponseEntity<List<NavbarCategoryResponse>> getNavbarCategories() {
+        return ResponseEntity.ok(categoryService.getNavbarCategories());
     }
 }

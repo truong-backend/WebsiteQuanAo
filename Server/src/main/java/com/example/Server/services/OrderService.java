@@ -200,4 +200,17 @@ public class OrderService {
     private String normalizeString(String s) {
         return s == null ? null : s.trim().replaceAll("\\s+", " ");
     }
+
+    /**
+     * Update only the status of an order
+     */
+    public OrderResponse updateStatus(String id, OrderStatus status) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", id));
+        order.setStatus(status);
+        Order saved = orderRepository.save(order);
+        return OrderMapper.toResponse(saved);
+    }
+
+
 }

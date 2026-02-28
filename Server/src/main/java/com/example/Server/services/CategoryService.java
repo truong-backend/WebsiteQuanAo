@@ -4,6 +4,7 @@ import com.example.Server.dto.request.category.CategoryRequest;
 import com.example.Server.dto.response.category.CategoryHeaderResponse;
 import com.example.Server.dto.response.category.CategoryOptionResponse;
 import com.example.Server.dto.response.category.CategoryResponse;
+import com.example.Server.dto.response.category.NavbarCategoryResponse;
 import com.example.Server.entity.Category;
 import com.example.Server.exception.InvalidOperationException;
 import com.example.Server.exception.ResourceAlreadyExistsException;
@@ -17,6 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -32,11 +34,7 @@ public class CategoryService {
      * Find all categories with pagination, search, and filtering
      */
     @Transactional(Transactional.TxType.SUPPORTS)
-    public Page<CategoryResponse> findAll(
-            Pageable pageable,
-            String search,
-            Long parentId
-    ) {
+    public Page<CategoryResponse> findAll(Pageable pageable, String search, Long parentId) {
         Specification<Category> spec = Specification.where(null);
 
         if (search != null && !search.trim().isEmpty()) {
@@ -52,9 +50,7 @@ public class CategoryService {
             );
         }
 
-        return categoryRepository
-                .findAll(spec, pageable)
-                .map(CategoryMapper::toResponse);
+        return categoryRepository.findAll(spec, pageable).map(CategoryMapper::toResponse);
     }
 
     /**
@@ -64,11 +60,7 @@ public class CategoryService {
         String categoryName = normalizeName(request.getCategoryName());
 
         if (categoryRepository.existsByCategoryName(categoryName)) {
-            throw new ResourceAlreadyExistsException(
-                    "Category",
-                    "categoryName",
-                    categoryName
-            );
+            throw new ResourceAlreadyExistsException("Category", "categoryName", categoryName);
         }
 
         Category category = new Category();
@@ -76,16 +68,11 @@ public class CategoryService {
 
         if (request.getParentCategoryId() != null) {
             Category parent = categoryRepository.findById(request.getParentCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Category",
-                            "id",
-                            request.getParentCategoryId()
-                    ));
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.getParentCategoryId()));
             category.setParentCategory(parent);
         }
 
-        Category saved = categoryRepository.save(category);
-        return CategoryMapper.toHeaderResponse(saved);
+        return CategoryMapper.toHeaderResponse(categoryRepository.save(category));
     }
 
     /**
@@ -93,44 +80,26 @@ public class CategoryService {
      */
     public CategoryHeaderResponse update(Long categoryId, CategoryRequest request) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category",
-                        "id",
-                        categoryId
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", categoryId));
 
         String categoryName = normalizeName(request.getCategoryName());
 
-        if (categoryRepository.existsByCategoryNameAndCategoryIdNot(
-                categoryName, categoryId)
-        ) {
-            throw new ResourceAlreadyExistsException(
-                    "Category",
-                    "categoryName",
-                    categoryName
-            );
+        if (categoryRepository.existsByCategoryNameAndCategoryIdNot(categoryName, categoryId)) {
+            throw new ResourceAlreadyExistsException("Category", "categoryName", categoryName);
         }
 
         category.setCategoryName(categoryName);
 
         if (request.getParentCategoryId() != null) {
             Category parent = categoryRepository.findById(request.getParentCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Category",
-                            "id",
-                            request.getParentCategoryId()
-                    ));
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.getParentCategoryId()));
 
             if (parent.getCategoryId().equals(category.getCategoryId())) {
-                throw new InvalidOperationException(
-                        "Category cannot be parent of itself"
-                );
+                throw new InvalidOperationException("Category cannot be parent of itself");
             }
 
             if (isCircularRelationship(parent, category.getCategoryId())) {
-                throw new InvalidOperationException(
-                        "Cannot create circular parent-child relationship"
-                );
+                throw new InvalidOperationException("Cannot create circular parent-child relationship");
             }
 
             category.setParentCategory(parent);
@@ -138,8 +107,7 @@ public class CategoryService {
             category.setParentCategory(null);
         }
 
-        Category saved = categoryRepository.save(category);
-        return CategoryMapper.toHeaderResponse(saved);
+        return CategoryMapper.toHeaderResponse(categoryRepository.save(category));
     }
 
     /**
@@ -147,12 +115,9 @@ public class CategoryService {
      */
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Category", "id", id)
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
 
-        if (category.getChildCategories() != null
-                && !category.getChildCategories().isEmpty()) {
+        if (category.getChildCategories() != null && !category.getChildCategories().isEmpty()) {
             throw new InvalidOperationException(
                     "Cannot delete category with subcategories. Please delete or reassign subcategories first."
             );
@@ -177,9 +142,7 @@ public class CategoryService {
     @Transactional(Transactional.TxType.SUPPORTS)
     public CategoryResponse getById(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Category", "id", id)
-                );
+                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
         return CategoryMapper.toResponse(category);
     }
 
@@ -188,9 +151,7 @@ public class CategoryService {
      */
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<CategoryOptionResponse> getAllCategoryOptions() {
-        return CategoryMapper.toOptionResponses(
-                categoryRepository.findAll()
-        );
+        return CategoryMapper.toOptionResponses(categoryRepository.findAll());
     }
 
     /**
@@ -204,23 +165,43 @@ public class CategoryService {
     }
 
     /**
-     * Normalize category name (trim + single space)
+     * Get navbar categories — fetch 1 lần duy nhất
+     * Trả về root categories, mỗi root kèm theo children (1 level)
+     * Dùng cho Navbar frontend
      */
-    private String normalizeName(String name) {
-        return name == null
-                ? null
-                : name.trim().replaceAll("\\s+", " ");
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<NavbarCategoryResponse> getNavbarCategories() {
+        List<Category> roots = categoryRepository.findByParentCategoryIsNull();
+
+        return roots.stream()
+                .map(root -> {
+                    List<NavbarCategoryResponse> children = root.getChildCategories() == null
+                            ? List.of()
+                            : root.getChildCategories().stream()
+                            .map(child -> new NavbarCategoryResponse(
+                                    child.getCategoryId(),
+                                    child.getCategoryName(),
+                                    List.of() // Chỉ lấy 1 level
+                            ))
+                            .collect(Collectors.toList());
+
+                    return new NavbarCategoryResponse(
+                            root.getCategoryId(),
+                            root.getCategoryName(),
+                            children
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Check if setting parent would create a circular relationship
-     */
+    private String normalizeName(String name) {
+        return name == null ? null : name.trim().replaceAll("\\s+", " ");
+    }
+
     private boolean isCircularRelationship(Category parent, Long categoryId) {
         Category current = parent;
         while (current != null) {
-            if (current.getCategoryId().equals(categoryId)) {
-                return true;
-            }
+            if (current.getCategoryId().equals(categoryId)) return true;
             current = current.getParentCategory();
         }
         return false;
