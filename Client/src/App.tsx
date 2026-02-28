@@ -20,64 +20,60 @@ import OrderInvoicePage from './page/User/OrderInvoicePage';
 import VnpayReturnPage from './page/User/VnpayReturnPage';
 import MomoReturnPage from './page/User/MomoReturnPage';
 
-// Protected Route Component
+// ─── Redirect theo role (dùng cho route "/") ─────────────────────────────────
+const RoleBasedRedirect = () => {
+  if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
+  if (authService.isAdmin()) return <Navigate to="/admin/dashboard" replace />;
+  return <Navigate to="/products" replace />;
+};
+
+// ─── Chỉ check đã đăng nhập ───────────────────────────────────────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!authService.isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+// ─── Chỉ cho phép ROLE_ADMIN ──────────────────────────────────────────────────
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
+  if (!authService.isAdmin()) return <Navigate to="/products" replace />;
   return <>{children}</>;
 };
 
 function App() {
   return (
     <Routes>
-      {/* Public Routes - Auth */}
+      {/* ─── Auth (luôn truy cập được) ──────────────────────────────────────── */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
+      {/* ─── Public Routes ──────────────────────────────────────────────────── */}
       <Route path="/products" element={<ProductListingPage />} />
       <Route path="/products/:id" element={<ProductDetailPage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
-      <Route path="/orders/:id" element={<OrderStatusPage />} />
-      <Route path="/orders/:id/invoice" element={<OrderInvoicePage />} />
       <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
       <Route path="/payment/momo-return" element={<MomoReturnPage />} />
-      {/* Protected Admin Routes */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        {/* Dashboard */}
+
+      {/* ─── User Routes (cần đăng nhập) ────────────────────────────────────── */}
+      <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+      <Route path="/orders/:id" element={<ProtectedRoute><OrderStatusPage /></ProtectedRoute>} />
+      <Route path="/orders/:id/invoice" element={<ProtectedRoute><OrderInvoicePage /></ProtectedRoute>} />
+
+      {/* ─── Admin Routes (chỉ ROLE_ADMIN) ──────────────────────────────────── */}
+      <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<div>Dashboard Page</div>} />
-        
-        {/* Account Management */}
         <Route path="accounts" element={<AccountPage />} />
-        
-        {/* Category Management */}
         <Route path="categories" element={<CategoryPage />} />
-        
-        {/* Product Management */}
         <Route path="products" element={<ProductPage />} />
         <Route path="product-variants" element={<ProductVariantPage />} />
-        
-        {/* Attributes Management */}
         <Route path="sizes" element={<SizePage />} />
         <Route path="colors" element={<ColorPage />} />
-        
-        {/* Order Management */}
         <Route path="orders" element={<OrderPage />} />
       </Route>
 
-      {/* Redirect root to login */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      
-      {/* 404 Not Found */}
+      {/* ─── Root redirect theo role ─────────────────────────────────────────── */}
+      <Route path="/" element={<RoleBasedRedirect />} />
       <Route path="*" element={<div>404 - Page Not Found</div>} />
     </Routes>
   );

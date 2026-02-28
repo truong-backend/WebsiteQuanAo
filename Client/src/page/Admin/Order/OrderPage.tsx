@@ -11,7 +11,10 @@ import type { FC } from "react";
 import type { OrderResponse } from "../../../type/Orders/OrderResponse";
 
 // Workaround: re-type OrderFormUpdate to ensure props are recognized correctly
-const OrderFormUpdateComponent = OrderFormUpdate as FC<{ id: string; onSuccess?: () => void }>;
+const OrderFormUpdateComponent = OrderFormUpdate as FC<{
+  id: string;
+  onSuccess?: () => void;
+}>;
 import {
   OrderStatus,
   OrderStatusLabels,
@@ -56,7 +59,7 @@ const OrderPage: React.FC = () => {
         filterStatus || undefined,
         filterStartDate || undefined,
         filterEndDate || undefined,
-        filterAccountId ? Number(filterAccountId) : undefined
+        filterAccountId ? Number(filterAccountId) : undefined,
       );
 
       setOrders(response.content);
@@ -143,9 +146,7 @@ const OrderPage: React.FC = () => {
     {
       key: "id",
       label: "Mã đơn hàng",
-      render: (item) => (
-        <span className="font-mono text-sm">{item.id}</span>
-      ),
+      render: (item) => <span className="font-mono text-sm">{item.id}</span>,
     },
     {
       key: "orderTime",
@@ -155,7 +156,9 @@ const OrderPage: React.FC = () => {
         return (
           <div className="text-sm">
             <div>{date.toLocaleDateString("vi-VN")}</div>
-            <div className="text-gray-500">{date.toLocaleTimeString("vi-VN")}</div>
+            <div className="text-gray-500">
+              {date.toLocaleTimeString("vi-VN")}
+            </div>
           </div>
         );
       },
@@ -177,11 +180,30 @@ const OrderPage: React.FC = () => {
       key: "status",
       label: "Trạng thái",
       render: (item) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${OrderStatusColors[item.status]}`}
+        <select
+          value={item.status}
+          onChange={async (e) => {
+            const newStatus = e.target.value as OrderStatus;
+            try {
+              await OrderService.updateOrderStatus(item.id, newStatus);
+              fetchOrders();
+            } catch (err) {
+              alert(
+                err instanceof Error
+                  ? err.message
+                  : "Có lỗi khi cập nhật trạng thái",
+              );
+            }
+          }}
+          className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer
+        focus:outline-none focus:ring-2 focus:ring-blue-500 ${OrderStatusColors[item.status as OrderStatus]}`}
         >
-          {OrderStatusLabels[item.status]}
-        </span>
+          {Object.values(OrderStatus).map((status) => (
+            <option key={status} value={status}>
+              {OrderStatusLabels[status]}
+            </option>
+          ))}
+        </select>
       ),
     },
     {
@@ -275,7 +297,10 @@ const OrderPage: React.FC = () => {
           <select
             value={`${sortBy}-${sortDir}`}
             onChange={(e) => {
-              const [by, dir] = e.target.value.split("-") as [string, "asc" | "desc"];
+              const [by, dir] = e.target.value.split("-") as [
+                string,
+                "asc" | "desc",
+              ];
               handleSortChange(by, dir);
             }}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -310,7 +335,9 @@ const OrderPage: React.FC = () => {
               </label>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as OrderStatus | "")}
+                onChange={(e) =>
+                  setFilterStatus(e.target.value as OrderStatus | "")
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Tất cả trạng thái</option>
@@ -374,7 +401,9 @@ const OrderPage: React.FC = () => {
       )}
 
       {loading && orders.length > 0 && (
-        <div className="mb-4 text-center text-sm text-gray-500">Đang tải...</div>
+        <div className="mb-4 text-center text-sm text-gray-500">
+          Đang tải...
+        </div>
       )}
 
       <DynamicList<OrderResponse>
@@ -441,7 +470,10 @@ const OrderPage: React.FC = () => {
                 ×
               </button>
             </div>
-            <OrderFormUpdateComponent id={selectedOrderId} onSuccess={handleUpdateSuccess} />
+            <OrderFormUpdateComponent
+              id={selectedOrderId}
+              onSuccess={handleUpdateSuccess}
+            />
           </div>
         </div>
       )}

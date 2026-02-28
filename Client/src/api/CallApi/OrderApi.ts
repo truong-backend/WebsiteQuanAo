@@ -27,21 +27,32 @@ class OrderApi extends BaseApi<
       startDate?: string;
       endDate?: string;
       accountId?: number;
-    }
+    },
   ): Promise<PageResponse<OrderResponse>> {
     const params: Record<string, string | number | boolean> = {};
     if (additionalParams?.status) params.status = additionalParams.status;
-    if (additionalParams?.startDate) params.startDate = additionalParams.startDate;
+    if (additionalParams?.startDate)
+      params.startDate = additionalParams.startDate;
     if (additionalParams?.endDate) params.endDate = additionalParams.endDate;
-    if (additionalParams?.accountId != null) params.accountId = additionalParams.accountId;
+    if (additionalParams?.accountId != null)
+      params.accountId = additionalParams.accountId;
     return this.getAll<PageResponse<OrderResponse>>(
       page,
       size,
       search,
       sortBy,
       sortDir,
-      Object.keys(params).length ? params : undefined
+      Object.keys(params).length ? params : undefined,
     );
+  }
+
+  async updateStatus(id: string, status: string): Promise<OrderResponse> {
+    const response = await this.axiosInstance.patch<OrderResponse>(
+      `/${id}/status`,
+      null,
+      { params: { status } },
+    );
+    return response.data;
   }
 }
 

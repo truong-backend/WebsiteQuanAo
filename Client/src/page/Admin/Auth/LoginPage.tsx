@@ -5,19 +5,24 @@ import { MailOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../../Service/AuthService';
 import type { LoginRequest } from '../../../type/authcation/LoginRequest';
-// import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate(); // ← Hook navigation
+  const navigate = useNavigate();
 
   const onFinish = async (values: LoginRequest) => {
     setLoading(true);
     try {
       await authService.login(values);
       message.success('Đăng nhập thành công!');
-      navigate('/admin/dashboard'); // ← Navigate không reload
+
+      // Redirect theo role
+      if (authService.isAdmin()) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/products');
+      }
     } catch (error) {
       if (error instanceof Error) {
         message.error(error.message);
@@ -31,7 +36,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="login-container">
-      <Card className="login-card" title="Đăng nhập Admin">
+      <Card className="login-card" title="Đăng nhập">
         <Form
           form={form}
           name="login"
@@ -47,11 +52,7 @@ const LoginPage: React.FC = () => {
               { type: 'email', message: 'Email không hợp lệ!' }
             ]}
           >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="admin@example.com"
-              size="large"
-            />
+            <Input prefix={<MailOutlined />} placeholder="example@email.com" size="large" />
           </Form.Item>
 
           <Form.Item
@@ -62,21 +63,11 @@ const LoginPage: React.FC = () => {
               { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
             ]}
           >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Nhập mật khẩu"
-              size="large"
-            />
+            <Input.Password prefix={<LockOutlined />} placeholder="Nhập mật khẩu" size="large" />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
-            >
+            <Button type="primary" htmlType="submit" loading={loading} block size="large">
               Đăng nhập
             </Button>
           </Form.Item>

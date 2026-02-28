@@ -175,4 +175,18 @@ export const OrderService = {
       throw new Error("Không thể kết nối đến server");
     }
   },
+
+  updateOrderStatus: async (id: string, status: OrderStatus): Promise<OrderResponse> => {
+  try {
+    return await orderApi.updateStatus(id, status);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const msg = getErrorMessage(error.response.data, "Có lỗi xảy ra khi cập nhật trạng thái");
+      if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
+      if (error.response.status === 400) throw new Error(msg || "Trạng thái không hợp lệ");
+      throw new Error(msg);
+    }
+    throw new Error("Không thể kết nối đến server");
+  }
+},
 };
