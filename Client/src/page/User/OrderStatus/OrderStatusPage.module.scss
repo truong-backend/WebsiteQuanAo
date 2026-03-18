@@ -1,0 +1,33 @@
+// OrderStatusPage.module.scss
+$primary:  #22c55e;
+$black:    #111827;
+$white:    #ffffff;
+$grey-50:  #f9fafb;
+$grey-100: #f3f4f6;
+$grey-200: #e5e7eb;
+$grey-600: #4b5563;
+$font:     'Be Vietnam Pro', 'Segoe UI', sans-serif;
+
+.page      { padding: 40px 0; background: $grey-50; min-height: 70vh; font-family: $font; }
+.container { max-width: 560px; margin: 0 auto; padding: 0 24px; }
+.title     { font-size: 26px; font-weight: 800; color: $black; margin: 0 0 20px; letter-spacing: -0.02em; }
+
+.card      { background: $white; border-radius: 16px; padding: 28px; border: 1px solid $grey-200; }
+.orderId   { font-size: 13px; font-weight: 700; color: $grey-600; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 4px; }
+.orderNum  { font-size: 16px; font-weight: 600; color: $black; margin: 0 0 6px; font-family: monospace; }
+.time      { font-size: 13px; color: $grey-600; margin: 0 0 20px; }
+
+.statusRow { margin-bottom: 20px;
+  &__label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $grey-600; margin-bottom: 8px; } }
+
+.divider   { height: 1px; background: $grey-200; margin: 20px 0; }
+
+.shipLabel { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: $grey-600; margin: 0 0 8px; }
+.shipInfo  { font-size: 14px; color: $black; line-height: 1.7; margin: 0; }
+.note      { font-size: 13px; color: $grey-600; margin: 10px 0 0; }
+
+.actions   { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+.btnOutline { background: $white; border: 1.5px solid $grey-200; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 600; color: $black; cursor: pointer; text-decoration: none; font-family: $font; transition: border-color .15s, color .15s;
+  &:hover { border-color: $primary; color: $primary; } }
+.btnText    { background: none; border: none; color: $grey-600; font-size: 14px; font-weight: 500; cursor: pointer; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-family: $font; transition: color .15s;
+  &:hover { color: $primary; } }

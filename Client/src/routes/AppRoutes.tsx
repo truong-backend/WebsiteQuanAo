@@ -19,12 +19,15 @@ import OrderPage from "../page/Admin/Order/OrderPage";
 // ── User Pages ───────────────────────────────────────────────────────────────
 import HomePage from "../page/User/Home/HomePage";
 import ProductListPage from "../page/User/Product/ProductListingPage";
-import ProductDetailPage from "../page/User/Product/ProductDetailPage";
+import ProductDetailPage from "../page/User/ProductDetail/ProductDetailPage";
 import CartPage from "../page/User/Cart/CartPage";
-import CheckoutPage from "../page/User/Cart/CheckoutPage";
-import OrderStatusPage from "../page/User/Order/OrderStatusPage";
-import OrderInvoicePage from "../page/User/Order/OrderInvoicePage";
-import VnpayReturnPage from "../page/User/Order/VnpayReturnPage";
+import CheckoutPage from "../page/User/Checkout/CheckoutPage";
+import OrderStatusPage from "../page/User/OrderStatus/OrderStatusPage";
+import OrderInvoicePage from "../page/User/OrderInvoice/OrderInvoicePage";
+import VnpayReturnPage from "../page/User/VnPay/VnpayReturnPage";
+import AccountProfilePage from "../page/User/AccountProfilePage/AccountProfilePage";
+import ContactPage from "../page/User/ContactPage/ContactPage";
+import AboutPage from "../page/User/About/AboutPage";
 // import MomoReturnPage from "../page/Order/MomoReturnPage";
 
 // ── Guards ───────────────────────────────────────────────────────────────────
@@ -56,16 +59,61 @@ const AppRoutes: React.FC = () => (
     <Route path="/products" element={<ProductListPage />} />
     <Route path="/products/:id" element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
+    <Route path="/about" element={<AboutPage />} />
+    <Route path="/contact" element={<ContactPage />} />
     {/* <Route path="/payment/momo-return" element={<MomoReturnPage />} /> */}
 
     {/* Protected – user */}
-    <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-    <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-    <Route path="/orders/:id" element={<ProtectedRoute><OrderStatusPage /></ProtectedRoute>} />
-    <Route path="/orders/:id/invoice" element={<ProtectedRoute><OrderInvoicePage /></ProtectedRoute>} />
+    <Route
+      path="/cart"
+      element={
+        <ProtectedRoute>
+          <CartPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/checkout"
+      element={
+        <ProtectedRoute>
+          <CheckoutPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/orders/:id"
+      element={
+        <ProtectedRoute>
+          <OrderStatusPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/orders/:id/invoice"
+      element={
+        <ProtectedRoute>
+          <OrderInvoicePage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/profile"
+      element={
+        <ProtectedRoute>
+          <AccountProfilePage />
+        </ProtectedRoute>
+      }
+    />
 
     {/* Admin */}
-    <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+    <Route
+      path="/admin"
+      element={
+        <AdminRoute>
+          <AdminLayout />
+        </AdminRoute>
+      }
+    >
       <Route index element={<Navigate to="/admin/dashboard" replace />} />
       <Route path="dashboard" element={<div>Dashboard Page</div>} />
       <Route path="accounts" element={<AccountPage />} />

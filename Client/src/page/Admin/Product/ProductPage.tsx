@@ -1,261 +1,84 @@
 // src/pages/Admin/Product/ProductPage.tsx
 import { useState, useEffect } from "react";
 import DynamicList from "../../../Components/Admin/List/DynamicList";
-import type {
-  Column,
-  Action,
-} from "../../../Components/Admin/List/DynamicList";
+import type { Column, Action } from "../../../Components/Admin/List/DynamicList";
 import { ProductService } from "../../../Service/ProductService";
+import type { ProductResponse } from "../../../type/product/ProductResponse";
 import ProductFormCreate from "./ProductFormCreate";
 import ProductFormUpdate from "./ProductFormUpdate";
-import type { ProductResponse } from "../../../type/product/ProductResponse";
+import AdminModal from "../../../Components/Admin/common/AdminModal/AdminModal";
+import AdminPageState from "../../../Components/Admin/common/AdminPageState/AdminPageState";
+import styles from "./ProductPage.module.scss";
 
 type ProductRecord = ProductResponse & Record<string, unknown>;
 
 const ProductPage: React.FC = () => {
   const [products, setProducts] = useState<ProductResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+  const [showCreate, setShowCreate]   = useState(false);
+  const [showUpdate, setShowUpdate]   = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    null,
-  );
-
-  const fetchProducts = async () => {
+  const fetch = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const response = await ProductService.getProductsPaged(
-        0,
-        1000, // Get all for client-side filtering
-        undefined,
-        undefined,
-        "name",
-        "asc",
-      );
-
-      setProducts(response.content);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
-    } finally {
-      setLoading(false);
-    }
+      setLoading(true); setError(null);
+      const res = await ProductService.getProductsPaged(0, 1000, undefined, undefined, "name", "asc");
+      setProducts(res.content);
+    } catch (err) { setError(err instanceof Error ? err.message : "Có lỗi xảy ra"); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // ============================================
-  // HANDLERS
-  // ============================================
+  useEffect(() => { fetch(); }, []);
 
   const handleDelete = async (item: ProductRecord) => {
-    if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${item.name}"?`)) {
-      return;
-    }
-
-    try {
-      await ProductService.deleteProduct(item.id);
-      alert("Xóa sản phẩm thành công");
-      fetchProducts();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa");
-    }
+    if (!confirm(`Xóa sản phẩm "${item.name}"?`)) return;
+    try { await ProductService.deleteProduct(item.id); fetch(); }
+    catch (err) { alert(err instanceof Error ? err.message : "Lỗi khi xóa"); }
   };
 
-  const handleEdit = (item: ProductRecord) => {
-    setSelectedProductId(item.id);
-    setShowUpdateModal(true);
-  };
-
-  const handleCreateSuccess = () => {
-    setShowCreateModal(false);
-    fetchProducts();
-  };
-
-  const handleUpdateSuccess = () => {
-    setShowUpdateModal(false);
-    setSelectedProductId(null);
-    fetchProducts();
-  };
-
-  const handleSearch = (searchText: string) => {
-    console.log('Searching for:', searchText);
-  };
-
-  // ============================================
-  // TABLE CONFIG
-  // ============================================
+  const handleEdit = (item: ProductRecord) => { setSelectedId(item.id as string); setShowUpdate(true); };
 
   const columns: Column<ProductRecord>[] = [
-    {
-      key: "name",
-      label: "Tên sản phẩm",
-      sortable: true,
-      searchable: true,
-      width: 250,
-    },
-    {
-      key: "price",
-      label: "Giá",
-      sortable: true,
-      width: 150,
-      render: (item) => `${item.price.toLocaleString("vi-VN")} ₫`,
-    },
-    {
-      key: "img",
-      label: "Hình ảnh",
-      width: 200,
-      render: (item) => (
-        <img
-          src={`http://localhost:8080${item.img}`}
-          alt={item.name}
-          className="w-32 h-20 object-cover rounded-lg border shadow-sm"
-          onError={(e) => {
-            e.currentTarget.src =
-              "https://via.placeholder.com/128?text=No+Image";
-          }}
-        />
-      ),
-    },
-    {
-      key: "description",
-      label: "Mô tả",
-      searchable: true,
-      render: (item) => (
-        <span className="line-clamp-2" title={item.description}>
-          {item.description}
-        </span>
-      ),
-    },
+    { key: "name", label: "Tên sản phẩm", sortable: true, searchable: true },
+    { key: "price", label: "Giá", sortable: true,
+      render: (item) => <span style={{ fontWeight: 700, color: '#22c55e' }}>{(item.price as number).toLocaleString("vi-VN")}₫</span> },
+    { key: "img", label: "Ảnh", render: (item) => (
+        <img src={`http://localhost:8080${item.img}`} alt={item.name as string}
+          style={{ width: 72, height: 48, objectFit: 'cover', borderRadius: 8, border: '1px solid #e5e7eb' }}
+          onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/72?text=N/A'; }} />
+      )},
+    { key: "description", label: "Mô tả", searchable: true,
+      render: (item) => <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.description as string}</span> },
   ];
 
   const actions: Action<ProductRecord>[] = [
-    {
-      label: "Sửa",
-      onClick: handleEdit,
-      variant: "primary",
-    },
-    {
-      label: "Xóa",
-      onClick: handleDelete,
-      variant: "danger",
-    },
+    { label: "Sửa", onClick: handleEdit,   variant: "primary" },
+    { label: "Xóa", onClick: handleDelete, variant: "danger"  },
   ];
 
-  // ============================================
-  // RENDER
-  // ============================================
-
-  if (loading && products.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          <p className="mt-2 text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && products.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p className="font-bold">Lỗi</p>
-          <p>{error}</p>
-          <button
-            onClick={fetchProducts}
-            className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Thử lại
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading && products.length === 0) return <AdminPageState loading error={null} onRetry={fetch} />;
+  if (error   && products.length === 0) return <AdminPageState loading={false} error={error} onRetry={fetch} />;
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Quản lý sản phẩm</h2>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-medium"
-        >
-          + Tạo sản phẩm mới
-        </button>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Quản lý sản phẩm</h2>
+        <button className={styles.createBtn} onClick={() => setShowCreate(true)}>+ Tạo sản phẩm mới</button>
       </div>
-
-      {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={products as ProductRecord[]}
-        columns={columns}
-        actions={actions}
+        data={products as ProductRecord[]} columns={columns} actions={actions}
         keyExtractor={(item) => item.id as string}
-        emptyMessage="Không tìm thấy sản phẩm nào"
-        loading={loading}
-        showGlobalSearch={true}
-        searchPlaceholder="Tìm kiếm theo tên hoặc mô tả sản phẩm..."
-        onSearch={handleSearch}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          pageSizeOptions: ['5', '10', '20', '50'],
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} của ${total} sản phẩm`,
-        }}
+        emptyMessage="Không có sản phẩm nào" loading={loading}
+        showGlobalSearch pageSize={10}
       />
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Tạo sản phẩm mới</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <ProductFormCreate onSuccess={handleCreateSuccess} />
-          </div>
-        </div>
-      )}
-
-      {/* Update Modal */}
-      {showUpdateModal && selectedProductId !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Cập nhật sản phẩm</h3>
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedProductId(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <ProductFormUpdate
-              id={selectedProductId}
-              onSuccess={handleUpdateSuccess}
-            />
-          </div>
-        </div>
-      )}
+      <AdminModal open={showCreate} title="Tạo sản phẩm mới" onClose={() => setShowCreate(false)} size="lg">
+        <ProductFormCreate onSuccess={() => { setShowCreate(false); fetch(); }} />
+      </AdminModal>
+      <AdminModal open={showUpdate && selectedId !== null} title="Cập nhật sản phẩm" onClose={() => { setShowUpdate(false); setSelectedId(null); }} size="lg">
+        {selectedId && <ProductFormUpdate id={selectedId} onSuccess={() => { setShowUpdate(false); setSelectedId(null); fetch(); }} />}
+      </AdminModal>
     </div>
   );
 };
-
 export default ProductPage;

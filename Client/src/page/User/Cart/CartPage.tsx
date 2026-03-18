@@ -1,85 +1,106 @@
 // src/pages/Cart/CartPage.tsx
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import {
-  Box, Container, Typography, Paper, IconButton, Button,
-  Divider, List, ListItem, ListItemAvatar, Avatar, ListItemText,
-} from "@mui/material";
-import { Add, Remove, Delete } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { CartService, type CartItem } from "../../../Service/CartService";
-import Header from "../../../Components/User/Footer/Footer";
-import Footer from "../../../Components/User/Footer/Footer";
+import PageLayout from "../../../Components/User/layout/PageLayout/PageLayout";
+import BackButton from "../../../Components/User/ui/BackButton/BackButton";
+import EmptyState from "../../../Components/User/ui/EmptyState/EmptyState";
+import PriceText from "../../../Components/User/ui/PriceText/PriceText";
+import styles from "./CartPage.module.scss";
+
+const BASE_URL = "http://localhost:8080";
+const MIN_QUANTITY = 1;
 
 const CartPage: React.FC = () => {
   const [items, setItems] = useState<CartItem[]>(() => CartService.getCart());
   const navigate = useNavigate();
 
-  const persist = (next: CartItem[]) => {
-    setItems(next);
-    CartService.setCart(next);
-  };
-
-  const handleChangeQty = (id: string, delta: number) => {
-    persist(items.map((i) => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
-  };
-
+  const persist = (next: CartItem[]) => { setItems(next); CartService.setCart(next); };
+  const handleChangeQty = (id: string, delta: number) =>
+    persist(items.map((i) => i.id === id ? { ...i, quantity: Math.max(MIN_QUANTITY, i.quantity + delta) } : i));
   const handleRemove = (id: string) => persist(items.filter((i) => i.id !== id));
 
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const total      = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const totalItems = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "grey.50" }}>
-      <Header />
-      <Box component="main" sx={{ flex: 1, py: 4 }}>
-        <Container maxWidth="md">
-          <Typography variant="h4" fontWeight="bold" gutterBottom>Giỏ hàng</Typography>
+    <PageLayout>
+      <div className={styles.page}>
+        <div className={styles.container}>
+
+          <div className={styles.header}>
+            <div className={styles.header__left}>
+              <h1 className={styles.header__title}>Giỏ hàng</h1>
+              {totalItems > 0 && <span className={styles.badge}>{totalItems}</span>}
+            </div>
+            <BackButton />
+          </div>
 
           {items.length === 0 ? (
-            <Paper sx={{ p: 4, textAlign: "center" }}>
-              <Typography sx={{ mb: 2 }}>Giỏ hàng của bạn đang trống.</Typography>
-              <Button variant="contained" component={Link} to="/products">Tiếp tục mua sắm</Button>
-            </Paper>
+            <EmptyState
+              icon={<span style={{ fontSize: 64 }}>🛍</span>}
+              title="Giỏ hàng của bạn đang trống"
+              description="Hãy chọn thêm sản phẩm để tiếp tục nhé!"
+              actionLabel="Khám phá sản phẩm"
+              actionTo="/products"
+            />
           ) : (
-            <Paper sx={{ p: 3 }}>
-              <List>
-                {items.map((item) => (
-                  <ListItem
-                    key={item.id}
-                    secondaryAction={
-                      <IconButton onClick={() => handleRemove(item.id)}><Delete /></IconButton>
-                    }
-                  >
-                    <ListItemAvatar>
-                      <Avatar
-                        variant="rounded"
-                        src={`http://localhost:8080${item.img}`}
+            <div className={styles.layout}>
+
+              {/* Item list */}
+              <div className={styles.list}>
+                {items.map((item, idx) => (
+                  <div key={item.id}>
+                    <div className={styles.item}>
+                      <img
+                        className={styles.img}
+                        src={`${BASE_URL}${item.img}`}
                         alt={item.name}
-                        sx={{ width: 64, height: 64, mr: 2 }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).src = "https://via.placeholder.com/80"; }}
                       />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`${item.price.toLocaleString("vi-VN")}₫ x ${item.quantity}`}
-                    />
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <IconButton onClick={() => handleChangeQty(item.id, -1)}><Remove /></IconButton>
-                      <Typography>{item.quantity}</Typography>
-                      <IconButton onClick={() => handleChangeQty(item.id, 1)}><Add /></IconButton>
-                    </Box>
-                  </ListItem>
+                      <div className={styles.info}>
+                        <p className={styles.name}>{item.name}</p>
+                        <PriceText amount={item.price} />
+                      </div>
+                      <div className={styles.qty}>
+                        <button className={styles.qtyBtn} onClick={() => handleChangeQty(item.id, -1)}>−</button>
+                        <span className={styles.qtyNum}>{item.quantity}</span>
+                        <button className={styles.qtyBtn} onClick={() => handleChangeQty(item.id, 1)}>+</button>
+                      </div>
+                      <button className={styles.removeBtn} onClick={() => handleRemove(item.id)} title="Xóa">✕</button>
+                    </div>
+                    {idx < items.length - 1 && <div className={styles.divider} />}
+                  </div>
                 ))}
-              </List>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h6">Tổng cộng: {total.toLocaleString("vi-VN")}₫</Typography>
-                <Button variant="contained" onClick={() => navigate("/checkout")}>Tiến hành thanh toán</Button>
-              </Box>
-            </Paper>
+              </div>
+
+              {/* Summary */}
+              <div className={styles.summary}>
+                <p className={styles.summary__title}>Tóm tắt đơn hàng</p>
+                <div className={styles.summary__divider} />
+                {items.map((item) => (
+                  <div key={item.id} className={styles.summary__row}>
+                    <span className={styles.summary__label}>{item.name} ×{item.quantity}</span>
+                    <PriceText amount={item.price * item.quantity} />
+                  </div>
+                ))}
+                <div className={styles.summary__divider} />
+                <div className={styles.summary__total}>
+                  <span className={styles.summary__totalLabel}>Tổng cộng</span>
+                  <PriceText amount={total} variant="h6" fontSize={18} />
+                </div>
+                <button className={styles.btnCheckout} onClick={() => navigate("/checkout")}>
+                  Tiến hành thanh toán
+                </button>
+                <button className={styles.btnBack} onClick={() => navigate(-1)}>
+                  ← Tiếp tục mua sắm
+                </button>
+              </div>
+            </div>
           )}
-        </Container>
-      </Box>
-      <Footer />
-    </Box>
+        </div>
+      </div>
+    </PageLayout>
   );
 };
 

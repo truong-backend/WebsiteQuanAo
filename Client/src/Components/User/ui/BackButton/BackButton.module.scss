@@ -1,0 +1,7 @@
+// BackButton.module.scss
+$primary: #22c55e; $primary-dk: #16a34a; $grey-200: #e5e7eb; $grey-600: #4b5563;
+$font: 'Be Vietnam Pro','Segoe UI',sans-serif;
+
+.btn { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1.5px solid $grey-200; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 600; color: $grey-600; cursor: pointer; font-family: $font; transition: border-color .15s, color .15s;
+  &:hover { border-color: $primary; color: $primary; } }
+.arrow { font-size: 12px; }

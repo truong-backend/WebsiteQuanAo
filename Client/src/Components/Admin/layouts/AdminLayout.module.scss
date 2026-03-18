@@ -1,0 +1,234 @@
+// AdminLayout.module.scss — MUI LIGHT STYLE
+// Trắng · Xanh dương · Clean · Enterprise
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+// ─── Palette ──────────────────────────────────────────────────────────────────
+
+$primary:    #1976d2;
+$primary-dk: #1565c0;
+$primary-lt: #e3f2fd;
+$primary-mid:#1e88e5;
+
+$white:    #ffffff;
+$bg:       #f5f6fa;       // Nền xám nhạt
+$surface:  #ffffff;
+$border:   #e0e3eb;
+$border-lt:#eef0f5;
+
+$text-100: #111827;
+$text-70:  #374151;
+$text-40:  #9ca3af;
+
+$danger:   #d32f2f;
+$font:     'Inter', 'Roboto', 'Segoe UI', sans-serif;
+
+// ─── Shell ────────────────────────────────────────────────────────────────────
+
+.shell {
+  display:     flex;
+  min-height:  100vh;
+  font-family: $font;
+  background:  $bg;
+}
+
+// ─── Overlay ──────────────────────────────────────────────────────────────────
+
+.overlay {
+  position:   fixed;
+  inset:      0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index:    20;
+  display:    none;
+
+  @media (max-width: 1023px) { display: block; }
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+.sidebar {
+  position:       fixed;
+  top:            0;
+  left:           0;
+  height:         100%;
+  width:          240px;
+  background:     $surface;
+  color:          $text-100;
+  z-index:        30;
+  display:        flex;
+  flex-direction: column;
+  transform:      translateX(-100%);
+  transition:     transform 0.26s ease;
+  border-right:   1px solid $border;
+  box-shadow:     2px 0 8px rgba(0,0,0,0.06);
+
+  &--open { transform: translateX(0); }
+
+  @media (min-width: 1024px) {
+    position:    sticky;
+    top:         0;
+    height:      100vh;
+    transform:   translateX(0);
+    flex-shrink: 0;
+    box-shadow:  none;
+  }
+}
+
+.sidebarHead {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         18px 16px;
+  border-bottom:   1px solid $border;
+}
+
+.sidebarLogo {
+  font-size:   17px;
+  font-weight: 700;
+  color:       $text-100;
+  letter-spacing: -0.3px;
+
+  span { color: $primary; }
+}
+
+.closeBtn {
+  background:    none;
+  border:        none;
+  color:         $text-40;
+  cursor:        pointer;
+  width:         30px;
+  height:        30px;
+  border-radius: 6px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     15px;
+  transition:    background 0.15s;
+
+  &:hover { background: $border-lt; color: $text-100; }
+
+  @media (min-width: 1024px) { display: none; }
+}
+
+.nav {
+  flex:           1;
+  padding:        10px 8px;
+  overflow-y:     auto;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+.navItem {
+  display:        flex;
+  align-items:    center;
+  gap:            10px;
+  padding:        9px 12px;
+  border-radius:  8px;
+  font-size:      14px;
+  font-weight:    500;
+  color:          $text-70;
+  text-decoration: none;
+  transition:     background 0.14s, color 0.14s;
+  cursor:         pointer;
+
+  &:hover { background: $border-lt; color: $text-100; }
+
+  &--active {
+    background:  $primary-lt;
+    color:       $primary;
+    font-weight: 600;
+
+    .navIcon { color: $primary; }
+  }
+
+  .navIcon { font-size: 16px; flex-shrink: 0; opacity: 0.8; }
+}
+
+.navDivider {
+  height:     1px;
+  background: $border;
+  margin:     8px 4px;
+  // Nằm trong flex column → margin-top: auto đẩy mọi thứ sau nó xuống đáy
+  margin-top: auto;
+}
+
+.logoutBtn {
+  display:        flex;
+  align-items:    center;
+  gap:            10px;
+  padding:        9px 12px;
+  border-radius:  8px;
+  font-size:      14px;
+  font-weight:    500;
+  color:          $danger;
+  background:     none;
+  border:         none;
+  cursor:         pointer;
+  width:          100%;
+  text-align:     left;
+  font-family:    $font;
+  transition:     background 0.14s, color 0.14s;
+
+  &:hover { background: #fff1f2; color: $danger; }
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+.main {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  min-width:      0;
+}
+
+.header {
+  background:    $surface;
+  border-bottom: 1px solid $border;
+  padding:       0 24px;
+  height:        58px;
+  display:       flex;
+  align-items:   center;
+  gap:           14px;
+  position:      sticky;
+  top:           0;
+  z-index:       10;
+  box-shadow:    0 1px 4px rgba(0,0,0,0.06);
+}
+
+.hamburger {
+  background:    none;
+  border:        none;
+  cursor:        pointer;
+  width:         36px;
+  height:        36px;
+  border-radius: 7px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  color:         $text-70;
+  font-size:     18px;
+  transition:    background 0.14s;
+
+  &:hover { background: $border-lt; }
+
+  @media (min-width: 1024px) { display: none; }
+}
+
+.headerTitle {
+  font-size:      15px;
+  font-weight:    600;
+  color:          $text-100;
+  letter-spacing: -0.1px;
+}
+
+.content {
+  flex:     1;
+  padding:  24px;
+  overflow: auto;
+
+  @media (max-width: 640px) { padding: 14px; }
+}

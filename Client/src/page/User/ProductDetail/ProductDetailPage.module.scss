@@ -1,0 +1,66 @@
+// ProductDetailPage.module.scss
+$primary:    #22c55e;
+$primary-dk: #16a34a;
+$black:      #111827;
+$white:      #ffffff;
+$grey-50:    #f9fafb;
+$grey-100:   #f3f4f6;
+$grey-200:   #e5e7eb;
+$grey-400:   #9ca3af;
+$grey-600:   #4b5563;
+$font:       'Be Vietnam Pro', 'Segoe UI', sans-serif;
+
+.page      { padding: 32px 0; background: $grey-50; min-height: 80vh; font-family: $font; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+.topBar    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: $grey-400;
+  a    { color: $grey-600; text-decoration: none; transition: color .15s; &:hover { color: $primary; } }
+  span { color: $black; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; } }
+
+.card      { background: $white; border-radius: 20px; padding: 36px; border: 1px solid $grey-200;
+  @media (max-width: 768px) { padding: 20px; } }
+.grid      { display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  @media (max-width: 768px) { grid-template-columns: 1fr; gap: 24px; } }
+
+// ── Image side ─────────────────────────────────────────────────────────────
+.imgWrap   { border-radius: 16px; overflow: hidden; background: $grey-100; cursor: zoom-in; position: relative; padding-top: 100%; }
+.img       { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .3s; }
+.thumbs    { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.thumb     { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 2px solid $grey-200; cursor: pointer; transition: border-color .15s;
+  &:hover { border-color: $primary; } }
+
+// ── Info side ──────────────────────────────────────────────────────────────
+.name      { font-size: 26px; font-weight: 800; color: $black; margin: 0 0 12px; line-height: 1.2; letter-spacing: -0.02em; }
+.desc      { font-size: 14px; color: $grey-600; line-height: 1.7; margin: 12px 0 24px; white-space: pre-line; }
+
+.section   { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: $grey-600; margin: 0 0 10px; }
+
+// Color swatches
+.colors    { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.colorDot  { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid $grey-200; transition: all .2s; box-sizing: border-box;
+  &:hover    { transform: scale(1.15); }
+  &--active  { border-color: $primary; box-shadow: 0 0 0 2px $white inset; } }
+
+// Size chips
+.sizes     { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.sizeChip  { border: 1.5px solid $grey-200; background: $white; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: $font; color: $black; transition: all .15s;
+  &:hover       { border-color: $primary; color: $primary; }
+  &--active     { background: $primary; border-color: $primary; color: $white; }
+  &--outOfStock { opacity: .4; cursor: not-allowed; text-decoration: line-through; } }
+
+.stock     { font-size: 13px; font-weight: 600; margin-bottom: 24px;
+  &--ok  { color: $primary; }
+  &--out { color: #ef4444; } }
+
+// Action buttons
+.btnRow    { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.btnCart   { flex: 1; min-width: 180px; border: 2px solid $primary; background: $white; color: $primary; border-radius: 14px; padding: 14px 20px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: $font; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s;
+  &:hover     { background: #f0fdf4; }
+  &--added    { border-color: $primary; background: $primary; color: $white; &:hover { background: $primary-dk; } }
+  &:disabled  { opacity: .5; cursor: not-allowed; } }
+.btnViewCart { background: none; border: none; color: $grey-600; font-size: 14px; font-weight: 600; cursor: pointer; padding: 14px 16px; border-radius: 14px; display: flex; align-items: center; gap: 6px; font-family: $font; transition: color .15s;
+  &:hover { color: $primary; } }
+.btnBuy    { border: none; background: #111827; color: $white; border-radius: 14px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: $font; display: flex; align-items: center; gap: 8px; transition: background .15s; min-width: 180px;
+  &:hover     { background: #1f2937; }
+  &:disabled  { opacity: .5; cursor: not-allowed; } }

@@ -1,3 +1,4 @@
+// src/pages/Admin/ColorPage.tsx
 import { useState, useEffect } from "react";
 import DynamicList from "../../../Components/Admin/List/DynamicList";
 import type {
@@ -5,35 +6,35 @@ import type {
   Action,
 } from "../../../Components/Admin/List/DynamicList";
 import { ColorService } from "../../../Service/ColorService";
+import type { ColorResponse } from "../../../type/Color/ColorResponse";
 import ColorFormCreate from "./ColorFormCreate";
 import ColorFormUpdate from "./ColorFormUpdate";
-import type { ColorResponse } from "../../../type/Color/ColorResponse";
+import AdminModal from "../../../Components/Admin/common/AdminModal/AdminModal";
+import AdminPageState from "../../../Components/Admin/common/AdminPageState/AdminPageState";
+import styles from "./ColorPage.module.scss";
 
-// Extend ColorResponse so it satisfies DynamicList's Record<string, unknown> constraint
-type ColorRecord = ColorResponse & Record<string, unknown>;
+type ColorResponseRecord = ColorResponse & Record<string, unknown>;
 
 const ColorPage: React.FC = () => {
-  const [colors, setColors] = useState<ColorResponse[]>([]);
+  const [colors, setColorResponses] = useState<ColorResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-
-  const fetchColors = async () => {
+  const fetch = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await ColorService.getColorsPaged(
+      const res = await ColorService.getColorsPaged(
         0,
         1000,
         undefined,
         "code",
-        "asc"
+        "asc",
       );
-      setColors(response.content);
+      setColorResponses(res.content);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -42,183 +43,118 @@ const ColorPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchColors();
+    fetch();
   }, []);
 
-  // ============================================
-  // HANDLERS
-  // ============================================
-
-  const handleDelete = async (item: ColorRecord) => {
-    if (!confirm(`Bạn có chắc muốn xóa màu "${item.name}"?`)) return;
+  const handleDelete = async (item: ColorResponseRecord) => {
+    if (!confirm(`Bạn có chắc muốn xóa?`)) return;
     try {
       await ColorService.deleteColor(item.code);
-      alert("Xóa màu thành công");
-      fetchColors();
+      fetch();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Có lỗi xảy ra khi xóa");
     }
   };
 
-  const handleEdit = (item: ColorRecord) => {
-    setSelectedColorId(item.code);
-    setShowUpdateModal(true);
+  const handleEdit = (item: ColorResponseRecord) => {
+    setSelectedId(item.code as string);
+    setShowUpdate(true);
+  };
+  const onCreateOk = () => {
+    setShowCreate(false);
+    fetch();
+  };
+  const onUpdateOk = () => {
+    setShowUpdate(false);
+    setSelectedId(null);
+    fetch();
   };
 
-  const handleCreateSuccess = () => {
-    setShowCreateModal(false);
-    fetchColors();
-  };
-
-  const handleUpdateSuccess = () => {
-    setShowUpdateModal(false);
-    setSelectedColorId(null);
-    fetchColors();
-  };
-
-  const handleSearch = (searchText: string) => {
-    console.log("Searching for:", searchText);
-  };
-
-  // ============================================
-  // TABLE CONFIG
-  // ============================================
-
-  const columns: Column<ColorRecord>[] = [
+  const columns: Column<ColorResponseRecord>[] = [
     {
       key: "code",
       label: "Mã màu",
       sortable: true,
       searchable: true,
-      width: 150,
+      render: (item) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              backgroundColor: item.code as string,
+              border: "1px solid #e5e7eb",
+              cursor: "pointer",
+            }}
+            title="Click để copy"
+            onClick={() => {
+              navigator.clipboard.writeText(item.code as string);
+              alert("Đã copy: " + item.code);
+            }}
+          />
+          <span style={{ fontWeight: 500 }}>{item.code}</span>
+        </div>
+      ),
     },
     {
       key: "name",
       label: "Tên màu",
       sortable: true,
       searchable: true,
-      width: 200,
     },
   ];
-
-  const actions: Action<ColorRecord>[] = [
-    {
-      label: "Sửa",
-      onClick: handleEdit,
-      variant: "primary",
-    },
-    {
-      label: "Xóa",
-      onClick: handleDelete,
-      variant: "danger",
-    },
+  const actions: Action<ColorResponseRecord>[] = [
+    { label: "Sửa", onClick: handleEdit, variant: "primary" },
+    { label: "Xóa", onClick: handleDelete, variant: "danger" },
   ];
 
-  // ============================================
-  // RENDER
-  // ============================================
-
-  if (loading && colors.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-          <p className="mt-2 text-gray-600">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && colors.length === 0) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p className="font-bold">Lỗi</p>
-          <p>{error}</p>
-          <button
-            onClick={fetchColors}
-            className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Thử lại
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading && colors.length === 0)
+    return <AdminPageState loading error={null} onRetry={fetch} />;
+  if (error && colors.length === 0)
+    return <AdminPageState loading={false} error={error} onRetry={fetch} />;
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Quản lý màu sắc</h2>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Quản lý màu sắc</h2>
         <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded font-medium"
+          className={styles.createBtn}
+          onClick={() => setShowCreate(true)}
         >
-          + Tạo màu mới
+          + Tạo mới
         </button>
       </div>
-
-      {/* Table with built-in search, sort, filter */}
       <DynamicList
-        data={colors as ColorRecord[]}
+        data={colors as ColorResponseRecord[]}
         columns={columns}
         actions={actions}
-        keyExtractor={(item) => item.code as string}
-        emptyMessage="Không tìm thấy màu nào"
+        keyExtractor={(item) => item.code as string | number}
+        emptyMessage="Không có dữ liệu"
         loading={loading}
-        showGlobalSearch={true}
-        searchPlaceholder="Tìm kiếm theo mã hoặc tên màu..."
-        onSearch={handleSearch}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          pageSizeOptions: ["5", "10", "20", "50"],
-          showTotal: (total: number, range: [number, number]) =>
-            `${range[0]}-${range[1]} của ${total} màu`,
-        }}
+        showGlobalSearch
+        pageSize={10}
       />
-
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Tạo màu mới</h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <ColorFormCreate onSuccess={handleCreateSuccess} />
-          </div>
-        </div>
-      )}
-
-      {/* Update Modal */}
-      {showUpdateModal && selectedColorId !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Cập nhật màu</h3>
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedColorId(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <ColorFormUpdate id={selectedColorId} onSuccess={handleUpdateSuccess} />
-          </div>
-        </div>
-      )}
+      <AdminModal
+        open={showCreate}
+        title="Tạo mới"
+        onClose={() => setShowCreate(false)}
+      >
+        <ColorFormCreate onSuccess={onCreateOk} />
+      </AdminModal>
+      <AdminModal
+        open={showUpdate && selectedId !== null}
+        title="Cập nhật"
+        onClose={() => {
+          setShowUpdate(false);
+          setSelectedId(null);
+        }}
+      >
+        {selectedId !== null && (
+          <ColorFormUpdate id={selectedId} onSuccess={onUpdateOk} />
+        )}
+      </AdminModal>
     </div>
   );
 };
-
 export default ColorPage;

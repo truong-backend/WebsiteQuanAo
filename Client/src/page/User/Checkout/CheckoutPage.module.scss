@@ -1,0 +1,47 @@
+// CheckoutPage.module.scss
+$primary:    #22c55e;
+$primary-dk: #16a34a;
+$black:      #111827;
+$white:      #ffffff;
+$grey-50:    #f9fafb;
+$grey-100:   #f3f4f6;
+$grey-200:   #e5e7eb;
+$grey-400:   #9ca3af;
+$grey-600:   #4b5563;
+$font:       'Be Vietnam Pro', 'Segoe UI', sans-serif;
+
+.page      { padding: 40px 0; background: $grey-50; min-height: 70vh; font-family: $font; }
+.container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.title     { font-size: 28px; font-weight: 800; color: $black; letter-spacing: -0.02em; margin: 0 0 28px; }
+.layout    { display: grid; grid-template-columns: 1fr 340px; gap: 24px;
+  @media (max-width: 768px) { grid-template-columns: 1fr; } }
+
+// ── Form card ──────────────────────────────────────────────────────────────
+.formCard  { background: $white; border-radius: 16px; padding: 32px; border: 1px solid $grey-200; }
+.fieldset  { margin-bottom: 16px; }
+.label     { display: block; font-size: 13px; font-weight: 600; color: $grey-600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.input     { width: 100%; border: 1.5px solid $grey-200; border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: $font; color: $black; outline: none; transition: border-color .15s; box-sizing: border-box;
+  &:focus { border-color: $primary; }
+  &--textarea { resize: vertical; min-height: 88px; } }
+.error     { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+
+// ── Payment methods ────────────────────────────────────────────────────────
+.paySection { margin-top: 20px; }
+.payTitle   { font-size: 13px; font-weight: 600; color: $grey-600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.payOptions { display: flex; gap: 10px; flex-wrap: wrap; }
+.payOption  { flex: 1; min-width: 120px; border: 2px solid $grey-200; border-radius: 12px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: border-color .15s, background .15s; font-family: $font; background: $white;
+  &--active { border-color: $primary; background: #f0fdf4; }
+  &:hover   { border-color: $primary; }
+  input     { accent-color: $primary; }
+  span      { font-size: 14px; font-weight: 600; color: $black; } }
+
+.submitRow { display: flex; justify-content: flex-end; margin-top: 24px; }
+
+// ── Summary panel ──────────────────────────────────────────────────────────
+.summary   { background: $white; border-radius: 16px; padding: 24px; border: 1px solid $grey-200; height: fit-content; position: sticky; top: 88px;
+  &__title   { font-size: 17px; font-weight: 700; color: $black; margin: 0 0 16px; }
+  &__row     { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  &__name    { font-size: 13px; color: $grey-600; flex: 1; margin-right: 8px; }
+  &__divider { height: 1px; background: $grey-200; margin: 16px 0; }
+  &__total   { display: flex; justify-content: space-between; align-items: center; }
+  &__totalLbl { font-size: 15px; font-weight: 700; color: $black; } }

@@ -1,0 +1,76 @@
+// LoginPage.module.scss
+$primary:    #22c55e;
+$primary-dk: #16a34a;
+$black:      #111827;
+$white:      #ffffff;
+$grey-50:    #f9fafb;
+$grey-100:   #f3f4f6;
+$grey-200:   #e5e7eb;
+$grey-400:   #9ca3af;
+$grey-600:   #4b5563;
+$red:        #ef4444;
+$font:       'Be Vietnam Pro', 'Segoe UI', sans-serif;
+
+.page {
+  min-height: 100vh;
+  background: $grey-50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-family: $font;
+}
+
+.card {
+  background: $white;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid $grey-200;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 28px;
+  &__name { font-size: 24px; font-weight: 900; color: $black; letter-spacing: -0.5px;
+    span { color: $primary; } }
+  &__sub  { font-size: 14px; color: $grey-400; margin-top: 4px; }
+}
+
+.title { font-size: 20px; font-weight: 800; color: $black; margin: 0 0 24px; }
+
+.field  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.label  { font-size: 13px; font-weight: 600; color: $grey-600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+%input-base {
+  width: 100%; box-sizing: border-box;
+  border: 1.5px solid $grey-200; border-radius: 10px;
+  padding: 11px 14px; font-size: 14px; font-family: $font; color: $black;
+  background: $white; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  &::placeholder { color: $grey-400; }
+  &:focus { border-color: $primary; box-shadow: 0 0 0 3px rgba(34,197,94,.12); }
+  &:disabled { background: $grey-50; color: $grey-400; cursor: not-allowed; }
+}
+
+.inputWrap { position: relative;
+  input { @extend %input-base; padding-left: 40px; }
+}
+.inputIcon  { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: $grey-400; font-size: 16px; pointer-events: none; }
+.pwToggle   { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: $grey-400; font-size: 15px; padding: 4px; transition: color .15s;
+  &:hover { color: $black; } }
+
+.fieldError { font-size: 12px; color: $red; margin-top: 2px; }
+
+.submitBtn { width: 100%; background: $primary; color: $white; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: $font; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s, transform .15s; margin-top: 8px;
+  &:hover:not(:disabled) { background: $primary-dk; transform: translateY(-1px); }
+  &:disabled { opacity: .6; cursor: not-allowed; transform: none; } }
+
+.btnSpinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.footer { text-align: center; margin-top: 20px; font-size: 14px; color: $grey-600;
+  a { color: $primary; font-weight: 600; text-decoration: none; &:hover { text-decoration: underline; } } }
+
+.errorBox { background: #fef2f2; border: 1px solid #fecaca; color: $red; border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; }
