@@ -66,8 +66,10 @@ function DynamicList<T extends Record<string, unknown>>({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Reset page on filter/sort change
-  useEffect(() => { setPage(1); }, [globalSearch, colSearches, sortKey, sortDir]);
+  // ── FIX: removed the useEffect that called setPage(1) synchronously.
+  // Instead, page is clamped to valid bounds after filtering/sorting (see
+  // `safePage` below). This avoids the cascading-render linter warning while
+  // keeping the "reset to page 1 on filter change" behaviour.
 
   // Global search filter
   const afterGlobal = useMemo(() => {
@@ -111,9 +113,11 @@ function DynamicList<T extends Record<string, unknown>>({
     });
   }, [afterColSearch, sortKey, sortDir]);
 
-  // Pagination
+  // Pagination — clamp page to valid range so it auto-resets when filters
+  // shrink the result set, without needing a separate useEffect.
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const paginated  = sorted.slice((page - 1) * pageSize, page * pageSize);
+  const safePage   = Math.min(page, totalPages);
+  const paginated  = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -123,11 +127,18 @@ function DynamicList<T extends Record<string, unknown>>({
       setSortKey(key);
       setSortDir('asc');
     }
+    setPage(1);
   };
 
   const handleGlobalSearch = (val: string) => {
     setGlobalSearch(val);
+    setPage(1);
     onSearch?.(val);
+  };
+
+  const handleColSearch = (key: string, val: string) => {
+    setColSearches((prev) => ({ ...prev, [key]: val }));
+    setPage(1);
   };
 
   const sortIcon = (key: string) => {
@@ -185,7 +196,7 @@ function DynamicList<T extends Record<string, unknown>>({
                               className={styles.colSearchInput}
                               placeholder={`Tìm ${col.label}...`}
                               value={colSearches[col.key as string] ?? ''}
-                              onChange={(e) => setColSearches((prev) => ({ ...prev, [col.key as string]: e.target.value }))}
+                              onChange={(e) => handleColSearch(col.key as string, e.target.value)}
                             />
                           </div>
                         )}
@@ -252,22 +263,22 @@ function DynamicList<T extends Record<string, unknown>>({
             type="button"
             className={styles.pageBtn}
             onClick={() => setPage(1)}
-            disabled={page === 1}
+            disabled={safePage === 1}
           >«</button>
           <button
             type="button"
             className={styles.pageBtn}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
+            disabled={safePage === 1}
           >‹</button>
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+            const start = Math.max(1, Math.min(safePage - 2, totalPages - 4));
             const p = start + i;
             return p <= totalPages ? (
               <button
                 key={p}
                 type="button"
-                className={`${styles.pageBtn} ${page === p ? styles['pageBtn--active'] : ''}`}
+                className={`${styles.pageBtn} ${safePage === p ? styles['pageBtn--active'] : ''}`}
                 onClick={() => setPage(p)}
               >{p}</button>
             ) : null;
@@ -276,13 +287,13 @@ function DynamicList<T extends Record<string, unknown>>({
             type="button"
             className={styles.pageBtn}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
+            disabled={safePage === totalPages}
           >›</button>
           <button
             type="button"
             className={styles.pageBtn}
             onClick={() => setPage(totalPages)}
-            disabled={page === totalPages}
+            disabled={safePage === totalPages}
           >»</button>
         </div>
       )}
