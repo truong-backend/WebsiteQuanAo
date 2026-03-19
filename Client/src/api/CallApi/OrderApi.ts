@@ -60,12 +60,18 @@ class OrderApi extends BaseApi<
   createOrder(payload: CreateOrderRequest) {
     return this.axiosInstance.post<OrderResponse>("", payload);
   }
- 
+
+  // OrderApi.ts — thêm method này
+  async createUserOrder(payload: CreateOrderRequest): Promise<OrderResponse> {
+    const res = await this.axiosInstance.post<OrderResponse>("", payload);
+    return res.data;
+  }
+
   /** Lịch sử đơn hàng của user hiện tại */
   getMyOrders() {
     return this.axiosInstance.get<OrderResponse[]>("/me");
   }
- 
+
   /** Chi tiết đơn hàng */
   getOrderById(id: string) {
     return this.axiosInstance.get<OrderResponse>(`/${id}`);

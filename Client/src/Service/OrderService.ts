@@ -2,9 +2,13 @@ import axios from "axios";
 import { orderApi } from "../api/CallApi/OrderApi";
 import type { OrderCreateRequest } from "../type/Orders/OrderCreateRequest";
 import type { OrderUpdateRequest } from "../type/Orders/OrderUpdateRequest";
-import type { OrderResponse, OrderResponsePageResponse } from "../type/Orders/OrderResponse";
+import type {
+  OrderResponse,
+  OrderResponsePageResponse,
+} from "../type/Orders/OrderResponse";
 import { OrderStatus } from "../type/Orders/OrderStatus";
 import type { CartItem } from "./CartService";
+// import type { CreateOrderRequest } from "../type/Orders/OrderTypes";
 
 /** Lấy message lỗi từ response (hỗ trợ nhiều format backend) */
 function getErrorMessage(data: unknown, fallback: string): string {
@@ -27,7 +31,7 @@ export const OrderService = {
     status?: OrderStatus,
     startDate?: string,
     endDate?: string,
-    accountId?: number
+    accountId?: number,
   ): Promise<OrderResponsePageResponse> => {
     try {
       return await orderApi.getOrders(page, size, search, sortBy, sortDir, {
@@ -39,30 +43,34 @@ export const OrderService = {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         throw new Error(
-          getErrorMessage(error.response.data, "Không thể tải danh sách đơn hàng")
+          getErrorMessage(
+            error.response.data,
+            "Không thể tải danh sách đơn hàng",
+          ),
         );
       }
       throw new Error("Không thể kết nối đến server");
     }
   },
-
-  /** POST /orders — tạo đơn hàng */
   createOrder: async (payload: OrderCreateRequest): Promise<OrderResponse> => {
     try {
-      return await orderApi.create(payload);
+      // ✅ Gọi đúng method, trả về .data
+      return await orderApi.createUserOrder(payload);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         const data = error.response.data;
         const msg = getErrorMessage(data, "Có lỗi xảy ra khi tạo đơn hàng");
-        if (error.response.status === 409) throw new Error(msg || "Mã đơn hàng đã tồn tại");
-        if (error.response.status === 404) throw new Error(msg || "Không tìm thấy sản phẩm hoặc tài khoản");
-        if (error.response.status === 400) throw new Error(msg || "Dữ liệu không hợp lệ");
+        if (error.response.status === 409)
+          throw new Error(msg || "Mã đơn hàng đã tồn tại");
+        if (error.response.status === 404)
+          throw new Error(msg || "Không tìm thấy sản phẩm hoặc tài khoản");
+        if (error.response.status === 400)
+          throw new Error(msg || "Dữ liệu không hợp lệ");
         throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");
     }
   },
-
   /**
    * Tạo đơn hàng từ giỏ hàng (localStorage).
    *
@@ -76,7 +84,7 @@ export const OrderService = {
       address: string;
       note?: string;
       paymentType?: "COD" | "BANKING";
-    }
+    },
   ): Promise<OrderResponse> => {
     const payload: OrderCreateRequest = {
       phoneNumber: form.phoneNumber,
@@ -93,14 +101,22 @@ export const OrderService = {
   },
 
   /** PUT /orders/{id} */
-  updateOrder: async (id: string, payload: OrderUpdateRequest): Promise<OrderResponse> => {
+  updateOrder: async (
+    id: string,
+    payload: OrderUpdateRequest,
+  ): Promise<OrderResponse> => {
     try {
       return await orderApi.update(id, payload);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const msg = getErrorMessage(error.response.data, "Có lỗi xảy ra khi cập nhật đơn hàng");
-        if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
-        if (error.response.status === 400) throw new Error(msg || "Thao tác không hợp lệ");
+        const msg = getErrorMessage(
+          error.response.data,
+          "Có lỗi xảy ra khi cập nhật đơn hàng",
+        );
+        if (error.response.status === 404)
+          throw new Error("Không tìm thấy đơn hàng");
+        if (error.response.status === 400)
+          throw new Error(msg || "Thao tác không hợp lệ");
         throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");
@@ -113,8 +129,14 @@ export const OrderService = {
       return await orderApi.getById(id);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
-        throw new Error(getErrorMessage(error.response.data, "Có lỗi xảy ra khi lấy đơn hàng"));
+        if (error.response.status === 404)
+          throw new Error("Không tìm thấy đơn hàng");
+        throw new Error(
+          getErrorMessage(
+            error.response.data,
+            "Có lỗi xảy ra khi lấy đơn hàng",
+          ),
+        );
       }
       throw new Error("Không thể kết nối đến server");
     }
@@ -126,9 +148,10 @@ export const OrderService = {
       return await orderApi.delete(id);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        if (error.response.status === 404) throw new Error("Đơn hàng không tồn tại hoặc đã bị xóa");
+        if (error.response.status === 404)
+          throw new Error("Đơn hàng không tồn tại hoặc đã bị xóa");
         throw new Error(
-          getErrorMessage(error.response.data, "Không thể xóa đơn hàng này")
+          getErrorMessage(error.response.data, "Không thể xóa đơn hàng này"),
         );
       }
       throw new Error("Không thể kết nối đến server");
@@ -136,14 +159,22 @@ export const OrderService = {
   },
 
   /** PATCH /orders/{id}/status */
-  updateOrderStatus: async (id: string, status: OrderStatus): Promise<OrderResponse> => {
+  updateOrderStatus: async (
+    id: string,
+    status: OrderStatus,
+  ): Promise<OrderResponse> => {
     try {
       return await orderApi.updateStatus(id, status);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        const msg = getErrorMessage(error.response.data, "Có lỗi xảy ra khi cập nhật trạng thái");
-        if (error.response.status === 404) throw new Error("Không tìm thấy đơn hàng");
-        if (error.response.status === 400) throw new Error(msg || "Trạng thái không hợp lệ");
+        const msg = getErrorMessage(
+          error.response.data,
+          "Có lỗi xảy ra khi cập nhật trạng thái",
+        );
+        if (error.response.status === 404)
+          throw new Error("Không tìm thấy đơn hàng");
+        if (error.response.status === 400)
+          throw new Error(msg || "Trạng thái không hợp lệ");
         throw new Error(msg);
       }
       throw new Error("Không thể kết nối đến server");

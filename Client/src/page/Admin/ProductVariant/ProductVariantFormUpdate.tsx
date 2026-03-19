@@ -55,7 +55,7 @@ function ProductVariantFormUpdate({ id, onSuccess }: ProductVariantFormUpdatePro
     {
       name: "img",
       label: "URL hình ảnh",
-      type: "text",
+      type: "image",
       placeholder: "Nhập URL hình ảnh",
       required: true,
     },
