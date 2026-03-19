@@ -25,7 +25,7 @@ import CheckoutPage from "../page/User/Checkout/CheckoutPage";
 import OrderStatusPage from "../page/User/OrderStatus/OrderStatusPage";
 import OrderInvoicePage from "../page/User/OrderInvoice/OrderInvoicePage";
 import VnpayReturnPage from "../page/User/VnPay/VnpayReturnPage";
-import AccountProfilePage from "../page/User/AccountProfilePage/AccountProfilePage";
+// import AccountProfilePage from "../page/User/AccountProfilePage/AccountProfilePage";
 import ContactPage from "../page/User/ContactPage/ContactPage";
 import AboutPage from "../page/User/About/AboutPage";
 // import MomoReturnPage from "../page/Order/MomoReturnPage";
@@ -96,14 +96,14 @@ const AppRoutes: React.FC = () => (
         </ProtectedRoute>
       }
     />
-    <Route
+    {/* <Route
       path="/profile"
       element={
         <ProtectedRoute>
           <AccountProfilePage />
         </ProtectedRoute>
       }
-    />
+    /> */}
 
     {/* Admin */}
     <Route

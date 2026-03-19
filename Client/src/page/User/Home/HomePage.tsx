@@ -43,28 +43,6 @@ const TickerRow: React.FC<TickerRowProps> = ({ reverse = false, outlined = false
   );
 };
 
-// ─── CSS 3D Sphere ───────────────────────────────────────────────────────────
-
-const CssSphere: React.FC = () => (
-  <div className={styles.sphereWrap}>
-    {/* Outer glow ring */}
-    <div className={styles.sphereGlow} />
-    {/* Main sphere body */}
-    <div className={styles.sphere}>
-      {/* Layered gradient rings for depth */}
-      <div className={styles.sphereRing} />
-      <div className={`${styles.sphereRing} ${styles["sphereRing--2"]}`} />
-      <div className={`${styles.sphereRing} ${styles["sphereRing--3"]}`} />
-      <div className={`${styles.sphereRing} ${styles["sphereRing--4"]}`} />
-      {/* Highlight */}
-      <div className={styles.sphereHighlight} />
-      {/* Inner shine */}
-      <div className={styles.sphereShine} />
-    </div>
-    {/* Shadow beneath */}
-    <div className={styles.sphereShadow} />
-  </div>
-);
 
 // ─── Step Card ────────────────────────────────────────────────────────────────
 

@@ -4,9 +4,9 @@ import DynamicList from "../../../Components/Admin/List/DynamicList";
 import type { Column, Action } from "../../../Components/Admin/List/DynamicList";
 import { OrderService } from "../../../Service/OrderService";
 import type { OrderResponse } from "../../../type/Orders/OrderResponse";
-import { OrderStatus, OrderStatusLabels, OrderStatusColors } from "../../../type/Orders/OrderStatus";
-import OrderFormUpdate from "./OrderFormUpdate";
-import AdminModal from "../../../Components/Admin/common/AdminModal/AdminModal";
+import { OrderStatus, OrderStatusLabels } from "../../../type/Orders/OrderStatus";
+// import OrderFormUpdate from "./OrderFormUpdate";
+// import AdminModal from "../../../Components/Admin/common/AdminModal/AdminModal";
 import AdminPageState from "../../../Components/Admin/common/AdminPageState/AdminPageState";
 import styles from "./OrderPage.module.scss";
 
@@ -18,8 +18,8 @@ const OrderPage: React.FC = () => {
   const [orders, setOrders]     = useState<OrderResponse[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
-  const [showUpdate, setShowUpdate]   = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // const [showUpdate, setShowUpdate]   = useState(false);
+  // const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage]         = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [search, setSearch]     = useState("");
@@ -51,7 +51,7 @@ const OrderPage: React.FC = () => {
     catch (err) { alert(err instanceof Error ? err.message : "Lỗi khi xóa"); }
   };
 
-  const handleEdit = (item: OrderResponse) => { setSelectedId(item.id); setShowUpdate(true); };
+  // const handleEdit = (item: OrderResponse) => { setSelectedId(item.id); setShowUpdate(true); };
 
   const hasFilters = !!(filters.status || filters.startDate || filters.endDate || filters.accountId);
 
@@ -81,7 +81,7 @@ const OrderPage: React.FC = () => {
   ];
 
   const actions: Action<OrderResponse>[] = [
-    { label: "Sửa", onClick: handleEdit,   variant: "primary" },
+    // { label: "Sửa", onClick: handleEdit,   variant: "primary" },
     { label: "Xóa", onClick: handleDelete, variant: "danger"  },
   ];
 
@@ -153,9 +153,9 @@ const OrderPage: React.FC = () => {
         </div>
       )}
 
-      <AdminModal open={showUpdate && selectedId !== null} title="Cập nhật đơn hàng" onClose={() => { setShowUpdate(false); setSelectedId(null); }} size="lg">
+      {/* <AdminModal open={showUpdate && selectedId !== null} title="Cập nhật đơn hàng" onClose={() => { setShowUpdate(false); setSelectedId(null); }} size="lg">
         {selectedId && <OrderFormUpdate id={selectedId} onSuccess={() => { setShowUpdate(false); setSelectedId(null); fetch(); }} />}
-      </AdminModal>
+      </AdminModal> */}
     </div>
   );
 };

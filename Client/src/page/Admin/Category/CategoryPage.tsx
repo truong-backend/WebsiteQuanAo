@@ -4,7 +4,7 @@ import DynamicList from "../../../Components/Admin/List/DynamicList";
 import type { Column, Action } from "../../../Components/Admin/List/DynamicList";
 import { categoryService } from "../../../Service/categoryService";
 import type { CategoryResponse } from "../../../type/categotry/CategoryResponse";
-import type { CategoryOption } from "../../../type/categotry/CategoryOption";
+// import type { CategoryOption } from "../../../type/categotry/CategoryOption";
 import CategoryFormCreate from "./CategoryFormCreate";
 import CategoryFormUpdate from "./CategoryFormUpdate";
 import AdminModal from "../../../Components/Admin/common/AdminModal/AdminModal";
@@ -15,16 +15,16 @@ type CategoryRecord = CategoryResponse & Record<string, unknown>;
 
 const CategoryPage: React.FC = () => {
   const [categories, setCategories]         = useState<CategoryResponse[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  // const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
   const [showCreate, setShowCreate]   = useState(false);
   const [showUpdate, setShowUpdate]   = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  useEffect(() => {
-    categoryService.getRootCategoryOptions().then(setCategoryOptions).catch(console.error);
-  }, []);
+  // useEffect(() => {
+  //   categoryService.getRootCategoryOptions().then(setCategoryOptions).catch(console.error);
+  // }, []);
 
   const fetch = async () => {
     try {

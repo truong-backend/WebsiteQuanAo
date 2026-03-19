@@ -20,11 +20,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, isAdded
     ? "https://via.placeholder.com/300?text=No+Image"
     : product.img.startsWith("http") ? product.img : `http://localhost:8080${product.img}`;
 
-  const handleBuyNow = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onAddToCart) onAddToCart(product);
-    navigate("/checkout");
-  };
 
   return (
     <div className={styles.card}>

@@ -1,5 +1,5 @@
 // src/Components/User/ui/StatusChip/StatusChip.tsx
-import { OrderStatusLabels } from "../../../../type/Orders/OrderStatus";
+import { OrderStatus, OrderStatusLabels } from "../../../../type/Orders/OrderStatus";
 import styles from "./StatusChip.module.scss";
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -7,7 +7,9 @@ const STATUS_VARIANT: Record<string, string> = {
   DELIVERED: "success", CANCELLED: "error",
 };
 
-interface StatusChipProps { status: string; }
+interface StatusChipProps { 
+  status: OrderStatus; 
+}
 
 const StatusChip: React.FC<StatusChipProps> = ({ status }) => (
   <span className={`${styles.chip} ${styles[`chip--${STATUS_VARIANT[status] ?? "default"}`]}`}>

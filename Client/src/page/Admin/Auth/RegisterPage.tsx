@@ -10,7 +10,7 @@ type FieldErrors = Partial<Record<keyof Fields, string>>;
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
-  const [values, setValues]     = useState<Fields>({ name: '', email: '', password: '', confirmPassword: '' });
+  const [values, setValues]     = useState<Fields>({ name: '', email: '', password: '', confirmPassword: ''});
   const [errors, setErrors]     = useState<FieldErrors>({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading]   = useState(false);

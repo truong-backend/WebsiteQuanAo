@@ -87,7 +87,7 @@ const CartPage: React.FC = () => {
                 <div className={styles.summary__divider} />
                 <div className={styles.summary__total}>
                   <span className={styles.summary__totalLabel}>Tổng cộng</span>
-                  <PriceText amount={total} variant="h6" fontSize={18} />
+                  <PriceText amount={total}  fontSize={18} />
                 </div>
                 <button className={styles.btnCheckout} onClick={() => navigate("/checkout")}>
                   Tiến hành thanh toán
