@@ -1,4 +1,4 @@
-// src/components/common/Button/AppButton.tsx
+
 import { Button as MuiButton, CircularProgress } from "@mui/material";
 import type { ButtonProps } from "@mui/material";
 
