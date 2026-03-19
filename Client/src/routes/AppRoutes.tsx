@@ -3,8 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { authService } from "../Service/AuthService";
 
 // ── Auth Pages ──────────────────────────────────────────────────────────────
-import LoginPage from "../page/Admin/Auth/LoginPage";
-import RegisterPage from "../page/Admin/Auth/RegisterPage";
+import LoginPage from "../page/Auth/LoginPage";
+import RegisterPage from "../page/Auth/RegisterPage";
 
 // ── Admin ───────────────────────────────────────────────────────────────────
 import AdminLayout from "../Components/Admin/layouts/AdminLayout";
