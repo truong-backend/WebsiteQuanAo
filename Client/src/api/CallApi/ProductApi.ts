@@ -5,6 +5,7 @@ import type { ProductCreateRequest } from "../../type/product/ProductCreateReque
 import type { ProductUpdateRequest } from "../../type/product/ProductUpdateRequest.ts";
 import type { ProductOption } from "../../type/product/ProductOption.ts";
 import type { ProductListItem } from "../../type/product/ProductListItem.ts";
+import type { ProductDetailResponse } from "../../type/product/ProductDetailResponse.ts";
 
 class ProductApi extends BaseApi<
   ProductResponse,
@@ -71,6 +72,16 @@ class ProductApi extends BaseApi<
     if (maxPrice !== undefined) params.maxPrice = maxPrice;
 
     return this.customGet<PageResponse<ProductListItem>>('/listing', { params });
+  }
+
+    /** Lấy chi tiết sản phẩm theo ID */
+  getDetailById(id: string) {
+    return this.axiosInstance.get<ProductDetailResponse>(`/${id}`);
+  }
+ 
+  /** Lấy chi tiết sản phẩm theo path/slug */
+  getDetailByPath(path: string) {
+    return this.axiosInstance.get<ProductDetailResponse>(`/path/${path}`);
   }
 }
 

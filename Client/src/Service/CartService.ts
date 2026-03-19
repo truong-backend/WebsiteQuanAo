@@ -2,11 +2,15 @@
  * Giỏ hàng (localStorage). Dùng thống nhất ở CartPage, CheckoutPage, ProductDetailPage.
  */
 export interface CartItem {
+  /** productVariantId — key duy nhất, dùng khi gửi lên server */
   id: string;
   name: string;
   price: number;
   img: string;
   quantity: number;
+  /** Thông tin hiển thị thêm (tuỳ chọn) */
+  colorName?: string;
+  sizeName?: string;
 }
 
 const CART_KEY = "cart_items";
@@ -33,19 +37,39 @@ export const CartService = {
     writeCart(items);
   },
 
-  addItem(product: { id: string; name: string; price: number; img: string }, quantity = 1): void {
+  /**
+   * Thêm sản phẩm vào giỏ từ ProductDetailPage.
+   * id = productVariantId (key phân biệt variant)
+   */
+  addItemFromVariant(item: {
+    id: string; // productVariantId
+    name: string;
+    price: number;
+    img: string;
+    quantity: number;
+    colorName?: string;
+    sizeName?: string;
+  }): void {
+    const cart = readCart();
+    const existing = cart.find((i) => i.id === item.id);
+    if (existing) {
+      existing.quantity += item.quantity;
+    } else {
+      cart.push({ ...item });
+    }
+    writeCart(cart);
+  },
+
+  addItem(
+    product: { id: string; name: string; price: number; img: string },
+    quantity = 1
+  ): void {
     const cart = readCart();
     const existing = cart.find((i) => i.id === product.id);
     if (existing) {
       existing.quantity += quantity;
     } else {
-      cart.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        img: product.img,
-        quantity,
-      });
+      cart.push({ ...product, quantity });
     }
     writeCart(cart);
   },
@@ -73,5 +97,9 @@ export const CartService = {
 
   getTotal(): number {
     return readCart().reduce((sum, i) => sum + i.price * i.quantity, 0);
+  },
+
+  getItemCount(): number {
+    return readCart().reduce((sum, i) => sum + i.quantity, 0);
   },
 };

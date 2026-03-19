@@ -3,6 +3,7 @@ import { BaseApi } from "../BaseApi/baseApi";
 import type { OrderCreateRequest } from "../../type/Orders/OrderCreateRequest";
 import type { OrderUpdateRequest } from "../../type/Orders/OrderUpdateRequest";
 import type { OrderResponse } from "../../type/Orders/OrderResponse";
+import type { CreateOrderRequest } from "../../type/Orders/OrderTypes";
 
 class OrderApi extends BaseApi<
   OrderResponse,
@@ -53,6 +54,21 @@ class OrderApi extends BaseApi<
       { params: { status } },
     );
     return response.data;
+  }
+
+  /** Tạo đơn hàng mới */
+  createOrder(payload: CreateOrderRequest) {
+    return this.axiosInstance.post<OrderResponse>("", payload);
+  }
+ 
+  /** Lịch sử đơn hàng của user hiện tại */
+  getMyOrders() {
+    return this.axiosInstance.get<OrderResponse[]>("/me");
+  }
+ 
+  /** Chi tiết đơn hàng */
+  getOrderById(id: string) {
+    return this.axiosInstance.get<OrderResponse>(`/${id}`);
   }
 }
 

@@ -1,7 +1,7 @@
 // src/pages/Product/ProductListPage.tsx
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ShoppingBagOutlined } from "@mui/icons-material";
+import { ShoppingBagOutlined, FilterList as FilterListIcon } from "@mui/icons-material";
 import { Pagination } from "@mui/material";
 import { ProductService } from "../../../Service/ProductService";
 import { categoryService } from "../../../Service/categoryService";
@@ -26,25 +26,27 @@ const TOAST_DURATION_MS = 2500;
 
 const ProductListPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts]   = useState<ProductListItem[]>([]);
-  const [categories, setCategories] = useState<SelectOption[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages]   = useState(0);
-  const [toastOpen, setToastOpen]   = useState(false);
+  const [products, setProducts]         = useState<ProductListItem[]>([]);
+  const [categories, setCategories]     = useState<SelectOption[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+  const [currentPage, setCurrentPage]   = useState(0);
+  const [totalPages, setTotalPages]     = useState(0);
+  const [toastOpen, setToastOpen]       = useState(false);
   const [toastProduct, setToastProduct] = useState<{ name: string; id: string } | null>(null);
-  const [addedIds, setAddedIds]     = useState<Set<string>>(new Set());
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") ?? "");
-  const [categoryId, setCategoryId]   = useState<number | undefined>(searchParams.get("category") ? Number(searchParams.get("category")) : undefined);
-  const [minPrice, setMinPrice]   = useState(DEFAULT_MIN_PRICE);
-  const [maxPrice, setMaxPrice]   = useState(DEFAULT_MAX_PRICE);
-  const [sortBy, setSortBy]       = useState<SortBy>((searchParams.get("sortBy") as SortBy) ?? "price");
-  const [sortDir, setSortDir]     = useState<SortDir>((searchParams.get("sortDir") as SortDir) ?? "desc");
+  const [addedIds, setAddedIds]         = useState<Set<string>>(new Set());
+  const [searchInput, setSearchInput]   = useState(searchParams.get("search") ?? "");
+  const [searchQuery, setSearchQuery]   = useState(searchParams.get("search") ?? "");
+  const [categoryId, setCategoryId]     = useState<number | undefined>(searchParams.get("category") ? Number(searchParams.get("category")) : undefined);
+  const [minPrice, setMinPrice]         = useState(DEFAULT_MIN_PRICE);
+  const [maxPrice, setMaxPrice]         = useState(DEFAULT_MAX_PRICE);
+  const [sortBy, setSortBy]             = useState<SortBy>((searchParams.get("sortBy") as SortBy) ?? "price");
+  const [sortDir, setSortDir]           = useState<SortDir>((searchParams.get("sortDir") as SortDir) ?? "desc");
+  const [drawerOpen, setDrawerOpen]     = useState(false);
 
   useEffect(() => {
-    setSearchInput(searchParams.get("search") ?? ""); setSearchQuery(searchParams.get("search") ?? "");
+    setSearchInput(searchParams.get("search") ?? "");
+    setSearchQuery(searchParams.get("search") ?? "");
     setCategoryId(searchParams.get("category") ? Number(searchParams.get("category")) : undefined);
     setCurrentPage(0);
   }, [searchParams.get("search"), searchParams.get("category")]);
@@ -71,7 +73,10 @@ const ProductListPage: React.FC = () => {
 
   useEffect(() => { setCurrentPage(0); }, [searchQuery, categoryId, minPrice, maxPrice, sortBy, sortDir]);
 
-  const handleReset = () => { setSearchInput(""); setSearchQuery(""); setCategoryId(undefined); setMinPrice(DEFAULT_MIN_PRICE); setMaxPrice(DEFAULT_MAX_PRICE); };
+  const handleReset = () => {
+    setSearchInput(""); setSearchQuery(""); setCategoryId(undefined);
+    setMinPrice(DEFAULT_MIN_PRICE); setMaxPrice(DEFAULT_MAX_PRICE);
+  };
 
   const handleAddToCart = (product: ProductListItem) => {
     CartService.addItem({ id: product.id, name: product.name, price: product.price, img: product.img }, 1);
@@ -84,66 +89,93 @@ const ProductListPage: React.FC = () => {
 
   return (
     <PageLayout>
+      {/* Overlay */}
+      <div
+        className={`${styles.overlay} ${drawerOpen ? styles.overlayOpen : ""}`}
+        onClick={() => setDrawerOpen(false)}
+      />
+
+      {/* Drawer */}
+      <div className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ""}`}>
+        <div className={styles.drawerHeader}>
+          <span className={styles.drawerTitle}>🎚 Bộ lọc</span>
+          <button className={styles.drawerClose} onClick={() => setDrawerOpen(false)}>✕</button>
+        </div>
+        <div className={styles.drawerBody}>
+          <Sidebar
+            searchInput={searchInput} onSearchChange={setSearchInput}
+            categoryId={categoryId} onCategoryChange={setCategoryId}
+            categories={categories}
+            minPrice={minPrice} maxPrice={maxPrice}
+            onMinPriceChange={setMinPrice} onMaxPriceChange={setMaxPrice}
+            onReset={handleReset}
+          />
+        </div>
+      </div>
+
       <div className={styles.page}>
         <div className={styles.container}>
           <div className={styles.layout}>
-
-            {/* Sidebar */}
-            <div>
-              <Sidebar searchInput={searchInput} onSearchChange={setSearchInput} categoryId={categoryId} onCategoryChange={setCategoryId} categories={categories} minPrice={minPrice} maxPrice={maxPrice} onMinPriceChange={setMinPrice} onMaxPriceChange={setMaxPrice} onReset={handleReset} />
-            </div>
-
-            {/* Main */}
-            <div>
-              <div className={styles.toolbar}>
-                <div className={styles.toolLeft}>
-                  <h1 className={styles.toolTitle}>{activeCategoryName ?? "Sản phẩm"}</h1>
-                  {!loading && <p className={styles.toolCount}>Tìm thấy {products.length} sản phẩm{activeCategoryName ? ` trong "${activeCategoryName}"` : ""}</p>}
-                </div>
-                <div className={styles.toolRight}>
-                  <div className={styles.sortGroup}>
-                    <button className={`${styles.sortBtn} ${sortBy === "price" ? styles["sortBtn--active"] : ""}`} onClick={() => setSortBy("price")}>Giá</button>
-                    <button className={`${styles.sortBtn} ${sortBy === "name"  ? styles["sortBtn--active"] : ""}`} onClick={() => setSortBy("name")}>Tên</button>
-                  </div>
-                  <button className={styles.dirBtn} onClick={() => setSortDir((p) => p === "asc" ? "desc" : "asc")}>
-                    {sortDir === "asc" ? "↑" : "↓"}
-                  </button>
-                </div>
+            {/* Toolbar */}
+            <div className={styles.toolbar}>
+              <div className={styles.toolLeft}>
+                <h1 className={styles.toolTitle}>{activeCategoryName ?? "Sản phẩm"}</h1>
+                {!loading && (
+                  <p className={styles.toolCount}>
+                    Tìm thấy {products.length} sản phẩm{activeCategoryName ? ` trong "${activeCategoryName}"` : ""}
+                  </p>
+                )}
               </div>
+              <div className={styles.toolRight}>
+                {/* Filter button */}
+                <button className={styles.filterBtn} onClick={() => setDrawerOpen(true)}>
+                  <FilterListIcon fontSize="small" /> Bộ lọc
+                </button>
 
-              {loading && (
-                <div className={styles.loading}>
-                  <div className={styles.spinner} />
-                  <span>Đang tải sản phẩm...</span>
+                <div className={styles.sortGroup}>
+                  <button className={`${styles.sortBtn} ${sortBy === "price" ? styles["sortBtn--active"] : ""}`} onClick={() => setSortBy("price")}>Giá</button>
+                  <button className={`${styles.sortBtn} ${sortBy === "name"  ? styles["sortBtn--active"] : ""}`} onClick={() => setSortBy("name")}>Tên</button>
                 </div>
-              )}
-              {error && !loading && <ErrorAlert message={error} onRetry={fetchProducts} />}
-              {!loading && !error && products.length === 0 && (
-                <EmptyState icon={<ShoppingBagOutlined sx={{ fontSize: 56 }} />} title="Không tìm thấy sản phẩm" description="Thử thay đổi bộ lọc hoặc tìm kiếm khác" />
-              )}
-              {!loading && !error && products.length > 0 && (
-                <>
-                  <div className={styles.grid}>
-                    {products.map((p) => (
-                      <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} isAdded={addedIds.has(p.id)} />
-                    ))}
-                  </div>
-                  {totalPages > 1 && (
-                    <Pagination
-                      count={totalPages} page={currentPage + 1}
-                      onChange={(_, page) => { setCurrentPage(page - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      color="primary" size="large" showFirstButton showLastButton
-                      sx={{ display: "flex", justifyContent: "center", mt: 4,
-                        "& .MuiPaginationItem-root": { borderRadius: "10px", fontWeight: 600 },
-                        "& .Mui-selected": { backgroundColor: "#22c55e !important" } }}
-                    />
-                  )}
-                </>
-              )}
+                <button className={styles.dirBtn} onClick={() => setSortDir((p) => p === "asc" ? "desc" : "asc")}>
+                  {sortDir === "asc" ? "↑" : "↓"}
+                </button>
+              </div>
             </div>
+
+            {/* Product area — full width */}
+            {loading && (
+              <div className={styles.loading}>
+                <div className={styles.spinner} />
+                <span>Đang tải sản phẩm...</span>
+              </div>
+            )}
+            {error && !loading && <ErrorAlert message={error} onRetry={fetchProducts} />}
+            {!loading && !error && products.length === 0 && (
+              <EmptyState icon={<ShoppingBagOutlined sx={{ fontSize: 56 }} />} title="Không tìm thấy sản phẩm" description="Thử thay đổi bộ lọc hoặc tìm kiếm khác" />
+            )}
+            {!loading && !error && products.length > 0 && (
+              <>
+                <div className={styles.grid}>
+                  {products.map((p) => (
+                    <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} isAdded={addedIds.has(p.id)} />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <Pagination
+                    count={totalPages} page={currentPage + 1}
+                    onChange={(_, page) => { setCurrentPage(page - 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    color="primary" size="large" showFirstButton showLastButton
+                    sx={{ display: "flex", justifyContent: "center", mt: 4,
+                      "& .MuiPaginationItem-root": { borderRadius: "10px", fontWeight: 600 },
+                      "& .Mui-selected": { backgroundColor: "#22c55e !important" } }}
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
+
       <AddToCartToast open={toastOpen} productName={toastProduct?.name ?? null} onClose={() => setToastOpen(false)} />
     </PageLayout>
   );

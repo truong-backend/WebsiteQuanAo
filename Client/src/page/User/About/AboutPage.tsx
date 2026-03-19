@@ -1,10 +1,13 @@
 // src/pages/User/About/AboutPage.tsx
 import React from "react";
 import styles from "./AboutPage.module.scss";
+import PageLayout from "../../../Components/User/layout/PageLayout/PageLayout";
 
 const AboutPage: React.FC = () => {
   return (
-    <div className={styles.container}>
+
+    <PageLayout>
+      <div className={styles.container}>
       <div className={styles.hero}>
         <h1>Về Chúng Tôi</h1>
         <p>
@@ -37,6 +40,7 @@ const AboutPage: React.FC = () => {
         </ul>
       </div>
     </div>
+    </PageLayout>
   );
 };
 

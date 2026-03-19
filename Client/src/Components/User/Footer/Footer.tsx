@@ -16,27 +16,36 @@ const STRIP_ITEMS = [
 const NAV_LINKS = {
   "Khám phá": [
     { label: "Tất cả sản phẩm", to: "/products" },
-    { label: "Hàng mới về",     to: "/products?sort=new" },
-    { label: "Bán chạy nhất",   to: "/products?sort=popular" },
-    { label: "Ưu đãi hôm nay",  to: "/products?sale=true" },
+    { label: "Hàng mới về", to: "/products?sort=new" },
+    { label: "Bán chạy nhất", to: "/products?sort=popular" },
+    { label: "Ưu đãi hôm nay", to: "/products?sale=true" },
   ],
   "Hỗ trợ": [
     { label: "Chính sách đổi trả", to: "#" },
     { label: "Hướng dẫn mua hàng", to: "#" },
-    { label: "Tra cứu đơn hàng",   to: "/orders" },
-    { label: "Liên hệ",            to: "#" },
+    { label: "Tra cứu đơn hàng", to: "/orders" },
+    { label: "Liên hệ", to: "#" },
   ],
   "Tài khoản": [
-    { label: "Đăng nhập",        to: "/login" },
-    { label: "Đăng ký",          to: "/register" },
-    { label: "Trang cá nhân",    to: "/profile" },
+    { label: "Đăng nhập", to: "/login" },
+    { label: "Đăng ký", to: "/register" },
+    { label: "Trang cá nhân", to: "/profile" },
     { label: "Lịch sử đơn hàng", to: "/orders" },
   ],
 };
 
 const SOCIALS = ["f", "ig", "yt", "tt"] as const;
 const SOCIAL_LABELS: Record<string, string> = {
-  f: "F", ig: "IG", yt: "YT", tt: "TK",
+  f: "F",
+  ig: "IG",
+  yt: "YT",
+  tt: "TK",
+};
+const SOCIAL_LINKS: Record<string, string> = {
+  f: "https://www.facebook.com/thanhtruong2k3/", 
+  ig: "https://www.instagram.com/quyhacde/",
+  yt: "https://www.youtube.com/@ThanhTruongNguyen-u1b",
+  tt: "https://www.tiktok.com/@ng_thanh_truong",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -49,24 +58,26 @@ const Footer: React.FC = () => {
 
   return (
     <footer className={styles.footer}>
-
       {/* ── Scrolling strip ─────────────────────────────────────────── */}
       <div className={styles.strip}>
         <div className={styles.strip__track}>
           {stripItems.map((item, i) => (
-            <span key={i} className={styles.strip__item}>{item}</span>
+            <span key={i} className={styles.strip__item}>
+              {item}
+            </span>
           ))}
         </div>
         <div className={styles.strip__track} aria-hidden>
           {stripItems.map((item, i) => (
-            <span key={`dup-${i}`} className={styles.strip__item}>{item}</span>
+            <span key={`dup-${i}`} className={styles.strip__item}>
+              {item}
+            </span>
           ))}
         </div>
       </div>
 
       {/* ── Main grid ───────────────────────────────────────────────── */}
       <div className={styles.main}>
-
         {/* Brand */}
         <div className={styles.brand}>
           <a href="/" className={styles.brand__logo}>
@@ -79,9 +90,16 @@ const Footer: React.FC = () => {
           </p>
           <div className={styles.brand__socials}>
             {SOCIALS.map((s) => (
-              <button key={s} className={styles.brand__socialBtn} title={s.toUpperCase()}>
+              <a
+                key={s}
+                href={SOCIAL_LINKS[s]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.brand__socialBtn}
+                title={s.toUpperCase()}
+              >
                 {SOCIAL_LABELS[s]}
-              </button>
+              </a>
             ))}
           </div>
         </div>
@@ -111,11 +129,14 @@ const Footer: React.FC = () => {
         <div className={styles.bottom__inner}>
           <p className={styles.bottom__copy}>
             © {new Date().getFullYear()}{" "}
-            <span className={styles.bottom__highlight}>ShopVN</span>. All rights reserved.
+            <span className={styles.bottom__highlight}>ShopVN</span>. All rights
+            reserved.
           </p>
           <div className={styles.bottom__badges}>
             {["VNPAY", "MoMo", "COD", "SSL"].map((b) => (
-              <span key={b} className={styles.bottom__badge}>{b}</span>
+              <span key={b} className={styles.bottom__badge}>
+                {b}
+              </span>
             ))}
           </div>
         </div>

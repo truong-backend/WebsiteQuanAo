@@ -33,20 +33,39 @@ const CheckoutPage: React.FC = () => {
     e.preventDefault();
     if (!items.length) return;
     try {
-      setSubmitting(true); setError(null);
-      const order = await OrderService.createOrderFromCart(items, { phoneNumber, address, note: note || undefined });
+      setSubmitting(true);
+      setError(null);
+
+      // VNPAY / MOMO → backend nhận "BANKING", rồi redirect gateway
+      const backendPaymentType = paymentMethod === "COD" ? "COD" : "BANKING";
+
+      const order = await OrderService.createOrderFromCart(items, {
+        phoneNumber,
+        address,
+        note: note || undefined,
+        paymentType: backendPaymentType,
+      });
+
       if (paymentMethod === "VNPAY") {
         const url = await PaymentGatewayService.createVnpayPayment(order.id, total);
-        CartService.clear(); window.location.href = url; return;
+        CartService.clear();
+        window.location.href = url;
+        return;
       }
       if (paymentMethod === "MOMO") {
         const url = await PaymentGatewayService.createMomoPayment(order.id, total);
-        CartService.clear(); window.location.href = url; return;
+        CartService.clear();
+        window.location.href = url;
+        return;
       }
-      CartService.clear(); navigate(`/orders/${order.id}`);
+
+      CartService.clear();
+      navigate(`/orders/${order.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tạo đơn hàng mới");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!items.length) return (
@@ -66,29 +85,60 @@ const CheckoutPage: React.FC = () => {
           <h1 className={styles.title}>Thanh toán</h1>
           <div className={styles.layout}>
 
-            {/* Form */}
+            {/* ── Form ── */}
             <form className={styles.formCard} onSubmit={handleSubmit}>
               {error && <div className={styles.error}>{error}</div>}
 
               <div className={styles.fieldset}>
                 <label className={styles.label}>Số điện thoại *</label>
-                <input className={styles.input} type="tel" required value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="0901 234 567" />
+                <input
+                  className={styles.input}
+                  type="tel"
+                  required
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="0901 234 567"
+                />
               </div>
+
               <div className={styles.fieldset}>
                 <label className={styles.label}>Địa chỉ giao hàng *</label>
-                <input className={styles.input} required value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Số nhà, đường, quận, thành phố" />
+                <input
+                  className={styles.input}
+                  required
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Số nhà, đường, quận, thành phố"
+                />
               </div>
+
               <div className={styles.fieldset}>
                 <label className={styles.label}>Ghi chú</label>
-                <textarea className={`${styles.input} ${styles["input--textarea"]}`} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Yêu cầu đặc biệt, thời gian giao hàng..." />
+                <textarea
+                  className={`${styles.input} ${styles["input--textarea"]}`}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Yêu cầu đặc biệt, thời gian giao hàng..."
+                />
               </div>
 
               <div className={styles.paySection}>
                 <p className={styles.payTitle}>Phương thức thanh toán</p>
                 <div className={styles.payOptions}>
                   {PAY_OPTIONS.map((opt) => (
-                    <label key={opt.value} className={`${styles.payOption} ${paymentMethod === opt.value ? styles["payOption--active"] : ""}`}>
-                      <input type="radio" name="payment" value={opt.value} checked={paymentMethod === opt.value} onChange={() => setPaymentMethod(opt.value)} />
+                    <label
+                      key={opt.value}
+                      className={`${styles.payOption} ${
+                        paymentMethod === opt.value ? styles["payOption--active"] : ""
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={opt.value}
+                        checked={paymentMethod === opt.value}
+                        onChange={() => setPaymentMethod(opt.value)}
+                      />
                       <span>{opt.emoji} {opt.label}</span>
                     </label>
                   ))}
@@ -102,12 +152,21 @@ const CheckoutPage: React.FC = () => {
               </div>
             </form>
 
-            {/* Summary */}
+            {/* ── Summary ── */}
             <div className={styles.summary}>
               <p className={styles.summary__title}>Tóm tắt đơn hàng</p>
               {items.map((item) => (
                 <div key={item.id} className={styles.summary__row}>
-                  <span className={styles.summary__name}>{item.name} × {item.quantity}</span>
+                  <div className={styles.summary__nameBlock}>
+                    <span className={styles.summary__name}>
+                      {item.name} × {item.quantity}
+                    </span>
+                    {(item.colorName || item.sizeName) && (
+                      <span className={styles.summary__variant}>
+                        {[item.colorName, item.sizeName].filter(Boolean).join(" / ")}
+                      </span>
+                    )}
+                  </div>
                   <PriceText amount={item.price * item.quantity} />
                 </div>
               ))}
@@ -117,6 +176,7 @@ const CheckoutPage: React.FC = () => {
                 <PriceText amount={total} fontWeight="bold" />
               </div>
             </div>
+
           </div>
         </div>
       </div>

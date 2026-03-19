@@ -20,8 +20,6 @@ export class BaseApi<
         "Content-Type": "application/json",
       },
     });
-
-    // ─── Request interceptor: gắn token vào mỗi request ──────────────────────
     this.axiosInstance.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem("token");

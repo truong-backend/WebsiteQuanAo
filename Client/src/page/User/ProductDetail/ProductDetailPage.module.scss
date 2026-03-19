@@ -1,4 +1,6 @@
 // ProductDetailPage.module.scss
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+
 $primary:    #22c55e;
 $primary-dk: #16a34a;
 $black:      #111827;
@@ -10,57 +12,631 @@ $grey-400:   #9ca3af;
 $grey-600:   #4b5563;
 $font:       'Be Vietnam Pro', 'Segoe UI', sans-serif;
 
-.page      { padding: 32px 0; background: $grey-50; min-height: 80vh; font-family: $font; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+// ─── Page ──────────────────────────────────────────────────────────────────
+.page {
+  background: $grey-50;
+  min-height: 100vh;
+  font-family: $font;
+  padding: 32px 0 80px;
+}
 
-.topBar    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: $grey-400;
-  a    { color: $grey-600; text-decoration: none; transition: color .15s; &:hover { color: $primary; } }
-  span { color: $black; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; } }
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
 
-.card      { background: $white; border-radius: 20px; padding: 36px; border: 1px solid $grey-200;
-  @media (max-width: 768px) { padding: 20px; } }
-.grid      { display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
-  @media (max-width: 768px) { grid-template-columns: 1fr; gap: 24px; } }
+// ─── Breadcrumb ────────────────────────────────────────────────────────────
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: $grey-400;
 
-// ── Image side ─────────────────────────────────────────────────────────────
-.imgWrap   { border-radius: 16px; overflow: hidden; background: $grey-100; cursor: zoom-in; position: relative; padding-top: 100%; }
-.img       { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .3s; }
-.thumbs    { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.thumb     { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; border: 2px solid $grey-200; cursor: pointer; transition: border-color .15s;
-  &:hover { border-color: $primary; } }
+  a { color: $grey-600; text-decoration: none; &:hover { color: $primary; } }
+  span { color: $grey-400; }
+  span:last-child { color: $black; font-weight: 500; }
+}
 
-// ── Info side ──────────────────────────────────────────────────────────────
-.name      { font-size: 26px; font-weight: 800; color: $black; margin: 0 0 12px; line-height: 1.2; letter-spacing: -0.02em; }
-.desc      { font-size: 14px; color: $grey-600; line-height: 1.7; margin: 12px 0 24px; white-space: pre-line; }
+// ─── Main layout ───────────────────────────────────────────────────────────
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
 
-.section   { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: $grey-600; margin: 0 0 10px; }
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
 
-// Color swatches
-.colors    { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-.colorDot  { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 3px solid $grey-200; transition: all .2s; box-sizing: border-box;
-  &:hover    { transform: scale(1.15); }
-  &--active  { border-color: $primary; box-shadow: 0 0 0 2px $white inset; } }
+// ─── Gallery ───────────────────────────────────────────────────────────────
+.gallery {
+  display: flex;
+  gap: 12px;
+  position: sticky;
+  top: 88px;
+}
 
-// Size chips
-.sizes     { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
-.sizeChip  { border: 1.5px solid $grey-200; background: $white; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: $font; color: $black; transition: all .15s;
-  &:hover       { border-color: $primary; color: $primary; }
-  &--active     { background: $primary; border-color: $primary; color: $white; }
-  &--outOfStock { opacity: .4; cursor: not-allowed; text-decoration: line-through; } }
+.thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
-.stock     { font-size: 13px; font-weight: 600; margin-bottom: 24px;
-  &--ok  { color: $primary; }
-  &--out { color: #ef4444; } }
+.thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid $grey-200;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  transition: border-color 0.15s;
 
-// Action buttons
-.btnRow    { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-.btnCart   { flex: 1; min-width: 180px; border: 2px solid $primary; background: $white; color: $primary; border-radius: 14px; padding: 14px 20px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: $font; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s;
-  &:hover     { background: #f0fdf4; }
-  &--added    { border-color: $primary; background: $primary; color: $white; &:hover { background: $primary-dk; } }
-  &:disabled  { opacity: .5; cursor: not-allowed; } }
-.btnViewCart { background: none; border: none; color: $grey-600; font-size: 14px; font-weight: 600; cursor: pointer; padding: 14px 16px; border-radius: 14px; display: flex; align-items: center; gap: 6px; font-family: $font; transition: color .15s;
-  &:hover { color: $primary; } }
-.btnBuy    { border: none; background: #111827; color: $white; border-radius: 14px; padding: 14px 28px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: $font; display: flex; align-items: center; gap: 8px; transition: background .15s; min-width: 180px;
-  &:hover     { background: #1f2937; }
-  &:disabled  { opacity: .5; cursor: not-allowed; } }
+  img { width: 100%; height: 100%; object-fit: cover; }
+
+  &--active { border-color: $primary; }
+  &:hover:not(.thumb--active) { border-color: $grey-400; }
+}
+
+.mainImg {
+  flex: 1;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  cursor: zoom-in;
+  background: $white;
+  border: 1px solid $grey-200;
+  aspect-ratio: 1 / 1.1;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  &--zoomed {
+    cursor: zoom-out;
+    img { transform: scale(1.25); }
+  }
+}
+
+.zoomHint {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.5);
+  color: $white;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.discBadge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: #ef4444;
+  color: $white;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+// ─── Info panel ────────────────────────────────────────────────────────────
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $primary;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: $grey-100;
+  color: $grey-600;
+}
+
+.name {
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 900;
+  color: $black;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+// ─── Rating ────────────────────────────────────────────────────────────────
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stars { display: flex; gap: 2px; }
+.stars--sm .starFilled,
+.stars--sm .starEmpty { font-size: 14px; }
+
+.starFilled { color: #f59e0b; font-size: 18px; }
+.starEmpty  { color: $grey-200; font-size: 18px; }
+.ratingVal  { font-size: 15px; font-weight: 700; color: $black; }
+.ratingCount { font-size: 13px; color: $grey-400; }
+
+// ─── Price ─────────────────────────────────────────────────────────────────
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.price {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 900;
+  color: $primary;
+  letter-spacing: -0.02em;
+}
+
+.originalPrice {
+  font-size: 18px;
+  color: $grey-400;
+  text-decoration: line-through;
+}
+
+.discLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ef4444;
+  background: #fee2e2;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+// ─── Stock ─────────────────────────────────────────────────────────────────
+.stock {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-self: flex-start;
+
+  &--in  { background: #dcfce7; color: #15803d; }
+  &--out { background: #fee2e2; color: #b91c1c; }
+}
+
+.divider {
+  height: 1px;
+  background: $grey-200;
+}
+
+// ─── Option groups ──────────────────────────────────────────────────────────
+.optionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.optionLabel {
+  font-size: 14px;
+  color: $grey-600;
+  font-weight: 500;
+
+  strong { color: $black; }
+}
+
+.optionHint { color: $grey-400; font-style: italic; }
+
+// Colors
+.colorPicker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.colorBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s;
+
+  &--active::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid $primary;
+  }
+
+  &:hover { transform: scale(1.15); }
+}
+
+// Sizes
+.sizePicker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sizeBtn {
+  min-width: 48px;
+  height: 40px;
+  border: 1.5px solid $grey-200;
+  border-radius: 10px;
+  background: $white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: $grey-600;
+  font-family: $font;
+  transition: all 0.15s;
+  padding: 0 12px;
+
+  &:hover:not(.sizeBtn--active) { border-color: $primary; color: $primary; }
+  &--active { background: $black; border-color: $black; color: $white; }
+}
+
+.sizeGuide {
+  font-size: 12px;
+  color: $primary;
+  text-decoration: none;
+  font-weight: 600;
+  align-self: flex-start;
+
+  &:hover { text-decoration: underline; }
+}
+
+// Quantity
+.qtyRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid $grey-200;
+  border-radius: 10px;
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.qtyBtn {
+  width: 40px;
+  height: 40px;
+  background: $grey-100;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: $grey-600;
+  font-family: $font;
+  transition: background 0.15s;
+
+  &:hover { background: $grey-200; }
+}
+
+.qtyVal {
+  width: 48px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: $black;
+}
+
+// ─── CTA Buttons ───────────────────────────────────────────────────────────
+.ctaRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  flex: 1;
+  min-width: 180px;
+  padding: 14px 24px;
+  background: $primary;
+  color: $white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: $font;
+  transition: background 0.2s, transform 0.15s;
+
+  &:hover:not(:disabled) { background: $primary-dk; transform: translateY(-2px); }
+  &--disabled { opacity: 0.5; cursor: not-allowed; }
+  &--done { background: #15803d; }
+}
+
+.btnSecondary {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 24px;
+  background: $black;
+  color: $white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: $font;
+  transition: opacity 0.2s, transform 0.15s;
+
+  &:hover:not(:disabled) { opacity: 0.85; transform: translateY(-2px); }
+  &--disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.sizeWarning {
+  font-size: 12px;
+  color: #ef4444;
+  margin: 0;
+}
+
+// ─── Trust badges ───────────────────────────────────────────────────────────
+.trustRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.trustItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: $grey-600;
+  font-weight: 500;
+
+  span:first-child { font-size: 16px; }
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────
+.tabs {
+  background: $white;
+  border-radius: 18px;
+  border: 1px solid $grey-200;
+  overflow: hidden;
+}
+
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid $grey-200;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: $grey-400;
+  cursor: pointer;
+  font-family: $font;
+  transition: color 0.15s, border-bottom 0.15s;
+  border-bottom: 3px solid transparent;
+
+  &--active {
+    color: $black;
+    border-bottom-color: $primary;
+  }
+
+  &:hover:not(.tabBtn--active) { color: $grey-600; }
+}
+
+.tabContent {
+  padding: 28px 32px;
+  min-height: 120px;
+}
+
+.descContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  p { font-size: 15px; color: $grey-600; line-height: 1.8; margin: 0; }
+}
+
+.materialRow {
+  font-size: 14px;
+  color: $grey-600;
+  padding: 12px 16px;
+  background: $grey-50;
+  border-radius: 10px;
+}
+
+.specsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  tr { border-bottom: 1px solid $grey-100; }
+  td {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: $grey-600;
+  }
+}
+
+.specLabel {
+  font-weight: 600;
+  color: $black;
+  width: 160px;
+}
+
+.careList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    font-size: 14px;
+    color: $grey-600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: $grey-50;
+    border-radius: 8px;
+  }
+}
+
+// ─── Policy cards ───────────────────────────────────────────────────────────
+.policyRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 720px) { grid-template-columns: 1fr; }
+}
+
+.policyCard {
+  background: $white;
+  border: 1px solid $grey-200;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.policyIcon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.policyTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: $black;
+  margin-bottom: 4px;
+}
+
+.policyDesc {
+  font-size: 13px;
+  color: $grey-400;
+  line-height: 1.6;
+}
+
+// ─── Reviews ───────────────────────────────────────────────────────────────
+.reviews {
+  background: $white;
+  border-radius: 18px;
+  border: 1px solid $grey-200;
+  padding: 32px;
+}
+
+.reviewsTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: $black;
+  margin: 0 0 24px;
+  letter-spacing: -0.02em;
+}
+
+.reviewSummary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: $grey-50;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.reviewBigScore {
+  font-size: 56px;
+  font-weight: 900;
+  color: $black;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.reviewTotal {
+  font-size: 13px;
+  color: $grey-400;
+  margin-top: 4px;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reviewCard {
+  padding: 20px;
+  border: 1px solid $grey-200;
+  border-radius: 14px;
+  transition: box-shadow 0.15s;
+
+  &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+}
+
+.reviewHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.reviewAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $primary;
+  color: $white;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reviewName {
+  font-size: 14px;
+  font-weight: 700;
+  color: $black;
+}
+
+.reviewDate {
+  font-size: 12px;
+  color: $grey-400;
+}
+
+.reviewComment {
+  font-size: 14px;
+  color: $grey-600;
+  line-height: 1.7;
+  margin: 0;
+}

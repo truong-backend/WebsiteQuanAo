@@ -19,7 +19,7 @@ import OrderPage from "../page/Admin/Order/OrderPage";
 // ── User Pages ───────────────────────────────────────────────────────────────
 import HomePage from "../page/User/Home/HomePage";
 import ProductListPage from "../page/User/Product/ProductListingPage";
-// import ProductDetailPage from "../page/User/ProductDetail/ProductDetailPage";
+import ProductDetailPage from "../page/User/ProductDetail/ProductDetailPage";
 import CartPage from "../page/User/Cart/CartPage";
 import CheckoutPage from "../page/User/Checkout/CheckoutPage";
 import OrderStatusPage from "../page/User/OrderStatus/OrderStatusPage";
@@ -57,7 +57,7 @@ const AppRoutes: React.FC = () => (
     {/* Public */}
     <Route path="/" element={<HomePage />} />
     <Route path="/products" element={<ProductListPage />} />
-    {/* <Route path="/products/:id" element={<ProductDetailPage />} /> */}
+    <Route path="/products/:id" element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
     <Route path="/about" element={<AboutPage />} />
     <Route path="/contact" element={<ContactPage />} />

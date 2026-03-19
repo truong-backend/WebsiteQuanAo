@@ -1,22 +1,15 @@
-import type { OrderStatus } from "./OrderStatus";
+// src/type/Orders/OrderCreateRequest.ts
 
-/** Dòng đơn từ giỏ (client). Server hiện không nhận orderItems trong POST /orders. */
-export interface ClientOrderItem {
-  productId: string;
-  productName?: string;
+export interface OrderItemRequest {
+  productVariantId: string;
   quantity: number;
-  unitPrice: number;
 }
 
-export interface OrderCreateRequest extends Record<string, unknown> {
-  id?: string;
-  orderTime: string; // ISO
+export interface OrderCreateRequest {
   phoneNumber: string;
   address: string;
   note?: string;
-  status: OrderStatus;
-  accountId?: number;
-  paymentId?: string;
-  /** Gửi kèm từ giỏ (server hiện bỏ qua; dùng OrderItemApi sau khi tạo đơn nếu cần). */
-  orderItems?: ClientOrderItem[];
+  /** COD | BANKING */
+  paymentType: "COD" | "BANKING";
+  items: OrderItemRequest[];
 }

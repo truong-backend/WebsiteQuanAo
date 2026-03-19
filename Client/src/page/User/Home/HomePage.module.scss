@@ -149,8 +149,10 @@ $font:          'Be Vietnam Pro', 'Segoe UI', sans-serif;
   &__bigText {
     display: flex;
     flex-direction: column;
-    margin: 0;
+    margin: 32px 0 0;
     line-height: 0.88;
+    position: relative;
+    z-index: 2;
 
     span {
       font-size: clamp(52px, 8.5vw, 114px);
@@ -442,9 +444,12 @@ $font:          'Be Vietnam Pro', 'Segoe UI', sans-serif;
   overflow: hidden;
   width: 100%;
   display: flex;
-  padding: 6px 0;
+  padding: 25px 0 18px;
 
-  & + & { border-top: 1.5px solid $grey-200; }
+  & + & {
+    border-top: 1.5px solid $grey-200;
+    padding: 28px 0 14px;
+  }
 }
 
 .tickerTrack {

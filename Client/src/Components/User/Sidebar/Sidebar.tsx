@@ -1,22 +1,9 @@
 // src/components/layout/Sidebar/Sidebar.tsx
 import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Button,
-  InputAdornment,
-  IconButton,
+  Box, Typography, TextField, FormControl, InputLabel,
+  Select, MenuItem, Button, InputAdornment, IconButton,
 } from "@mui/material";
-import {
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  FilterList as FilterListIcon,
-} from "@mui/icons-material";
+import { Search as SearchIcon, Clear as ClearIcon } from "@mui/icons-material";
 import type { SelectOption } from "../../../type/common/select/SelectOption";
 
 interface SidebarProps {
@@ -40,20 +27,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   onMinPriceChange, onMaxPriceChange,
   onReset,
 }) => (
-  <Paper elevation={2} sx={{ p: 3, position: "sticky", top: 80 }}>
-    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <FilterListIcon color="primary" />
-        <Typography variant="h6" fontWeight="bold">Bộ lọc</Typography>
-      </Box>
-      <Button size="small" onClick={onReset} sx={{ textTransform: "none" }}>Xóa tất cả</Button>
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+      <Button size="small" onClick={onReset} sx={{ textTransform: "none", color: "#9ca3af" }}>
+        Xóa tất cả
+      </Button>
     </Box>
 
     <TextField
       fullWidth size="small" placeholder="Tìm sản phẩm..."
       value={searchInput}
       onChange={(e) => onSearchChange(e.target.value)}
-      sx={{ mb: 2 }}
       InputProps={{
         startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>,
         endAdornment: searchInput && (
@@ -66,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       }}
     />
 
-    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+    <FormControl fullWidth size="small">
       <InputLabel>Danh mục</InputLabel>
       <Select
         value={categoryId ?? ""}
@@ -87,7 +71,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       fullWidth size="small" type="number" label="Giá tối thiểu (₫)"
       value={minPrice || ""}
       onChange={(e) => onMinPriceChange(Number(e.target.value))}
-      sx={{ mb: 2 }}
       InputProps={{ inputProps: { min: 0 } }}
     />
     <TextField
@@ -96,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       onChange={(e) => onMaxPriceChange(Number(e.target.value))}
       InputProps={{ inputProps: { min: 0 } }}
     />
-  </Paper>
+  </Box>
 );
 
 export default Sidebar;

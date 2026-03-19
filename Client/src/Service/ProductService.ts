@@ -9,6 +9,7 @@ import type { ProductOption } from "../type/product/ProductOption";
 import type { ProductListItem } from "../type/product/ProductListItem";
 import type { PageResponse } from "../api/BaseApi/baseApi";
 import type { SelectOption } from "../type/common/select/SelectOption";
+import type { ProductDetailResponse } from "../type/product/ProductDetailResponse";
 
 export const ProductService = {
   getProductsPaged: async (
@@ -139,6 +140,36 @@ export const ProductService = {
         throw new Error(errData.message || "Không thể tải danh sách sản phẩm");
       }
       throw new Error("Không thể kết nối đến server");
+    }
+  },
+
+  getDetailById: async (id: string): Promise<ProductDetailResponse> => {
+    try {
+      const res = await productApi.getDetailById(id);
+      return res.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(
+          (error.response.data as ErrorResponse).message ||
+            "Không thể tải sản phẩm"
+        );
+      }
+      throw new Error("Không thể kết nối server");
+    }
+  },
+ 
+  getDetailByPath: async (path: string): Promise<ProductDetailResponse> => {
+    try {
+      const res = await productApi.getDetailByPath(path);
+      return res.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(
+          (error.response.data as ErrorResponse).message ||
+            "Không thể tải sản phẩm"
+        );
+      }
+      throw new Error("Không thể kết nối server");
     }
   },
 };
