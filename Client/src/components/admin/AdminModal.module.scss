@@ -1,0 +1,103 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminModal.module.scss  —  "The Digital Atelier" Admin Modal
+// Classes: backdrop, dialog, dialog--sm, dialog--md, dialog--lg,
+//          head, title, closeBtn
+// ─────────────────────────────────────────────────────────────────────────────
+
+$c-surface-lowest: #ffffff;
+$c-surface-low:    #f2f4f4;
+$c-on-surface:     #2d3435;
+$c-on-surface-var: #5a6061;
+$c-outline-var:    #adb3b4;
+$c-primary:        #5f5e5e;
+
+$f-headline: 'Noto Serif', Georgia, serif;
+$f-body:     'Manrope', 'Helvetica Neue', sans-serif;
+
+// ── backdrop ──────────────────────────────────────────────────────────────────
+.backdrop {
+  position:   fixed;
+  inset:      0;
+  z-index:    100;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display:    flex;
+  align-items: center;
+  justify-content: center;
+  padding:    1rem;
+  animation:  fadeIn 0.2s ease;
+}
+
+// ── dialog box ────────────────────────────────────────────────────────────────
+.dialog {
+  background:    $c-surface-lowest;
+  border:        1px solid rgba($c-outline-var, 0.12);
+  box-shadow:    0 32px 64px -16px rgba(45, 52, 53, 0.12);
+  width:         100%;
+  max-height:    90vh;
+  overflow-y:    auto;
+  display:       flex;
+  flex-direction: column;
+  animation:     slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family:   $f-body;
+
+  // size modifiers
+  &--sm { max-width: 24rem; }
+  &--md { max-width: 36rem; }
+  &--lg { max-width: 52rem; }
+}
+
+// ── dialog header ─────────────────────────────────────────────────────────────
+.head {
+  display:     flex;
+  align-items: center;
+  justify-content: space-between;
+  padding:     1.25rem 1.5rem;
+  border-bottom: 1px solid rgba($c-outline-var, 0.1);
+  position:    sticky;
+  top:         0;
+  background:  $c-surface-lowest;
+  z-index:     1;
+}
+
+.title {
+  font-family:    $f-headline;
+  font-size:      1.125rem;
+  font-weight:    400;
+  letter-spacing: -0.02em;
+  color:          $c-on-surface;
+  margin:         0;
+}
+
+.closeBtn {
+  width:       2rem;
+  height:      2rem;
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  color:       $c-on-surface-var;
+  font-size:   1.25rem;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition:  background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+  line-height: 1;
+
+  &:hover {
+    background-color: $c-surface-low;
+    color:            $c-on-surface;
+  }
+}
+
+// ── keyframes ─────────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

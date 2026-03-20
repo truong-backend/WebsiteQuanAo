@@ -1,0 +1,220 @@
+// ─── Footer.module.scss ───────────────────────────────────────
+// Matches the "Digital Atelier" footer design from HTML
+
+.footer {
+  width: 100%;
+  background-color: #fafafa; // zinc-50
+  border-top: 1px solid rgba(228, 228, 231, 0.5); // zinc-200/30
+}
+
+// ─── Scrolling Strip ──────────────────────────────────────────
+
+.strip {
+  display: flex;
+  overflow: hidden;
+  background: #5f5e5e; // primary
+  color: #faf7f6; // on-primary
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.strip__track {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: marquee 30s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+
+.strip__item {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.625rem 2.5rem;
+
+  &::after {
+    content: '·';
+    margin-left: 2.5rem;
+    opacity: 0.4;
+  }
+}
+
+// ─── Main Grid ────────────────────────────────────────────────
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  padding: 5rem 3rem; // py-20 px-12
+  max-width: 1536px;
+  margin: 0 auto;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1.5fr repeat(3, 1fr);
+  }
+}
+
+// ─── Brand Column ─────────────────────────────────────────────
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.brand__logo {
+  font-family: 'Noto Serif', serif;
+  font-style: italic;
+  font-size: 1.375rem;
+  letter-spacing: -0.03em;
+  color: #18181b; // zinc-900
+  text-decoration: none;
+
+  span {
+    color: #6d5f07; // tertiary
+  }
+}
+
+.brand__desc {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: #52525b; // zinc-600
+  max-width: 22rem;
+}
+
+.brand__socials {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.brand__socialBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #71717a; // zinc-500
+  border: 1px solid rgba(173, 179, 180, 0.3);
+  border-radius: 0.25rem;
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+
+  &:hover {
+    color: #92400e; // amber-800
+    border-color: rgba(146, 64, 14, 0.3);
+    background: rgba(146, 64, 14, 0.05);
+  }
+}
+
+// ─── Nav Columns ──────────────────────────────────────────────
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.col__heading {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #18181b; // zinc-900
+  margin: 0;
+}
+
+.col__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.col__link {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #52525b; // zinc-600
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #92400e; // amber-800
+  }
+}
+
+// ─── Bottom Bar ───────────────────────────────────────────────
+
+.bottom {
+  border-top: 1px solid rgba(228, 228, 231, 0.3);
+  padding: 2rem 3rem; // py-8 px-12
+}
+
+.bottom__inner {
+  max-width: 1536px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.bottom__copy {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a1a1aa; // zinc-400
+  margin: 0;
+}
+
+.bottom__highlight {
+  color: #5f5e5e;
+  font-weight: 700;
+}
+
+.bottom__badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bottom__badge {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #71717a;
+  border: 1px solid rgba(173, 179, 180, 0.25);
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.125rem;
+}

@@ -1,0 +1,109 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminPageState.module.scss  —  "The Digital Atelier" Page States
+// Classes: wrap, loading, spinner, loadingText,
+//          error, errorTitle, errorMsg, retryBtn
+// ─────────────────────────────────────────────────────────────────────────────
+
+$c-surface-low:    #f2f4f4;
+$c-surface-lowest: #ffffff;
+$c-on-surface:     #2d3435;
+$c-on-surface-var: #5a6061;
+$c-outline-var:    #adb3b4;
+$c-primary:        #5f5e5e;
+$c-primary-dim:    #535252;
+$c-on-primary:     #faf7f6;
+$c-error:          #9f403d;
+$c-tertiary:       #6d5f07;
+
+$f-headline: 'Noto Serif', Georgia, serif;
+$f-body:     'Manrope', 'Helvetica Neue', sans-serif;
+
+// ── wrap — full-area centered container ───────────────────────────────────────
+.wrap {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         5rem 1rem;
+  min-height:      24rem;
+  font-family:     $f-body;
+}
+
+// ── loading state ─────────────────────────────────────────────────────────────
+.loading {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            1.25rem;
+}
+
+.spinner {
+  width:  2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba($c-outline-var, 0.2);
+  border-top-color: $c-primary;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.loadingText {
+  font-size:      0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight:    700;
+  color:          $c-on-surface-var;
+  margin:         0;
+}
+
+// ── error state ───────────────────────────────────────────────────────────────
+.error {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            0.75rem;
+  text-align:     center;
+  max-width:      28rem;
+  padding:        2.5rem 2rem;
+  background:     $c-surface-lowest;
+  border:         1px solid rgba($c-outline-var, 0.12);
+}
+
+.errorTitle {
+  font-family:    $f-headline;
+  font-size:      1.25rem;
+  font-weight:    400;
+  color:          $c-error;
+  margin:         0;
+  letter-spacing: -0.01em;
+}
+
+.errorMsg {
+  font-size:   0.875rem;
+  color:       $c-on-surface-var;
+  line-height: 1.6;
+  margin:      0;
+  font-weight: 300;
+}
+
+.retryBtn {
+  margin-top:  0.5rem;
+  padding:     0.75rem 2rem;
+  background:  $c-primary;
+  color:       $c-on-primary;
+  font-family: $f-body;
+  font-size:   0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border:      none;
+  cursor:      pointer;
+  transition:  background-color 0.2s ease, transform 0.1s ease;
+
+  &:hover  { background-color: $c-primary-dim; }
+  &:active { transform: scale(0.97); }
+}
+
+// ── keyframes ─────────────────────────────────────────────────────────────────
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
