@@ -28,9 +28,13 @@ import {
   OrderStatusPage,
   OrderInvoicePage,
   VnpayReturnPage,
-  ProfilePage
+  AboutPage,
+  ProfilePage,
+  ReturnPolicyPage,
+  ShoppingGuidePage,
+  OrderTrackingPage,
+  OrderHistoryPage,
 } from '@/pages/user';
-import AboutPage from '@/pages/user/AboutPage';
 
 // ── Route guards ──────────────────────────────────────────────
 
@@ -67,6 +71,10 @@ const AppRoutes: React.FC = () => (
     <Route path="/home"      element={<HomePage />} />
     <Route path="/about"     element={<AboutPage />} />
     <Route path="/contact"   element={<ContactPage />} />
+    <Route path="/return-policy"    element={<ReturnPolicyPage />} />
+    <Route path="/shopping-guide"   element={<ShoppingGuidePage />} />
+    <Route path="/order-tracking"   element={<OrderTrackingPage />} />
+    <Route path="/orders/history"   element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
     <Route path="/products"  element={<ProductListingPage />} />
     <Route path="/products/:id" element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
@@ -78,10 +86,6 @@ const AppRoutes: React.FC = () => (
     <Route path="/orders/:id"         element={<ProtectedRoute><OrderStatusPage /></ProtectedRoute>} />
     <Route path="/orders/:id/invoice" element={<ProtectedRoute><OrderInvoicePage /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-
-    ProfilePhoto
-    {/* <Route path="/profile" element={<ProtectedRoute><AccountProfilePage /></ProtectedRoute>} /> */}
 
     {/* ── Admin (nested layout) ── */}
     <Route

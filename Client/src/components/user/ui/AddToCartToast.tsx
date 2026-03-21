@@ -17,7 +17,10 @@ const AddToCartToast: React.FC<AddToCartToastProps> = ({ open, productName, onCl
 
   useEffect(() => {
     if (!open) return;
-    const timer = setTimeout(() => { setHiding(true); setTimeout(onClose, 250); }, 3000);
+    const timer = setTimeout(() => {
+      setHiding(true);
+      setTimeout(onClose, 250);
+    }, 3000);
     return () => clearTimeout(timer);
   }, [open, onClose]);
 
@@ -25,11 +28,15 @@ const AddToCartToast: React.FC<AddToCartToastProps> = ({ open, productName, onCl
 
   return (
     <div className={[styles.toast, hiding ? styles['toast--hide'] : ''].join(' ')}>
-      <span className={styles.icon}>✓</span>
-      <span className={styles.name}><strong>{productName}</strong> đã thêm vào giỏ!</span>
-      <button className={styles.btn} onClick={() => { onClose(); navigate('/cart'); }}>Xem giỏ</button>
+      <span className={`material-symbols-outlined ${styles.icon}`}>check</span>
+      <span className={styles.name}>
+        <strong>{productName}</strong> đã thêm vào giỏ!
+      </span>
+      <button className={styles.btn} onClick={() => { onClose(); navigate('/cart'); }}>
+        Xem giỏ
+      </button>
     </div>
   );
 };
 
-export default AddToCartToast;
+export default AddToCartToast; 

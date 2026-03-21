@@ -1,0 +1,50 @@
+// StatusChip.module.scss
+// Classes: chip, chip--warning, chip--info, chip--success, chip--error, chip--default
+
+$f-body: 'Manrope', 'Helvetica Neue', sans-serif;
+
+// ── chip base ─────────────────────────────────────────────────
+.chip {
+  display:         inline-block;
+  padding:         0.25rem 0.75rem;
+  border-radius:   0.75rem;
+  font-family:     $f-body;
+  font-size:       0.6875rem;
+  font-weight:     700;
+  letter-spacing:  0.05em;
+  text-transform:  uppercase;
+  white-space:     nowrap;
+  line-height:     1.4;
+}
+
+// ── variants ──────────────────────────────────────────────────
+
+// PENDING — amber / tertiary
+.chip--warning {
+  background: #fde987;       // tertiary-fixed
+  color:      #4d4300;       // on-tertiary-fixed
+}
+
+// CONFIRMED / SHIPPING — cool blue-grey
+.chip--info {
+  background: #dde4e5;       // surface-variant
+  color:      #3b4f51;
+}
+
+// COMPLETED — green
+.chip--success {
+  background: #dcfce7;
+  color:      #15803d;
+}
+
+// CANCELLED — red
+.chip--error {
+  background: #fee2e2;
+  color:      #9f403d;       // error
+}
+
+// fallback
+.chip--default {
+  background: #ebeeef;       // surface-container
+  color:      #5a6061;       // on-surface-variant
+}

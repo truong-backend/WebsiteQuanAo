@@ -238,7 +238,7 @@ const NavbarInner: React.FC<NavbarInnerProps> = ({ categories, scrolled, cartCou
                     <button onClick={() => navigate('/profile')}>
                       <ProfileIcon /> Trang cá nhân
                     </button>
-                    <button onClick={() => navigate('/orders')}>
+                    <button onClick={() => navigate('/orders/history')}>
                       <OrderIcon /> Đơn hàng
                     </button>
                     <button className={styles.logout} onClick={handleLogout}>

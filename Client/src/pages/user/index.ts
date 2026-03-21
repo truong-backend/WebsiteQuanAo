@@ -10,3 +10,7 @@ export { default as OrderInvoicePage }   from './OrderInvoicePage';
 export { default as VnpayReturnPage }    from './VnpayReturnPage';
 export { default as AboutPage }          from './AboutPage';
 export { default as ProfilePage }        from './ProfilePage';
+export { default as ReturnPolicyPage }   from './ReturnPolicyPage';
+export { default as ShoppingGuidePage }  from './ShoppingGuidePage';
+export { default as OrderTrackingPage }  from './OrderTrackingPage';
+export { default as OrderHistoryPage }   from './OrderHistoryPage';

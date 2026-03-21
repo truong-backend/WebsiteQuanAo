@@ -69,8 +69,8 @@ const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const username = 'Tài khoản';
-  const initial  = username.charAt(0).toUpperCase();
+  // const username = 'Tài khoản';
+  // const initial  = username.charAt(0).toUpperCase();
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');

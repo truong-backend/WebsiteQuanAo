@@ -18,10 +18,10 @@ const NAV_LINKS: Record<string, { label: string; to: string }[]> = {
     { label: 'Ưu đãi hôm nay',  to: '/products?sale=true' },
   ],
   'Hỗ trợ': [
-    { label: 'Chính sách đổi trả',  to: '#' },
-    { label: 'Hướng dẫn mua hàng', to: '#' },
-    { label: 'Tra cứu đơn hàng',   to: '/orders' },
-    { label: 'Liên hệ',            to: '#' },
+    { label: 'Chính sách đổi trả',  to: '/return-policy' },
+    { label: 'Hướng dẫn mua hàng', to: '/shopping-guide' },
+    { label: 'Tra cứu đơn hàng',   to: '/order-tracking' },
+    { label: 'Liên hệ',            to: '/contact' },
   ],
   'Tài khoản': [
     { label: 'Đăng nhập',        to: '/login' },

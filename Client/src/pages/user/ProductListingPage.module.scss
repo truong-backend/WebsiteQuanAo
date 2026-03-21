@@ -335,3 +335,25 @@ $shadow-editorial: 0 24px 48px -12px rgba(45, 52, 53, 0.08);
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+// ═══════════════════════════════════════════════════════════════════════════════
+// SIDEBAR (desktop only) + MAIN
+// ═══════════════════════════════════════════════════════════════════════════════
+
+.sidebar {
+  display:    none;          // hidden on mobile (drawer handles it)
+  flex-shrink: 0;
+  width:      16rem;
+  position:   sticky;
+  top:        6rem;          // below fixed nav
+  max-height: calc(100vh - 7rem);
+  overflow-y: auto;
+
+  @media (min-width: 1024px) {
+    display: block;
+  }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;              // prevent grid blowout
+}

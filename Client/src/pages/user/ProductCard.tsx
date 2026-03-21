@@ -1,9 +1,9 @@
-// src/components/User/ui/ProductCard/ProductCard.tsx
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LocalCartService } from "@/modules";
-import type { ProductListItem } from "@/types";
-import styles from "./ProductCard.module.scss";
+// src/components/user/ui/ProductCard/ProductCard.tsx
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LocalCartService } from '@/modules';
+import type { ProductListItem } from '@/types';
+import styles from './ProductCard.module.scss';
 
 interface ProductCardProps {
   product:      ProductListItem;
@@ -11,56 +11,92 @@ interface ProductCardProps {
   isAdded?:     boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart, isAdded = false }) => {
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToCart,
+  isAdded = false,
+}) => {
   const navigate = useNavigate();
-  const [imgOk, setImgOk]   = useState(false);
+  const [imgOk,  setImgOk]  = useState(false);
   const [imgErr, setImgErr] = useState(false);
-  const [wished, setWished] = useState(false);
 
   const src = imgErr
-    ? "https://via.placeholder.com/300?text=No+Image"
-    : product.img.startsWith("http") ? product.img : `http://localhost:8080${product.img}`;
+    ? 'https://via.placeholder.com/300?text=No+Image'
+    : product.img.startsWith('http')
+      ? product.img
+      : `http://localhost:8080${product.img}`;
+
+  const goDetail = () => navigate(`/products/${product.id}`);
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    LocalCartService.addItem({ id: product.id, name: product.name, price: product.price, img: product.img }, 1);
-    navigate("/checkout");
+    LocalCartService.addItem(
+      { id: product.id, name: product.name, price: product.price, img: product.img },
+      1,
+    );
+    navigate('/checkout');
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddToCart?.(product);
   };
 
   return (
-    <div className={styles.card}>
-      <div className={styles.imgWrap} onClick={() => navigate(`/products/${product.id}`)}>
+    <div className={styles.card} onClick={goDetail}>
+
+      {/* ── Image ── */}
+      <div className={styles.imgWrap}>
         {!imgOk && <div className={styles.skeleton} />}
-        <img className={styles.img} src={src} alt={product.name}
-          style={{ display: imgOk ? "block" : "none" }}
+        <img
+          className={styles.img}
+          src={src}
+          alt={product.name}
+          style={{ display: imgOk ? 'block' : 'none' }}
           onLoad={() => setImgOk(true)}
           onError={() => { setImgErr(true); setImgOk(true); }}
         />
-        <span className={styles.catChip}>{product.categoryName}</span>
-        <button className={styles.wishBtn} onClick={(e) => { e.stopPropagation(); setWished((w) => !w); }}>
-          {wished ? "❤" : "🤍"}
-        </button>
-      </div>
 
-      <div className={styles.body} onClick={() => navigate(`/products/${product.id}`)}>
-        <p className={styles.name}>{product.name}</p>
-        {product.description && <p className={styles.desc}>{product.description}</p>}
-        <p className={styles.price}>{product.price.toLocaleString("vi-VN")}₫</p>
-      </div>
-
-      <div className={styles.actions}>
-        <button className={styles.btnDetail} onClick={() => navigate(`/products/${product.id}`)}>
-          Xem chi tiết
-        </button>
-        {onAddToCart && (
-          <button className={`${styles.btnCart} ${isAdded ? styles["btnCart--added"] : ""}`}
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+        {/* Hover action bar */}
+        <div className={styles.actionBar}>
+          {onAddToCart ? (
+            <button
+              className={`${styles.btnAddCart} ${isAdded ? styles['btnAddCart--added'] : ''}`}
+              onClick={handleAddToCart}
+              disabled={isAdded}
+            >
+              <span className="material-symbols-outlined">
+                {isAdded ? 'check' : 'shopping_bag'}
+              </span>
+              {isAdded ? 'Đã thêm' : 'Thêm vào giỏ'}
+            </button>
+          ) : (
+            <button className={styles.btnAddCart} onClick={handleBuyNow}>
+              <span className="material-symbols-outlined">bolt</span>
+              Mua ngay
+            </button>
+          )}
+          <button
+            className={styles.btnQuickView}
+            onClick={(e) => { e.stopPropagation(); goDetail(); }}
+            aria-label="Xem nhanh"
           >
-            {isAdded ? "✓ Đã thêm" : "🛒 Thêm giỏ"}
+            <span className="material-symbols-outlined">visibility</span>
           </button>
-        )}
-        <button className={styles.btnBuy} onClick={handleBuyNow}>⚡ Mua ngay</button>
+        </div>
       </div>
+
+      {/* ── Body ── */}
+      <div className={styles.body}>
+        <p className={styles.name}>{product.name}</p>
+        {product.description && (
+          <p className={styles.desc}>{product.description}</p>
+        )}
+        <p className={styles.price}>
+          {product.price.toLocaleString('vi-VN')}₫
+        </p>
+      </div>
+
     </div>
   );
 };

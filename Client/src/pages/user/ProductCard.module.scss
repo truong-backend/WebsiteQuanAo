@@ -1,236 +1,185 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// ProductCard.module.scss  —  "Atelier Monochrome"
-// TSX classes: card, imgWrap, skeleton, img, catChip, wishBtn,
-//              body, name, desc, price,
-//              actions, btnDetail, btnCart, btnCart--added, btnBuy
+// ProductCard.module.scss
+// Classes dùng trong TSX:
+//   card, imgWrap, skeleton, img,
+//   actionBar, btnAddCart, btnAddCart--added, btnQuickView,
+//   body, name, desc, price
 // ─────────────────────────────────────────────────────────────────────────────
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
-
-$c-surface-low:    #f2f4f4;
-$c-surface-lowest: #ffffff;
-$c-container-high: #e4e9ea;
-$c-on-surface:     #2d3435;
-$c-on-surface-var: #5a6061;
-$c-primary:        #5f5e5e;
-$c-primary-dim:    #535252;
-$c-on-primary:     #faf7f6;
-$c-tertiary:       #6d5f07;
-$c-tertiary-fixed: #fde987;
-$c-outline:        #757c7d;
-$c-outline-var:    #adb3b4;
-$c-error:          #9f403d;
-$c-success:        #15803d;
-$c-success-bg:     #dcfce7;
+$c-bg:          #ffffff;
+$c-surface-low: #f2f4f4;
+$c-surface-high:#e4e9ea;
+$c-on-surface:  #2d3435;
+$c-on-var:      #5a6061;
+$c-primary:     #5f5e5e;
+$c-primary-dim: #535252;
+$c-on-primary:  #faf7f6;
+$c-outline-var: #adb3b4;
+$c-success:     #15803d;
+$c-success-bg:  #dcfce7;
 
 $f-headline: 'Noto Serif', Georgia, serif;
 $f-body:     'Manrope', 'Helvetica Neue', sans-serif;
 
-// ── card root ─────────────────────────────────────────────────────────────────
+// ── card ──────────────────────────────────────────────────────────────────────
 .card {
   display:        flex;
   flex-direction: column;
-  position:       relative;
+  background:     $c-bg;
   font-family:    $f-body;
-  background:     $c-surface-lowest;
-  border:         1px solid rgba($c-outline-var, 0.07);
-  transition:     box-shadow 0.3s ease, border-color 0.3s ease;
+  position:       relative;
+  cursor:         pointer;
+  border-radius:  0.25rem;
 
-  &:hover {
-    box-shadow:   0 8px 32px -8px rgba(45, 52, 53, 0.1);
-    border-color: rgba($c-outline-var, 0.14);
-  }
+  &:hover .actionBar { opacity: 1; transform: translateY(0); }
+  &:hover .img       { transform: scale(1.04); }
 }
 
-// ── image block ───────────────────────────────────────────────────────────────
+// ── image ─────────────────────────────────────────────────────────────────────
 .imgWrap {
-  position:     relative;
-  aspect-ratio: 3 / 4;         // matches HTML: aspect-[3/4]
-  overflow:     hidden;
-  background:   $c-surface-low;
-  cursor:       pointer;
-
-  &:hover .img    { transform: scale(1.05); filter: grayscale(0%); }
+  position:      relative;
+  aspect-ratio:  3 / 4;
+  overflow:      hidden;
+  background:    $c-surface-low;
+  border-radius: 0.25rem 0.25rem 0 0;
 }
 
-// lazy-load skeleton shimmer
 .skeleton {
-  position:   absolute;
-  inset:      0;
-  background: linear-gradient(
+  position:        absolute;
+  inset:           0;
+  z-index:         1;
+  background:      linear-gradient(
     90deg,
-    $c-surface-low 25%,
-    $c-container-high 50%,
-    $c-surface-low 75%
+    $c-surface-low  25%,
+    $c-surface-high 50%,
+    $c-surface-low  75%
   );
   background-size: 200% 100%;
-  animation:  shimmer 1.4s infinite;
+  animation:       shimmer 1.4s infinite;
 }
 
 .img {
-  width:       100%;
-  height:      100%;
-  object-fit:  cover;
-  filter:      grayscale(25%);     // grayscale-[0.3] from HTML
-  transition:  transform 0.7s ease, filter 0.4s ease;
-  display:     block;
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+  display:    block;
+  transition: transform 0.5s ease;
 }
 
-// category chip badge — top-left
-.catChip {
-  position:       absolute;
-  top:            1rem;
-  left:           1rem;
-  font-family:    $f-body;
-  font-size:      0.5625rem;       // text-[9px]
-  font-weight:    700;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  background:     $c-tertiary-fixed;
-  color:          #4d4300;         // on-tertiary-fixed
-  padding:        0.25rem 0.5rem;
-  pointer-events: none;
-  z-index:        2;
-  line-height:    1.4;
+// ── hover action bar — bottom of image ───────────────────────────────────────
+.actionBar {
+  position:  absolute;
+  bottom:    0;
+  left:      0;
+  right:     0;
+  z-index:   4;
+  display:   flex;
+  opacity:   0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
-// wishlist toggle — top-right
-.wishBtn {
-  position:   absolute;
-  top:        0.75rem;
-  right:      0.75rem;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(4px);
-  border:     none;
-  cursor:     pointer;
-  width:      2rem;
-  height:     2rem;
-  display:    flex;
-  align-items: center;
+// "Thêm vào giỏ" / "Mua ngay"
+.btnAddCart {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
   justify-content: center;
-  font-size:  1rem;
-  z-index:    2;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  gap:             0.35rem;
+  padding:         0.7rem 0.5rem;
+  background:      rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border:          none;
+  color:           $c-on-surface;
+  font-family:     $f-body;
+  font-size:       0.6875rem;
+  font-weight:     700;
+  text-transform:  uppercase;
+  letter-spacing:  0.08em;
+  cursor:          pointer;
+  white-space:     nowrap;
+  overflow:        hidden;
+  text-overflow:   ellipsis;
+  transition:      background 0.15s ease;
 
-  &:hover { transform: scale(1.1); background: $c-surface-lowest; }
-}
-
-// ── body block (name / desc / price) ─────────────────────────────────────────
-.body {
-  padding: 1rem 1rem 0.5rem;
-  cursor:  pointer;
-  flex:    1;
-  display: flex;
-  flex-direction: column;
-  gap:     0.375rem;
-
-  &:hover .name {
-    text-decoration:       underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 4px;
-  }
-}
-
-// product name — "Lucid Silk Blouse"
-.name {
-  font-family: $f-body;
-  font-size:   0.875rem;    // text-sm
-  font-weight: 500;
-  color:       $c-on-surface;
-  line-height: 1.4;
-  margin:      0;
-  transition:  none;
-
-  // one-line truncation on listing grid
-  overflow:      hidden;
-  display:       -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-// short description
-.desc {
-  font-size:   0.75rem;
-  color:       $c-on-surface-var;
-  font-weight: 300;
-  line-height: 1.5;
-  margin:      0;
-  overflow:    hidden;
-  display:     -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-// price — "font-headline text-sm" from HTML
-.price {
-  font-family:    $f-headline;
-  font-size:      0.875rem;
-  font-weight:    400;
-  color:          $c-on-surface;
-  margin:         0.25rem 0 0;
-  letter-spacing: -0.01em;
-}
-
-// ── action buttons row ────────────────────────────────────────────────────────
-.actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  border-top: 1px solid rgba($c-outline-var, 0.08);
-
-  // If btnCart is absent (no onAddToCart prop), buttons span across
-  &:has(.btnDetail:only-child) .btnDetail { grid-column: 1 / -1; }
-}
-
-// shared button base
-%actionBtn {
-  padding:    0.75rem 0.5rem;
-  background: transparent;
-  border:     none;
-  font-family: $f-body;
-  font-size:  0.5625rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor:     pointer;
-  text-align: center;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  white-space: nowrap;
-  overflow:   hidden;
-  text-overflow: ellipsis;
-}
-
-// "Xem chi tiết"
-.btnDetail {
-  @extend %actionBtn;
-  color:       $c-on-surface-var;
-  border-right: 1px solid rgba($c-outline-var, 0.08);
-
-  &:hover { background-color: $c-surface-low; color: $c-on-surface; }
-}
-
-// "🛒 Thêm giỏ"
-.btnCart {
-  @extend %actionBtn;
-  color:       $c-primary;
-  border-right: 1px solid rgba($c-outline-var, 0.08);
-
-  &:hover { background-color: $c-surface-low; color: $c-on-surface; }
+  &:hover { background: rgba(255, 255, 255, 1); }
 
   // ✓ Đã thêm state
   &--added {
-    background-color: $c-success-bg;
-    color:            $c-success;
-    pointer-events:   none;
+    background:     $c-success-bg;
+    color:          $c-success;
+    pointer-events: none;
+  }
+
+  .material-symbols-outlined {
+    font-size:               1rem;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+    flex-shrink:             0;
   }
 }
 
-// "⚡ Mua ngay"
-.btnBuy {
-  @extend %actionBtn;
-  background:  $c-on-surface;
-  color:       $c-on-primary;
+// icon eye — Quick View
+.btnQuickView {
+  width:           2.75rem;
+  flex-shrink:     0;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      $c-on-surface;
+  border:          none;
+  color:           $c-on-primary;
+  cursor:          pointer;
+  transition:      background 0.15s ease;
 
-  &:hover { background-color: $c-primary-dim; }
+  &:hover { background: $c-primary-dim; }
+
+  .material-symbols-outlined {
+    font-size:               1.125rem;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+  }
+}
+
+// ── body ──────────────────────────────────────────────────────────────────────
+.body {
+  padding:        0.75rem 0.25rem 0.5rem;
+  display:        flex;
+  flex-direction: column;
+  gap:            0.3rem;
+  flex:           1;
+}
+
+.name {
+  font-family:        $f-body;
+  font-size:          0.875rem;
+  font-weight:        400;
+  color:              $c-on-surface;
+  line-height:        1.45;
+  margin:             0;
+  overflow:           hidden;
+  display:            -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.desc {
+  font-size:          0.75rem;
+  color:              $c-on-var;
+  font-weight:        300;
+  line-height:        1.5;
+  margin:             0;
+  overflow:           hidden;
+  display:            -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.price {
+  font-family:    $f-headline;
+  font-size:      0.9375rem;
+  font-weight:    400;
+  color:          $c-on-surface;
+  letter-spacing: -0.01em;
+  margin:         0.125rem 0 0;
 }
 
 // ── keyframes ─────────────────────────────────────────────────────────────────
