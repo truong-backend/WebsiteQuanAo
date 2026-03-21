@@ -176,7 +176,7 @@ const ContactPage: React.FC = () => {
         </section>
 
         {/* ── Locations ── */}
-        <section className={styles.locations}>
+        {/* <section className={styles.locations}>
           <div className={styles.locations__inner}>
             <div className={styles.locations__header}>
               <span className={styles.locations__eyebrow}>Hệ thống cửa hàng</span>
@@ -203,10 +203,10 @@ const ContactPage: React.FC = () => {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* ── Map ── */}
-        <section className={styles.mapSection}>
+        {/* <section className={styles.mapSection}>
           <div
             className={styles.mapSection__bg}
             style={{ backgroundImage: `url('${MAP_BG}')` }}
@@ -216,7 +216,7 @@ const ContactPage: React.FC = () => {
               <span>Khám phá hệ thống cửa hàng</span>
             </div>
           </div>
-        </section>
+        </section> */}
 
       </div>
     </PageLayout>
