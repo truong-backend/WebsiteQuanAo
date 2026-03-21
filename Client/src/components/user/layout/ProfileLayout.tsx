@@ -24,12 +24,6 @@ const IconBag = () => (
     <path d="M16 10a4 4 0 0 1-8 0"/>
   </svg>
 );
-const IconMap = () => (
-  <svg className={styles.navLink__icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-    <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-  </svg>
-);
 const IconHeart = () => (
   <svg className={styles.navLink__icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -52,8 +46,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Trang cá nhân', to: '/profile',  icon: <IconUser /> },
-  { label: 'Đơn hàng',      to: '/orders',   icon: <IconBag /> },
-  { label: 'Địa chỉ',       to: '/addresses', icon: <IconMap /> },
+  { label: 'Đơn hàng',      to: '/orders/history',   icon: <IconBag /> },
+  // { label: 'Địa chỉ',       to: '/addresses', icon: <IconMap /> },
   { label: 'Yêu thích',     to: '/wishlist', icon: <IconHeart /> },
 ];
 

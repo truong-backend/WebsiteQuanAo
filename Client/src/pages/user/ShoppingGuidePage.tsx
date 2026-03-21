@@ -1,6 +1,7 @@
 // src/pages/user/ShoppingGuidePage.tsx
 import React from 'react';
 import styles from './ShoppingGuidePage.module.scss';
+import PageLayout from '@/components/user/layout/PageLayout';
 
 // ─── Image URLs ────────────────────────────────────────────────
 const IMG_STEP1 =
@@ -36,7 +37,7 @@ const TIPS = [
 // ─── Component ─────────────────────────────────────────────────
 const ShoppingGuidePage: React.FC = () => {
   return (
-    <div className={styles.page}>
+    <PageLayout>     <div className={styles.page}>
 
       {/* Hero */}
       <section className={styles.hero}>
@@ -157,18 +158,18 @@ const ShoppingGuidePage: React.FC = () => {
             <div className={styles.ctaButtons}>
               <button className={styles.ctaBtnPrimary}>
                 <span>Liên hệ qua Email</span>
-                <span className={`material-symbols-outlined ${styles.btnIcon}`}>arrow_forward</span>
+                <span className={`material-symbols-outlined ${styles.btnIcon}`}>honguyententhanhtruong@gmail.com</span>
               </button>
               <button className={styles.ctaBtnSecondary}>
                 <span>Gọi Hotline</span>
-                <span className={`material-symbols-outlined ${styles.btnIcon}`}>call</span>
+                <span className={`material-symbols-outlined ${styles.btnIcon}`}>0981907754</span>
               </button>
             </div>
           </div>
         </div>
       </section>
 
-    </div>
+    </div> </PageLayout>
   );
 };
 

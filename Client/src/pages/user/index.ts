@@ -14,3 +14,4 @@ export { default as ReturnPolicyPage }   from './ReturnPolicyPage';
 export { default as ShoppingGuidePage }  from './ShoppingGuidePage';
 export { default as OrderTrackingPage }  from './OrderTrackingPage';
 export { default as OrderHistoryPage }   from './OrderHistoryPage';
+export { default as NotFoundPage }       from './NotFoundPage';

@@ -11,34 +11,7 @@ const SOCIALS = [
   { label: 'TikTok',    href: 'https://www.tiktok.com/@ng_thanh_truong' },
 ];
 
-const LOCATIONS = [
-  {
-    city: 'Hồ Chí Minh',
-    address: '123 Nguyễn Huệ, Quận 1\nTP. Hồ Chí Minh, Việt Nam',
-    hours: [
-      'Thứ 2 — Thứ 7: 09:00 - 20:00',
-      'Chủ nhật: 10:00 - 18:00',
-    ],
-  },
-  {
-    city: 'Hà Nội',
-    address: '45 Tràng Tiền, Hoàn Kiếm\nHà Nội, Việt Nam',
-    hours: [
-      'Thứ 2 — Thứ 7: 09:00 - 20:00',
-      'Chủ nhật: Đóng cửa',
-    ],
-  },
-  {
-    city: 'Đà Nẵng',
-    address: '88 Bạch Đằng, Hải Châu\nĐà Nẵng, Việt Nam',
-    hours: [
-      'Thứ 2 — Chủ nhật: 09:00 - 21:00',
-    ],
-  },
-];
 
-const MAP_BG =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuC0e-9qeY7IP2vss_j9ap38ffwAIDoIyHGnTxrvDZbBY5HPnGgGf2Jq18iuTHmMBZo4BQC2itYmFvqcr6MzWG-X8yP7jx4sfm0yzDr65jGC71KefVey_GntOG4y8QBWrFl2HvuQkvoVJic9AeT9oDcRbsBeqoTZnD-XYQCUduPC-H9vjMFMsN73uDCkVqJDQcj6Rz4t1Lo3GoVdbE5YnzxhOc6YmUHv0j6Uy8Ph8YsqXiaDvkww5w550ccs76PszFFELZtgNa5vbMw';
 
 // ─── Component ────────────────────────────────────────────────
 

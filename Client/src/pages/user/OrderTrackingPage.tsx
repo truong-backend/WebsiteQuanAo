@@ -1,6 +1,7 @@
 // src/pages/user/OrderTrackingPage.tsx
 import React, { useState } from 'react';
 import styles from './OrderTrackingPage.module.scss';
+import PageLayout from '@/components/user/layout/PageLayout';
 
 // ─── Types ─────────────────────────────────────────────────────
 type StepStatus = 'done' | 'active' | 'pending';
@@ -61,7 +62,8 @@ const OrderTrackingPage: React.FC = () => {
   };
 
   return (
-    <div className={styles.page}>
+    <PageLayout>
+          <div className={styles.page}>
 
       {/* Header */}
       <header className={styles.header}>
@@ -198,6 +200,8 @@ const OrderTrackingPage: React.FC = () => {
         </section>
       </div>
     </div>
+    </PageLayout>
+
   );
 };
 

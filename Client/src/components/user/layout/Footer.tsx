@@ -27,7 +27,7 @@ const NAV_LINKS: Record<string, { label: string; to: string }[]> = {
     { label: 'Đăng nhập',        to: '/login' },
     { label: 'Đăng ký',          to: '/register' },
     { label: 'Trang cá nhân',    to: '/profile' },
-    { label: 'Lịch sử đơn hàng', to: '/orders' },
+    { label: 'Lịch sử đơn hàng', to: '/orders/history' },
   ],
 };
 

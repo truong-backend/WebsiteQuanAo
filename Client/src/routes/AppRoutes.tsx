@@ -34,6 +34,7 @@ import {
   ShoppingGuidePage,
   OrderTrackingPage,
   OrderHistoryPage,
+  NotFoundPage,
 } from '@/pages/user';
 
 // ── Route guards ──────────────────────────────────────────────
@@ -74,10 +75,11 @@ const AppRoutes: React.FC = () => (
     <Route path="/return-policy"    element={<ReturnPolicyPage />} />
     <Route path="/shopping-guide"   element={<ShoppingGuidePage />} />
     <Route path="/order-tracking"   element={<OrderTrackingPage />} />
-    <Route path="/orders/history"   element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
+    <Route path="/orders/history"   element={<OrderHistoryPage />} />
     <Route path="/products"  element={<ProductListingPage />} />
     <Route path="/products/:id" element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
+
     {/* <Route path="/payment/momo-return" element={<MomoReturnPage />} /> */}
 
     {/* ── Protected (user) ── */}
@@ -104,7 +106,7 @@ const AppRoutes: React.FC = () => (
     </Route>
 
     {/* ── 404 ── */}
-    <Route path="*" element={<div>404 - Page Not Found</div>} />
+    <Route path="*" element={<NotFoundPage />} />
 
   </Routes>
 );
