@@ -1,126 +1,75 @@
 package com.example.Server.exception;
 
 import com.example.Server.dto.response.error.ErrorResponse;
-import com.example.Server.exception.BaseException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
 
-import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler for the application
- * Catches all exceptions and returns standardized error responses
+ * Xử lý tập trung tất cả exception, trả về {@link ErrorResponse} chuẩn hóa.
  */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle all custom BaseException and its subclasses
-     */
     @ExceptionHandler(BaseException.class)
-    public ResponseEntity<ErrorResponse> handleBaseException(
-            BaseException ex,
-            WebRequest request) {
-
-        log.error("BaseException occurred: {}", ex.getMessage(), ex);
-
-        ErrorResponse errorResponse = new ErrorResponse(
-                ex.getErrorCode(),
-                ex.getMessage(),
-                ex.getHttpStatus().value(),
-                getPath(request)
-        );
-        errorResponse.setDetails(ex.getDetails());
-
-        return new ResponseEntity<>(errorResponse, ex.getHttpStatus());
+    public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex, WebRequest request) {
+        log.error("BaseException: {}", ex.getMessage());
+        ErrorResponse body = new ErrorResponse(
+                ex.getErrorCode(), ex.getMessage(),
+                ex.getHttpStatus().value(), getPath(request));
+        body.setDetails(ex.getDetails());
+        return new ResponseEntity<>(body, ex.getHttpStatus());
     }
 
-    /**
-     * Handle validation errors from @Valid annotation
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            MethodArgumentNotValidException ex,
-            WebRequest request) {
-
-        log.error("Validation error occurred", ex);
-
+    public ResponseEntity<ErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        log.error("Validation error: {}", ex.getMessage());
         Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), error.getDefaultMessage())
-        );
+        ex.getBindingResult().getFieldErrors()
+                .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                "VALIDATION_ERROR",
-                "Validation failed",
-                HttpStatus.BAD_REQUEST.value(),
-                getPath(request)
-        );
-        errorResponse.getDetails().put("fieldErrors", fieldErrors);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        ErrorResponse body = new ErrorResponse(
+                "VALIDATION_ERROR", "Validation failed",
+                HttpStatus.BAD_REQUEST.value(), getPath(request));
+        body.getDetails().put("fieldErrors", fieldErrors);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Handle constraint violation exceptions
-     */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(
-            ConstraintViolationException ex,
-            WebRequest request) {
-
-        log.error("Constraint violation occurred", ex);
-
+            ConstraintViolationException ex, WebRequest request) {
+        log.error("Constraint violation: {}", ex.getMessage());
         Map<String, String> violations = new HashMap<>();
-        ex.getConstraintViolations().forEach(violation -> {
-            String propertyPath = violation.getPropertyPath().toString();
-            String message = violation.getMessage();
-            violations.put(propertyPath, message);
-        });
+        ex.getConstraintViolations()
+                .forEach(v -> violations.put(v.getPropertyPath().toString(), v.getMessage()));
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                "CONSTRAINT_VIOLATION",
-                "Constraint violation",
-                HttpStatus.BAD_REQUEST.value(),
-                getPath(request)
-        );
-        errorResponse.getDetails().put("violations", violations);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        ErrorResponse body = new ErrorResponse(
+                "CONSTRAINT_VIOLATION", "Constraint violation",
+                HttpStatus.BAD_REQUEST.value(), getPath(request));
+        body.getDetails().put("violations", violations);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
-    /**
-     * Handle all other unhandled exceptions
-     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGlobalException(
-            Exception ex,
-            WebRequest request) {
-
-        log.error("Unexpected error occurred", ex);
-
-        ErrorResponse errorResponse = new ErrorResponse(
-                "INTERNAL_SERVER_ERROR",
-                "An unexpected error occurred",
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                getPath(request)
-        );
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponse> handleGlobal(Exception ex, WebRequest request) {
+        log.error("Unexpected error", ex);
+        ErrorResponse body = new ErrorResponse(
+                "INTERNAL_Server_ERROR", "An unexpected error occurred",
+                HttpStatus.INTERNAL_SERVER_ERROR.value(), getPath(request));
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    /**
-     * Extract request path from WebRequest
-     */
     private String getPath(WebRequest request) {
         return ((ServletWebRequest) request).getRequest().getRequestURI();
     }

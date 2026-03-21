@@ -6,6 +6,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.nio.file.Paths;
 
+/**
+ * Serve ảnh upload tĩnh từ thư mục local qua URL /images/**.
+ */
 @Configuration
 public class StaticResourceConfig implements WebMvcConfigurer {
 

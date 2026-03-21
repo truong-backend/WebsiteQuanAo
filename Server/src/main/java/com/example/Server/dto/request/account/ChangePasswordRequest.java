@@ -1,16 +1,10 @@
 package com.example.Server.dto.request.account;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class ChangePasswordRequest {
-
     @NotBlank(message = "Current password is required")
     private String oldPassword;
 

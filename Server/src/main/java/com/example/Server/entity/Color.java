@@ -12,14 +12,14 @@ import java.util.List;
 @AllArgsConstructor
 public class Color {
 
+    /** Mã hex màu sắc (VD: #FFFFFF). */
     @Id
-    @Column(name = "code", length = 7)
-    private String code; // Mã hex màu (VD: #FFFFFF)
+    @Column(length = 7)
+    private String code;
 
-    @Column(name = "name", length = 255, nullable = false, unique = true)
-    private String name; // Tên màu
+    @Column(nullable = false, unique = true)
+    private String name;
 
     @OneToMany(mappedBy = "color")
     private List<ProductVariant> productVariants;
-
 }

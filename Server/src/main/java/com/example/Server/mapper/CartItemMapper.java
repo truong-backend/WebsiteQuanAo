@@ -1,44 +1,23 @@
 package com.example.Server.mapper;
 
-import com.example.Server.dto.response.cartItem.CartItemResponse;
+import com.example.Server.dto.response.cartitem.CartItemResponse;
 import com.example.Server.entity.CartItem;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper for CartItem entity and its DTOs
- */
 public class CartItemMapper {
-
-    /**
-     * Convert CartItem entity to CartItemResponse
-     */
-    public static CartItemResponse toResponse(CartItem cartItem) {
-        if (cartItem == null) {
-            return null;
-        }
-
-        CartItemResponse response = new CartItemResponse();
-        response.setId(cartItem.getId());
-        response.setQuantity(cartItem.getQuantity());
-        response.setCartId(cartItem.getCart() != null ? cartItem.getCart().getId() : null);
-        response.setProductVariantId(cartItem.getProductVariant() != null ? cartItem.getProductVariant().getId() : null);
-
-        return response;
+    public static CartItemResponse toResponse(CartItem item) {
+        if (item == null) return null;
+        CartItemResponse r = new CartItemResponse();
+        r.setId(item.getId());
+        r.setQuantity(item.getQuantity());
+        r.setCartId(item.getCart() != null ? item.getCart().getId() : null);
+        r.setProductVariantId(item.getProductVariant() != null ? item.getProductVariant().getId() : null);
+        return r;
     }
-
-    /**
-     * Convert list of CartItem entities to list of CartItemResponse
-     */
-    public static List<CartItemResponse> toResponses(List<CartItem> cartItems) {
-        if (cartItems == null) {
-            return Collections.emptyList();
-        }
-
-        return cartItems.stream()
-                .map(CartItemMapper::toResponse)
-                .collect(Collectors.toList());
+    public static List<CartItemResponse> toResponses(List<CartItem> list) {
+        if (list == null) return Collections.emptyList();
+        return list.stream().map(CartItemMapper::toResponse).collect(Collectors.toList());
     }
 }

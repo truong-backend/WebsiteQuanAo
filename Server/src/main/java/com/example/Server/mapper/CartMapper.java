@@ -2,41 +2,50 @@ package com.example.Server.mapper;
 
 import com.example.Server.dto.response.cart.CartResponse;
 import com.example.Server.entity.Cart;
-
+import com.example.Server.entity.CartItem;
+import com.example.Server.entity.Product;
+import com.example.Server.entity.ProductVariant;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper for Cart entity and its DTOs
- */
+/** Chuyển đổi Cart entity → CartResponse kèm tính tổng tiền. */
 public class CartMapper {
 
-    /**
-     * Convert Cart entity to CartResponse
-     */
     public static CartResponse toResponse(Cart cart) {
-        if (cart == null) {
-            return null;
-        }
+        if (cart == null) return null;
+        CartResponse res = new CartResponse();
+        res.setId(cart.getId());
 
-        CartResponse response = new CartResponse();
-        response.setId(cart.getId());
-        response.setAccountId(cart.getAccount() != null ? cart.getAccount().getId() : null);
-
-        return response;
+        List<CartItem> items = cart.getCartItems() != null ? cart.getCartItems() : Collections.emptyList();
+        List<CartResponse.CartItemDto> dtos = items.stream()
+                .map(CartMapper::toItemDto).collect(Collectors.toList());
+        res.setItems(dtos);
+        res.setTotalAmount(dtos.stream()
+                .mapToDouble(i -> i.getSubtotal() != null ? i.getSubtotal() : 0).sum());
+        return res;
     }
 
-    /**
-     * Convert list of Cart entities to list of CartResponse
-     */
-    public static List<CartResponse> toResponses(List<Cart> carts) {
-        if (carts == null) {
-            return Collections.emptyList();
-        }
+    private static CartResponse.CartItemDto toItemDto(CartItem item) {
+        CartResponse.CartItemDto dto = new CartResponse.CartItemDto();
+        dto.setCartItemId(item.getId());
+        dto.setQuantity(item.getQuantity());
 
-        return carts.stream()
-                .map(CartMapper::toResponse)
-                .collect(Collectors.toList());
+        ProductVariant v = item.getProductVariant();
+        if (v != null) {
+            dto.setProductVariantId(v.getId());
+            dto.setImg(v.getImg());
+            if (v.getColor() != null) { dto.setColorCode(v.getColor().getCode()); dto.setColorName(v.getColor().getName()); }
+            if (v.getSize()  != null) { dto.setSizeId(v.getSize().getId());       dto.setSizeName(v.getSize().getName()); }
+            Product p = v.getProduct();
+            if (p != null) {
+                dto.setProductId(p.getId());
+                dto.setProductName(p.getName());
+                double price = p.getSalePrice() != null ? p.getSalePrice() : p.getPrice();
+                dto.setPrice(price);
+                dto.setSubtotal(price * item.getQuantity());
+            }
+        }
+        return dto;
     }
 }

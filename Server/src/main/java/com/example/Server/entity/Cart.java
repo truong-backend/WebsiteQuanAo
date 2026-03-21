@@ -13,7 +13,7 @@ import java.util.List;
 public class Cart {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
     @OneToOne

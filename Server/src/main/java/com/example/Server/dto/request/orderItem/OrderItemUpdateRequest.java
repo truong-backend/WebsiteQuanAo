@@ -1,24 +1,14 @@
-package com.example.Server.dto.request.orderItem;
+package com.example.Server.dto.request.orderitem;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class OrderItemUpdateRequest {
-
-    @NotNull(message = "quantity is required")
-    @Min(value = 1, message = "quantity must be at least 1")
+    @NotNull @Min(1)
     private Integer quantity;
 
-    @NotNull(message = "price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "price must be positive")
+    @NotNull @DecimalMin(value = "0.0", inclusive = false)
     private Double price;
 
     @NotBlank(message = "orderId is required")

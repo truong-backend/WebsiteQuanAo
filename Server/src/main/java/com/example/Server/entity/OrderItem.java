@@ -11,16 +11,15 @@ import lombok.*;
 public class OrderItem {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
-    @Column(name = "quantity", nullable = false)
+    @Column(nullable = false)
     private Integer quantity;
 
-    @Column(name = "price", nullable = false)
+    /** Giá snapshot tại thời điểm đặt hàng (không bị ảnh hưởng khi giá sản phẩm thay đổi). */
+    @Column(nullable = false)
     private Double price;
-
-    // ===== Khóa ngoại =====
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)

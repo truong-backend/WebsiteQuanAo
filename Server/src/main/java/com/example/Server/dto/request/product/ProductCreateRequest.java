@@ -1,18 +1,10 @@
 package com.example.Server.dto.request.product;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class ProductCreateRequest {
-
-    // FE không bắt nhập, BE tự sinh nếu null
     private String id;
 
     @NotBlank(message = "Name is required")
@@ -21,8 +13,7 @@ public class ProductCreateRequest {
     @NotBlank(message = "Description is required")
     private String description;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0", message = "Price must be >= 0")
+    @NotNull @DecimalMin(value = "0")
     private Double price;
 
     @NotBlank(message = "Path is required")

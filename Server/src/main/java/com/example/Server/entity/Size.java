@@ -13,10 +13,10 @@ import java.util.List;
 public class Size {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
-    @Column(name = "name", length = 255, nullable = false, unique = true)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @OneToMany(mappedBy = "size")

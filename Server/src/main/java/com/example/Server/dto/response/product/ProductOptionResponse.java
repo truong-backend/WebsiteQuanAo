@@ -1,13 +1,9 @@
-// package com.example.Server.dto.response.product;
-
 package com.example.Server.dto.response.product;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Data @NoArgsConstructor @AllArgsConstructor
 public class ProductOptionResponse {
-
     private String productId;
     private String productName;
-
 }

@@ -1,15 +1,10 @@
 package com.example.Server.dto.request.payment;
 
 import com.example.Server.enums.PaymentType;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.time.Instant;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class PaymentCreateRequest {
     private String id;
     private PaymentType type;

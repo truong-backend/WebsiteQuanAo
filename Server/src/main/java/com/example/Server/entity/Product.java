@@ -13,31 +13,41 @@ import java.util.List;
 public class Product {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
-    @Column(name = "name", length = 255, nullable = false)
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "description", columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "price", nullable = false)
+    @Column(nullable = false)
     private Double price;
 
-    @Column(name = "path", length = 255, nullable = false)
+    /** Giá sau giảm — null nếu không áp dụng khuyến mãi. */
+    @Column(name = "sale_price")
+    private Double salePrice;
+
+    @Column(nullable = false)
     private String path;
 
-    @Column(name = "img", length = 255, nullable = false)
+    @Column(nullable = false)
     private String img;
 
-    @Column(name = "hover_img", length = 255)
+    @Column(name = "hover_img")
     private String hoverImg;
+
+    /** Điểm đánh giá trung bình (0.0 – 5.0). */
+    private Double rating;
+
+    /** Tổng số lượt đánh giá. */
+    private Integer ratingCount;
 
     @ManyToOne
     @JoinColumn(name = "parent_category_id", nullable = false)
     private Category parentCategory;
 
-    @OneToMany(mappedBy = "product")
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<ProductVariant> variants;
 }

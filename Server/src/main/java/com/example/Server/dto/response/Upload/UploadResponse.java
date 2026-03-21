@@ -1,10 +1,8 @@
-package com.example.Server.dto.response.Upload;
+package com.example.Server.dto.response.upload;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
+@Data @AllArgsConstructor
 public class UploadResponse {
     private String url;
 }

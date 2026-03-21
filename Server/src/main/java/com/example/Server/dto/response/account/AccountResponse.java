@@ -1,14 +1,9 @@
 package com.example.Server.dto.response.account;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class AccountResponse {
-
     private Integer id;
     private String name;
     private String email;

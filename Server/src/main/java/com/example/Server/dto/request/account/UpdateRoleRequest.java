@@ -1,15 +1,10 @@
 package com.example.Server.dto.request.account;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class UpdateRoleRequest {
-
     @NotBlank(message = "Role is required")
     private String role;
 }

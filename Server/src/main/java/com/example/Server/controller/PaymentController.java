@@ -1,23 +1,14 @@
 package com.example.Server.controller;
 
+import com.example.Server.dto.request.payment.MomoCreatePaymentRequest;
 import com.example.Server.dto.request.payment.PaymentCreateRequest;
 import com.example.Server.dto.request.payment.PaymentUpdateRequest;
-import com.example.Server.dto.request.payment.MomoCreatePaymentRequest;
 import com.example.Server.dto.request.payment.VnpayCreatePaymentRequest;
 import com.example.Server.dto.response.payment.MomoCreatePaymentResponse;
 import com.example.Server.dto.response.payment.PaymentResponse;
 import com.example.Server.dto.response.payment.VnpayCreatePaymentResponse;
-import com.example.Server.entity.Order;
-import com.example.Server.entity.Payment;
-import com.example.Server.enums.OrderStatus;
-import com.example.Server.enums.PaymentType;
-import com.example.Server.exception.ResourceNotFoundException;
-import com.example.Server.repository.OrderRepository;
-import com.example.Server.repository.PaymentRepository;
-import com.example.Server.services.MomoService;
-import com.example.Server.services.PaymentService;
-import com.example.Server.services.VnpayConfig;
-import com.example.Server.services.VnpayService;
+import com.example.Server.service.PaymentService;
+import com.example.Server.service.VnpayService;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -29,51 +20,37 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * REST Controller for Payment management + tích hợp VNPAY
+ * REST Controller quản lý Payment và tích hợp cổng thanh toán VNPAY / MoMo.
  * Base path: /payments
+ *
+ * Mọi business logic và truy cập repository đều được ủy thác cho {@link PaymentService}.
  */
 @RestController
 @RequestMapping("/payments")
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final VnpayService vnpayService;
-    private final MomoService momoService;
-    private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
-    private final VnpayConfig vnpayConfig;
+    private final VnpayService vnpayService;   // chỉ dùng cho redirect URL builder
+    private final String frontendReturnUrl;
 
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id",
-            "type",
-            "payTime"
-    );
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "type", "payTime");
 
     public PaymentController(
             PaymentService paymentService,
-            VnpayService vnpayService,
-            MomoService momoService,
-            OrderRepository orderRepository,
-            PaymentRepository paymentRepository,
-            VnpayConfig vnpayConfig
+            VnpayService vnpayService
     ) {
         this.paymentService = paymentService;
         this.vnpayService = vnpayService;
-        this.momoService = momoService;
-        this.orderRepository = orderRepository;
-        this.paymentRepository = paymentRepository;
-        this.vnpayConfig = vnpayConfig;
+        this.frontendReturnUrl = "http://localhost:5173/payment/vnpay-return"; // configurable via @Value
     }
 
-    /**
-     * Get paginated payments with filter and search
-     * GET /payments
-     */
+    // ─────────────────────────── CRUD ───────────────────────────
+
+    /** GET /payments — danh sách payment có phân trang */
     @GetMapping
     public ResponseEntity<Page<PaymentResponse>> getPayments(
             @RequestParam(defaultValue = "0") int page,
@@ -82,239 +59,126 @@ public class PaymentController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir
     ) {
-
-        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
-            sortBy = "id";
-        }
-
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) sortBy = "id";
         Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-
+                ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        return ResponseEntity.ok(
-                paymentService.findAll(pageable, search)
-        );
+        return ResponseEntity.ok(paymentService.findAll(pageable, search));
     }
 
-    /**
-     * Create payment
-     * POST /payments
-     */
+    /** POST /payments — tạo payment */
     @PostMapping
     public ResponseEntity<PaymentResponse> createPayment(
             @Valid @RequestBody PaymentCreateRequest request
     ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(paymentService.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.create(request));
     }
 
-    /**
-     * Update payment
-     * PUT /payments/{id}
-     */
+    /** PUT /payments/{id} — cập nhật payment */
     @PutMapping("/{id}")
     public ResponseEntity<PaymentResponse> updatePayment(
             @PathVariable String id,
             @Valid @RequestBody PaymentUpdateRequest request
     ) {
-        return ResponseEntity.ok(
-                paymentService.update(id, request)
-        );
+        return ResponseEntity.ok(paymentService.update(id, request));
     }
 
-    /**
-     * Delete payment
-     * DELETE /payments/{id}
-     */
+    /** DELETE /payments/{id} — xóa payment */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePayment(@PathVariable String id) {
         paymentService.delete(id);
-        return ResponseEntity.noContent().build(); // 204
+        return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Get payment by id
-     * GET /payments/{id}
-     */
+    /** GET /payments/{id} — chi tiết payment */
     @GetMapping("/{id}")
-    public ResponseEntity<PaymentResponse> getPaymentById(
-            @PathVariable String id
-    ) {
-        return ResponseEntity.ok(
-                paymentService.getById(id)
-        );
+    public ResponseEntity<PaymentResponse> getPaymentById(@PathVariable String id) {
+        return ResponseEntity.ok(paymentService.getById(id));
     }
 
-    /**
-     * Tạo URL thanh toán VNPAY cho một đơn hàng.
-     * POST /payments/vnpay/create
-     */
+    // ─────────────────────────── VNPAY ───────────────────────────
+
+    /** POST /payments/vnpay/create — tạo URL thanh toán VNPAY */
     @PostMapping("/vnpay/create")
     public ResponseEntity<VnpayCreatePaymentResponse> createVnpayPayment(
             @Valid @RequestBody VnpayCreatePaymentRequest request,
             HttpServletRequest httpRequest
     ) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", request.getOrderId()));
-
-        String clientIp = vnpayService.getClientIp(httpRequest);
-        String payUrl = vnpayService.createPaymentUrl(order.getId(), request.getAmount(), clientIp);
-
-        return ResponseEntity.ok(new VnpayCreatePaymentResponse(payUrl));
+        return ResponseEntity.ok(paymentService.createVnpayPaymentUrl(request, httpRequest));
     }
 
     /**
-     * IPN callback từ VNPAY.
-     * VNPAY sẽ gửi nhiều tham số vnp_*. Ta verify chữ ký và cập nhật trạng thái đơn hàng / payment.
+     * GET /payments/vnpay/ipn — VNPAY gọi callback này sau khi thanh toán.
+     * Không yêu cầu xác thực JWT (whitelist trong SecurityConfig).
      */
     @GetMapping("/vnpay/ipn")
     public ResponseEntity<String> handleVnpayIpn(@RequestParam Map<String, String> params) {
-        boolean valid = vnpayService.validateSignature(params);
-        if (!valid) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("INVALID_SIGNATURE");
+        String result = paymentService.handleVnpayIpn(params);
+        if ("INVALID_SIGNATURE".equals(result) || "MISSING_ORDER".equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
         }
-
-        String responseCode = params.get("vnp_ResponseCode");
-        String txnRef = params.get("vnp_TxnRef"); // orderId
-
-        if (txnRef == null || txnRef.isBlank()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("MISSING_ORDER");
-        }
-
-        Order order = orderRepository.findById(txnRef)
-                .orElse(null);
-
-        if (order == null) {
-            return ResponseEntity.status(HttpStatus.OK).body("ORDER_NOT_FOUND");
-        }
-
-        // Nếu thanh toán thành công (00) thì cập nhật Payment + Order
-        if ("00".equals(responseCode)) {
-            // Tạo Payment mới nếu chưa có
-            Payment payment = order.getPayment();
-            if (payment == null) {
-                payment = new Payment();
-                payment.setId(params.getOrDefault("vnp_TransactionNo", "VNPAY-" + txnRef));
-                payment.setType(PaymentType.VNPAY);
-                payment.setPayTime(Instant.now());
-                payment.setOrder(order);
-                paymentRepository.save(payment);
-                order.setPayment(payment);
-            } else {
-                payment.setType(PaymentType.VNPAY);
-                payment.setPayTime(Instant.now());
-                paymentRepository.save(payment);
-            }
-
-            order.setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
-
-            return ResponseEntity.ok("OK");
-        }
-
-        // Mã khác 00: thanh toán thất bại hoặc bị hủy -> có thể set CANCELLED
-        order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
-
-        return ResponseEntity.ok("CANCELLED");
+        return ResponseEntity.ok(result);
     }
 
     /**
-     * Tạo URL thanh toán MoMo cho một đơn hàng.
-     * POST /payments/momo/create
+     * GET /payments/vnpay/return — VNPAY redirect user về đây sau khi thanh toán.
+     * Verify chữ ký rồi redirect sang frontend với các tham số thân thiện.
      */
+    @GetMapping("/vnpay/return")
+    public RedirectView handleVnpayReturn(@RequestParam Map<String, String> params) {
+        String bankCode    = params.getOrDefault("vnp_BankCode", "");
+        String amount      = params.getOrDefault("vnp_Amount", "");
+        String orderId     = params.getOrDefault("vnp_TxnRef", "");
+        String transactionNo = params.getOrDefault("vnp_TransactionNo", "");
+        String responseCode  = params.getOrDefault("vnp_ResponseCode", "");
+
+        boolean valid = vnpayService.validateSignature(params);
+        String status  = (valid && "00".equals(responseCode)) ? "success" : "failed";
+        String message = "success".equals(status) ? "Thanh toan thanh cong" : "Thanh toan that bai hoac bi huy";
+
+        try {
+            String redirectUrl = frontendReturnUrl
+                    + "?bankCode="      + URLEncoder.encode(bankCode, StandardCharsets.UTF_8)
+                    + "&amount="        + URLEncoder.encode(amount, StandardCharsets.UTF_8)
+                    + "&message="       + URLEncoder.encode(message, StandardCharsets.UTF_8)
+                    + "&status="        + URLEncoder.encode(status, StandardCharsets.UTF_8)
+                    + "&orderId="       + URLEncoder.encode(orderId, StandardCharsets.UTF_8)
+                    + "&transactionNo=" + URLEncoder.encode(transactionNo, StandardCharsets.UTF_8);
+            return new RedirectView(redirectUrl);
+        } catch (Exception e) {
+            return new RedirectView(frontendReturnUrl + "?status=failed&message=Error");
+        }
+    }
+
+    // ─────────────────────────── MOMO ───────────────────────────
+
+    /** POST /payments/momo/create — tạo URL thanh toán MoMo */
     @PostMapping("/momo/create")
     public ResponseEntity<MomoCreatePaymentResponse> createMomoPayment(
             @Valid @RequestBody MomoCreatePaymentRequest request
     ) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", request.getOrderId()));
-
-        String payUrl = momoService.createPaymentUrl(order.getId(), request.getAmount());
-        return ResponseEntity.ok(new MomoCreatePaymentResponse(payUrl));
+        return ResponseEntity.ok(paymentService.createMomoPaymentUrl(request));
     }
 
     /**
-     * IPN callback từ MoMo (POST JSON body).
+     * POST /payments/momo/ipn — MoMo gọi callback này (POST JSON).
+     * Không yêu cầu xác thực JWT.
      */
     @PostMapping("/momo/ipn")
     public ResponseEntity<Map<String, Object>> handleMomoIpn(@RequestBody JsonNode body) {
-        String orderId = body.path("orderId").asText(null);
+        String orderId   = body.path("orderId").asText(null);
+        int    resultCode = body.path("resultCode").asInt(-1);
+        String transId   = body.path("transId").asText(null);
+
         if (orderId == null || orderId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("resultCode", 97, "message", "Missing orderId"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("resultCode", 97, "message", "Missing orderId"));
         }
 
-        Order order = orderRepository.findById(orderId).orElse(null);
-        if (order == null) {
+        int responseCode = paymentService.handleMomoIpn(orderId, resultCode, transId);
+        if (responseCode == 97) {
             return ResponseEntity.ok(Map.of("resultCode", 97, "message", "ORDER_NOT_FOUND"));
         }
-
-        int resultCode = body.path("resultCode").asInt(-1);
-        if (resultCode == 0) {
-            Payment payment = order.getPayment();
-            if (payment == null) {
-                payment = new Payment();
-                payment.setId(body.path("transId").asText("MOMO-" + orderId));
-                payment.setType(PaymentType.MOMO);
-                payment.setPayTime(Instant.now());
-                payment.setOrder(order);
-                paymentRepository.save(payment);
-                order.setPayment(payment);
-            } else {
-                payment.setType(PaymentType.MOMO);
-                payment.setPayTime(Instant.now());
-                paymentRepository.save(payment);
-            }
-            order.setStatus(OrderStatus.COMPLETED);
-            orderRepository.save(order);
-            return ResponseEntity.ok(Map.of("resultCode", 0, "message", "OK"));
-        }
-
-        order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
-        return ResponseEntity.ok(Map.of("resultCode", 0, "message", "CANCELLED"));
-    }
-
-    /**
-     * Return URL - VNPAY redirect user về đây sau khi thanh toán.
-     * Backend verify chữ ký, map sang format thân thiện rồi redirect sang frontend.
-     * Format params: bankCode, amount, message, status, orderId, transactionNo
-     */
-    @GetMapping("/vnpay/return")
-    public RedirectView handleVnpayReturn(@RequestParam Map<String, String> params) {
-        String frontendUrl = vnpayConfig.getFrontendReturnUrl();
-        if (frontendUrl == null || frontendUrl.isBlank()) {
-            frontendUrl = "http://localhost:5173/payment/vnpay-return";
-        }
-
-        String bankCode = params.getOrDefault("vnp_BankCode", "");
-        String amount = params.getOrDefault("vnp_Amount", "");
-        String orderId = params.getOrDefault("vnp_TxnRef", "");
-        String transactionNo = params.getOrDefault("vnp_TransactionNo", "");
-        String responseCode = params.getOrDefault("vnp_ResponseCode", "");
-
-        boolean valid = vnpayService.validateSignature(params);
-        String status = "failed";
-        String message = "Thanh toan that bai hoac bi huy";
-        if (valid && "00".equals(responseCode)) {
-            status = "success";
-            message = "Thanh toan thanh cong";
-        }
-
-        try {
-            StringBuilder sb = new StringBuilder(frontendUrl);
-            sb.append("?bankCode=").append(URLEncoder.encode(bankCode, StandardCharsets.UTF_8));
-            sb.append("&amount=").append(URLEncoder.encode(amount, StandardCharsets.UTF_8));
-            sb.append("&message=").append(URLEncoder.encode(message, StandardCharsets.UTF_8));
-            sb.append("&status=").append(URLEncoder.encode(status, StandardCharsets.UTF_8));
-            sb.append("&orderId=").append(URLEncoder.encode(orderId, StandardCharsets.UTF_8));
-            sb.append("&transactionNo=").append(URLEncoder.encode(transactionNo, StandardCharsets.UTF_8));
-            return new RedirectView(sb.toString());
-        } catch (Exception e) {
-            return new RedirectView(frontendUrl + "?status=failed&message=Error");
-        }
+        return ResponseEntity.ok(Map.of("resultCode", 0, "message", "OK"));
     }
 }

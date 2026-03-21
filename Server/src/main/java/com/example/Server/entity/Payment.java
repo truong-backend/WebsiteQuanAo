@@ -1,12 +1,10 @@
 package com.example.Server.entity;
 
-
 import com.example.Server.enums.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment")
@@ -16,19 +14,17 @@ import java.time.LocalDateTime;
 public class Payment {
 
     @Id
-    @Column(name = "id", length = 36)
-    private String id; // Mã thanh toán
+    @Column(length = 36)
+    private String id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private PaymentType type; // Loại thanh toán
+    @Column(nullable = false)
+    private PaymentType type;
 
+    /** Thời điểm thanh toán thực tế — null cho đến khi xác nhận (BANKING/MOMO/VNPAY). */
     @Column(name = "pay_time")
-    private Instant payTime; // Giờ thanh toán (có thể null)
+    private Instant payTime;
 
-    /* ===== KHÓA NGOẠI ORDER ===== */
     @OneToOne(mappedBy = "payment")
     private Order order;
-
-
 }

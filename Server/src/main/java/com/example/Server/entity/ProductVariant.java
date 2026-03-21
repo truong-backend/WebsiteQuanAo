@@ -13,16 +13,14 @@ import java.util.List;
 public class ProductVariant {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
-    @Column(name = "quantity", nullable = false)
+    @Column(nullable = false)
     private Integer quantity;
 
-    @Column(name = "img", length = 255, nullable = false)
+    @Column(nullable = false)
     private String img;
-
-    // ====== Khóa ngoại ======
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)

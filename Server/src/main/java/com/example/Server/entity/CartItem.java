@@ -11,12 +11,11 @@ import lombok.*;
 public class CartItem {
 
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
-    @Column(name = "quantity", nullable = false)
+    @Column(nullable = false)
     private Integer quantity;
-
 
     @ManyToOne
     @JoinColumn(name = "cart_id", nullable = false)

@@ -14,8 +14,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order {
+
     @Id
-    @Column(name = "id", length = 36)
+    @Column(length = 36)
     private String id;
 
     @Column(name = "order_time", nullable = false)
@@ -24,25 +25,27 @@ public class Order {
     @Column(name = "phone_number", length = 12, nullable = false)
     private String phoneNumber;
 
-    @Column(name = "address", length = 255, nullable = false)
+    @Column(nullable = false)
     private String address;
 
-    @Column(name = "note", length = 255)
     private String note;
 
+    /** Tổng tiền đơn hàng tại thời điểm đặt (snapshot giá). */
+    @Column(name = "total_amount", nullable = false)
+    private Double totalAmount;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(nullable = false)
     private OrderStatus status;
 
     @ManyToOne
     @JoinColumn(name = "account_id")
     private Account account;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "payment_id")
     private Payment payment;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 }
-

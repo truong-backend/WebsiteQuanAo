@@ -1,42 +1,30 @@
 package com.example.Server.mapper;
 
-import com.example.Server.dto.response.orderItem.OrderItemResponse;
+import com.example.Server.dto.response.orderitem.OrderItemResponse;
 import com.example.Server.entity.OrderItem;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper for OrderItem entity and its DTOs
- */
 public class OrderItemMapper {
-
-    public static OrderItemResponse toResponse(OrderItem orderItem) {
-        if (orderItem == null) {
-            return null;
-        }
-        OrderItemResponse response = new OrderItemResponse();
-        response.setId(orderItem.getId());
-        response.setQuantity(orderItem.getQuantity());
-        response.setPrice(orderItem.getPrice());
-        response.setOrderId(orderItem.getOrder() != null ? orderItem.getOrder().getId() : null);
-        if (orderItem.getProductVariant() != null) {
-            response.setProductVariantId(orderItem.getProductVariant().getId());
-            if (orderItem.getProductVariant().getProduct() != null) {
-                response.setProductName(orderItem.getProductVariant().getProduct().getName());
-                response.setProductId(orderItem.getProductVariant().getProduct().getId());
+    public static OrderItemResponse toResponse(OrderItem item) {
+        if (item == null) return null;
+        OrderItemResponse r = new OrderItemResponse();
+        r.setId(item.getId());
+        r.setQuantity(item.getQuantity());
+        r.setPrice(item.getPrice());
+        r.setOrderId(item.getOrder() != null ? item.getOrder().getId() : null);
+        if (item.getProductVariant() != null) {
+            r.setProductVariantId(item.getProductVariant().getId());
+            if (item.getProductVariant().getProduct() != null) {
+                r.setProductId(item.getProductVariant().getProduct().getId());
+                r.setProductName(item.getProductVariant().getProduct().getName());
             }
         }
-        return response;
+        return r;
     }
-
-    public static List<OrderItemResponse> toResponses(List<OrderItem> orderItems) {
-        if (orderItems == null) {
-            return Collections.emptyList();
-        }
-        return orderItems.stream()
-                .map(OrderItemMapper::toResponse)
-                .collect(Collectors.toList());
+    public static List<OrderItemResponse> toResponses(List<OrderItem> list) {
+        if (list == null) return Collections.emptyList();
+        return list.stream().map(OrderItemMapper::toResponse).collect(Collectors.toList());
     }
 }

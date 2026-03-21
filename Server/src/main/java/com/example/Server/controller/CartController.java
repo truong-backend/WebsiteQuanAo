@@ -1,22 +1,14 @@
 package com.example.Server.controller;
 
-import com.example.Server.dto.request.cart.CartCreateRequest;
-import com.example.Server.dto.request.cart.CartUpdateRequest;
+import com.example.Server.dto.request.cart.AddToCartRequest;
 import com.example.Server.dto.response.cart.CartResponse;
-import com.example.Server.services.CartService;
+import com.example.Server.service.CartService;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Set;
-
 /**
- * REST Controller for Cart management
+ * Controller quản lý giỏ hàng của user đang đăng nhập.
  * Base path: /carts
  */
 @RestController
@@ -24,81 +16,31 @@ import java.util.Set;
 public class CartController {
 
     private final CartService cartService;
+    public CartController(CartService cartService) { this.cartService = cartService; }
 
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id"
-    );
+    /** GET /carts/me — lấy giỏ hàng hiện tại */
+    @GetMapping("/me")
+    public ResponseEntity<CartResponse> getMyCart() { return ResponseEntity.ok(cartService.getMyCart()); }
 
-    public CartController(CartService cartService) {
-        this.cartService = cartService;
+    /** POST /carts/me/items — thêm sản phẩm vào giỏ */
+    @PostMapping("/me/items")
+    public ResponseEntity<CartResponse> addToCart(@Valid @RequestBody AddToCartRequest request) {
+        return ResponseEntity.ok(cartService.addToCart(request));
     }
 
-    /**
-     * Get paginated carts with filter and search
-     * GET /carts
-     */
-    @GetMapping
-    public ResponseEntity<Page<CartResponse>> getCarts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir
-    ) {
-        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
-            sortBy = "id";
-        }
-
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        return ResponseEntity.ok(cartService.findAll(pageable, search));
+    /** PUT /carts/me/items/{cartItemId}?quantity=3 — cập nhật số lượng */
+    @PutMapping("/me/items/{cartItemId}")
+    public ResponseEntity<CartResponse> updateCartItem(@PathVariable String cartItemId, @RequestParam int quantity) {
+        return ResponseEntity.ok(cartService.updateCartItem(cartItemId, quantity));
     }
 
-    /**
-     * Create cart
-     * POST /carts
-     */
-    @PostMapping
-    public ResponseEntity<CartResponse> createCart(
-            @Valid @RequestBody CartCreateRequest request
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(cartService.create(request));
+    /** DELETE /carts/me/items/{cartItemId} — xóa một item */
+    @DeleteMapping("/me/items/{cartItemId}")
+    public ResponseEntity<CartResponse> removeCartItem(@PathVariable String cartItemId) {
+        return ResponseEntity.ok(cartService.removeCartItem(cartItemId));
     }
 
-    /**
-     * Update cart
-     * PUT /carts/{id}
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<CartResponse> updateCart(
-            @PathVariable String id,
-            @Valid @RequestBody CartUpdateRequest request
-    ) {
-        return ResponseEntity.ok(cartService.update(id, request));
-    }
-
-    /**
-     * Delete cart
-     * DELETE /carts/{id}
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCart(@PathVariable String id) {
-        cartService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Get cart by id
-     * GET /carts/{id}
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<CartResponse> getCartById(@PathVariable String id) {
-        return ResponseEntity.ok(cartService.getById(id));
-    }
+    /** DELETE /carts/me — xóa toàn bộ giỏ hàng */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> clearCart() { cartService.clearCart(); return ResponseEntity.noContent().build(); }
 }

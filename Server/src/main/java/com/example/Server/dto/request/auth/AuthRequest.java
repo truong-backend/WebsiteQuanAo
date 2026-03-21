@@ -1,14 +1,9 @@
 package com.example.Server.dto.request.auth;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class AuthRequest {
-
     private String email;
     private String password;
 }

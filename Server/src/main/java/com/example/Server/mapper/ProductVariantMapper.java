@@ -1,48 +1,27 @@
 package com.example.Server.mapper;
 
-import com.example.Server.dto.response.productVariant.ProductVariantResponse;
+import com.example.Server.dto.response.productvariant.ProductVariantResponse;
 import com.example.Server.entity.ProductVariant;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper for ProductVariant entity and its DTOs
- */
 public class ProductVariantMapper {
-
-    /**
-     * Convert ProductVariant entity to ProductVariantResponse
-     */
     public static ProductVariantResponse toResponse(ProductVariant pv) {
-        if (pv == null) {
-            return null;
-        }
-
-        ProductVariantResponse response = new ProductVariantResponse();
-        response.setId(pv.getId());
-        response.setQuantity(pv.getQuantity());
-        response.setImg(pv.getImg());
-        response.setProductId(pv.getProduct() != null ? pv.getProduct().getId() : null);
-        response.setProductName(pv.getProduct().getName());
-        response.setColorCode(pv.getColor() != null ? pv.getColor().getCode() : null);
-        response.setColorName(pv.getColor() != null ? pv.getColor().getName() : null);
-        response.setSizeId(pv.getSize() != null ? pv.getSize().getId() : null);
-
-        return response;
+        if (pv == null) return null;
+        ProductVariantResponse r = new ProductVariantResponse();
+        r.setId(pv.getId());
+        r.setQuantity(pv.getQuantity());
+        r.setImg(pv.getImg());
+        r.setProductId(pv.getProduct() != null ? pv.getProduct().getId() : null);
+        r.setProductName(pv.getProduct() != null ? pv.getProduct().getName() : null);
+        r.setColorCode(pv.getColor() != null ? pv.getColor().getCode() : null);
+        r.setColorName(pv.getColor() != null ? pv.getColor().getName() : null);
+        r.setSizeId(pv.getSize() != null ? pv.getSize().getId() : null);
+        return r;
     }
-
-    /**
-     * Convert list of ProductVariant entities to list of ProductVariantResponse
-     */
     public static List<ProductVariantResponse> toResponses(List<ProductVariant> list) {
-        if (list == null) {
-            return Collections.emptyList();
-        }
-
-        return list.stream()
-                .map(ProductVariantMapper::toResponse)
-                .collect(Collectors.toList());
+        if (list == null) return Collections.emptyList();
+        return list.stream().map(ProductVariantMapper::toResponse).collect(Collectors.toList());
     }
 }

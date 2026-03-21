@@ -1,19 +1,10 @@
 package com.example.Server.dto.request.register;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-
+@Data @NoArgsConstructor @AllArgsConstructor
 public class RegisterAccount {
     private String email;
-
     private String password;
-
     private String name;
-
-//    private String roles;
 }

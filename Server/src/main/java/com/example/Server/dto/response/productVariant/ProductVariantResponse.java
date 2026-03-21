@@ -1,14 +1,9 @@
-package com.example.Server.dto.response.productVariant;
+package com.example.Server.dto.response.productvariant;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class ProductVariantResponse {
-
     private String id;
     private Integer quantity;
     private String img;

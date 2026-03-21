@@ -1,23 +1,28 @@
 package com.example.Server.controller;
 
-import com.example.Server.dto.response.account.AccountResponse;
-import com.example.Server.entity.Account;
 import com.example.Server.dto.request.auth.AuthRequest;
 import com.example.Server.dto.request.register.RegisterAccount;
+import com.example.Server.dto.response.account.AccountResponse;
 import com.example.Server.dto.response.auth.LoginResponse;
-import com.example.Server.services.AuthenticationService;
-import com.example.Server.services.JwtService;
+import com.example.Server.entity.Account;
+import com.example.Server.service.AuthenticationService;
+import com.example.Server.service.JwtService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RequestMapping("/auth")
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Controller xử lý đăng ký và đăng nhập.
+ * Base path: /auth
+ */
 @RestController
+@RequestMapping("/auth")
 public class AuthenticationController {
-    private final JwtService jwtService;
 
+    private final JwtService jwtService;
     private final AuthenticationService authenticationService;
 
     public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService) {
@@ -25,24 +30,24 @@ public class AuthenticationController {
         this.authenticationService = authenticationService;
     }
 
+    /** POST /auth/signup — đăng ký tài khoản mới */
     @PostMapping("/signup")
-    public ResponseEntity<AccountResponse> register(@RequestBody RegisterAccount registerUserDto) {
-        AccountResponse registeredUser = authenticationService.signup(registerUserDto);
-
-        return ResponseEntity.ok(registeredUser);
+    public ResponseEntity<AccountResponse> signup(@RequestBody RegisterAccount request) {
+        return ResponseEntity.ok(authenticationService.signup(request));
     }
 
+    /** POST /auth/login — đăng nhập, nhận JWT token */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody AuthRequest loginUserDto) {
-        Account authenticatedUser = authenticationService.authenticate(loginUserDto);
+    public ResponseEntity<LoginResponse> login(@RequestBody AuthRequest request) {
+        Account account = authenticationService.authenticate(request);
 
-        String jwtToken = jwtService.generateToken(authenticatedUser);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", List.of(account.getRoles()));
+        String token = jwtService.generateToken(claims, account);
 
-        LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setToken(jwtToken);
-        loginResponse.setExpiresIn(jwtService.getExpirationTime());
-
-
-        return ResponseEntity.ok(loginResponse);
+        LoginResponse response = new LoginResponse();
+        response.setToken(token);
+        response.setExpiresIn(jwtService.getExpirationTime());
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,12 +1,8 @@
 package com.example.Server.dto.request.color;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class ColorUpdateRequest {
     private String name;
 }

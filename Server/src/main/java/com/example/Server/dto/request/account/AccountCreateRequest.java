@@ -1,17 +1,10 @@
 package com.example.Server.dto.request.account;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class AccountCreateRequest {
-
     @NotBlank(message = "Name is required")
     private String name;
 
@@ -23,5 +16,5 @@ public class AccountCreateRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    private String roles; // Optional, default to "USER"
+    private String roles;
 }

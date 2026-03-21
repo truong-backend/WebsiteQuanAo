@@ -1,14 +1,9 @@
-package com.example.Server.dto.response.cartItem;
+package com.example.Server.dto.response.cartitem;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Data @NoArgsConstructor @AllArgsConstructor
 public class CartItemResponse {
-
     private String id;
     private Integer quantity;
     private String cartId;
