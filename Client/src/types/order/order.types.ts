@@ -46,6 +46,18 @@ export interface OrderResponse extends Record<string, unknown> {
 
 export type OrderResponsePageResponse = PageResponse<OrderResponse>;
 
+export interface OrderBasicResponse {
+  id: string;
+  orderTime: string;           // ISO datetime string
+  phoneNumber: string;
+  address: string;
+  note?: string;
+  status: OrderStatus;
+  accountId?: number;
+  paymentId?: string;
+  orderItems: OrderItemResponse[];
+}
+
 /** Response đầy đủ (detail page — bao gồm items) */
 export interface OrderItemDto {
   orderItemId: string;
@@ -78,6 +90,17 @@ export interface OrderDetailResponse {
 }
 
 // ─── Order Request ────────────────────────────────────────────
+export interface CreateOrderRequest {
+  phoneNumber: string;
+  address: string;
+  note?: string;
+  paymentType: "COD" | "BANKING" | "MOMO" | "VNPAY";
+  items: {
+    productVariantId: string;
+    quantity: number;
+  }[];
+}
+
 export interface OrderItemRequest {
   productVariantId: string;
   quantity: number;
@@ -124,3 +147,4 @@ export interface OrderItemUpdateRequest {
   orderId: string;
   productVariantId: string;
 }
+

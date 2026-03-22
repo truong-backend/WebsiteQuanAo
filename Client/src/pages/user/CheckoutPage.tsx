@@ -142,7 +142,7 @@ const CheckoutPage: React.FC = () => {
                         checked={paymentMethod === opt.value}
                         onChange={() => setPaymentMethod(opt.value)}
                       />
-                      {/* <span>{opt.emoji} {opt.label}</span> */}
+                      <span>{} {opt.label}</span>
                     </label>
                   ))}
                 </div>

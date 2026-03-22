@@ -8,6 +8,7 @@ export interface AccountResponse {
   name: string;
   email: string;
   roles: string;
+  enabled: boolean;
 }
 
 export type AccountResponsePageResponse = PageResponse<AccountResponse>;

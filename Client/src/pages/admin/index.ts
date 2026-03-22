@@ -8,3 +8,4 @@ export { default as SizePage }           from './SizePage';
 export { default as ProductPage }        from './ProductPage';
 export { default as ProductVariantPage } from './ProductVariantPage';
 export { default as OrderPage }          from './OrderPage';
+export { default as ContactPage }        from './ContactPage';

@@ -27,3 +27,5 @@ export { OrderService, OrderItemService }        from "./order/order.module";
 export { PaymentService, PaymentGatewayService } from "./payment/payment.module";
 
 export { UploadService }                         from "./upload/upload.module";
+
+export { ContactService }                       from "./contact/contact.module";

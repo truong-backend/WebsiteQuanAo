@@ -1,9 +1,11 @@
 // src/pages/user/ContactPage.tsx
 import React, { useState } from 'react';
 import PageLayout from '@/components/user/layout/PageLayout';
+import { ContactService } from '@/modules';
+import type { ContactCreateRequest } from '@/types';
 import styles from './ContactPage.module.scss';
 
-// ─── Data ─────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/quyhacde/' },
@@ -11,27 +13,45 @@ const SOCIALS = [
   { label: 'TikTok',    href: 'https://www.tiktok.com/@ng_thanh_truong' },
 ];
 
-
+const INITIAL_FORM: ContactCreateRequest = {
+  name: '',
+  email: '',
+  subject: '',
+  message: '',
+};
 
 // ─── Component ────────────────────────────────────────────────
 
 const ContactPage: React.FC = () => {
-  const [form, setForm] = useState({
-    name: '', email: '', subject: '', message: '',
-  });
+  const [form, setForm]       = useState<ContactCreateRequest>(INITIAL_FORM);
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => setForm({ ...form, [e.target.name]: e.target.value });
+  ) => {
+    setError(null);
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setForm({ name: '', email: '', subject: '', message: '' });
-    }, 3000);
+    setLoading(true);
+    setError(null);
+
+    try {
+      await ContactService.submit(form);
+      setSubmitted(true);
+      setForm(INITIAL_FORM);
+
+      // Reset trạng thái sau 4 giây
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,7 +93,8 @@ const ContactPage: React.FC = () => {
           <div className={styles.formSection__grid}>
 
             {/* Form */}
-            <form className={styles.form} onSubmit={handleSubmit}>
+            <form className={styles.form} onSubmit={handleSubmit} noValidate>
+
               <div className={styles.form__row}>
                 <div className={styles.field}>
                   <label className={styles.label}>Họ và tên</label>
@@ -84,6 +105,7 @@ const ContactPage: React.FC = () => {
                     placeholder="Nhập tên của bạn"
                     value={form.name}
                     onChange={handleChange}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -96,6 +118,7 @@ const ContactPage: React.FC = () => {
                     placeholder="example@domain.com"
                     value={form.email}
                     onChange={handleChange}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -110,6 +133,7 @@ const ContactPage: React.FC = () => {
                   placeholder="Câu hỏi chung"
                   value={form.subject}
                   onChange={handleChange}
+                  disabled={loading}
                 />
               </div>
 
@@ -122,18 +146,30 @@ const ContactPage: React.FC = () => {
                   rows={6}
                   value={form.message}
                   onChange={handleChange}
+                  disabled={loading}
                   required
                 />
               </div>
 
+              {/* Error message */}
+              {error && (
+                <p className={styles.errorMsg}>{error}</p>
+              )}
+
               <button
                 type="submit"
+                disabled={loading || submitted}
                 className={[
                   styles.submitBtn,
                   submitted ? styles['submitBtn--done'] : '',
-                ].join(' ')}
+                  loading   ? styles['submitBtn--loading'] : '',
+                ].filter(Boolean).join(' ')}
               >
-                {submitted ? '✓ Đã gửi thành công!' : 'Gửi tin nhắn'}
+                {submitted
+                  ? '✓ Đã gửi thành công!'
+                  : loading
+                  ? 'Đang gửi...'
+                  : 'Gửi tin nhắn'}
               </button>
             </form>
 
@@ -147,49 +183,6 @@ const ContactPage: React.FC = () => {
             </div>
           </div>
         </section>
-
-        {/* ── Locations ── */}
-        {/* <section className={styles.locations}>
-          <div className={styles.locations__inner}>
-            <div className={styles.locations__header}>
-              <span className={styles.locations__eyebrow}>Hệ thống cửa hàng</span>
-              <h2 className={styles.locations__title}>Showroom của chúng tôi</h2>
-            </div>
-
-            <div className={styles.locations__grid}>
-              {LOCATIONS.map((loc) => (
-                <div key={loc.city} className={styles.locationCard}>
-                  <div className={styles.locationCard__line} />
-                  <h3 className={styles.locationCard__city}>{loc.city}</h3>
-                  <p className={styles.locationCard__address}>
-                    {loc.address.split('\n').map((line, i) => (
-                      <span key={i}>{line}{i < loc.address.split('\n').length - 1 && <br />}</span>
-                    ))}
-                  </p>
-                  <div className={styles.locationCard__hours}>
-                    <p className={styles.locationCard__hoursLabel}>Giờ mở cửa</p>
-                    {loc.hours.map((h) => (
-                      <p key={h} className={styles.locationCard__hoursRow}>{h}</p>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section> */}
-
-        {/* ── Map ── */}
-        {/* <section className={styles.mapSection}>
-          <div
-            className={styles.mapSection__bg}
-            style={{ backgroundImage: `url('${MAP_BG}')` }}
-          />
-          <div className={styles.mapSection__overlay}>
-            <div className={styles.mapSection__chip}>
-              <span>Khám phá hệ thống cửa hàng</span>
-            </div>
-          </div>
-        </section> */}
 
       </div>
     </PageLayout>

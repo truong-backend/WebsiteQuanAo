@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { to: '/admin/sizes',            icon: <ColumnHeightOutlined />,  label: 'Kích thước' },
   { to: '/admin/colors',           icon: <BgColorsOutlined />,      label: 'Màu sắc' },
   { to: '/admin/orders',           icon: <ShoppingCartOutlined />,  label: 'Đơn hàng' },
+  { to: '/admin/contacts',         icon: <UserOutlined />,          label: 'Liên hệ' },
 ];
 
 // ─── Inner (remounts on every route change → open resets automatically) ───────

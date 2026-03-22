@@ -1,7 +1,4 @@
 // ─── ProfilePage.module.scss ──────────────────────────────────
-// Style cho ProfilePage — dùng cùng design token với ProfileLayout
-
-// ─── Page wrapper ─────────────────────────────────────────────
 
 .page {
   display: flex;
@@ -51,12 +48,27 @@
   padding: 0.75rem 2rem;
   cursor: pointer;
   white-space: nowrap;
-  border-radius: 0.25rem;
   transition: background 0.25s;
 
-  &:hover {
-    background: #535252;
-  }
+  &:hover:not(:disabled) { background: #535252; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.cancelBtn {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a6061;
+  background: transparent;
+  border: 1px solid rgba(173, 179, 180, 0.3);
+  padding: 0.75rem 2rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover:not(:disabled) { background: #f2f4f4; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 // ─── Identity block ───────────────────────────────────────────
@@ -73,7 +85,7 @@
   }
 }
 
-// ─── Photo ───────────────────────────────────────────────────
+// ─── Photo ────────────────────────────────────────────────────
 
 .identity__photoCol {
   display: flex;
@@ -97,7 +109,6 @@
   background: #f2f4f4;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 
-  // grayscale by default, full color on hover (like HTML)
   img {
     filter: grayscale(100%);
     transform: scale(1.05);
@@ -117,38 +128,43 @@
   display: block;
 }
 
-.photo__editBtn {
-  position: absolute;
-  bottom: -1rem;
-  right: -1rem;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 1px solid rgba(173, 179, 180, 0.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s;
-
-  span {
-    font-size: 1.125rem;
-    color: #6d5f07; // tertiary
-  }
-
-  &:hover {
-    background: #f2f4f4;
-  }
-}
-
 // ─── Info column ──────────────────────────────────────────────
 
 .identity__infoCol {
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 2rem;
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(173, 179, 180, 0.15);
+  gap: 0;
+}
+
+.tab {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #757c7d;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.75rem 1.5rem 0.75rem 0;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+
+  &:hover { color: #2d3435; }
+
+  &--active {
+    color: #2d3435;
+    border-bottom-color: #2d3435;
+  }
 }
 
 // ─── Info grid (fields) ───────────────────────────────────────
@@ -171,9 +187,7 @@
   padding-bottom: 0.5rem;
   transition: border-color 0.2s;
 
-  &:hover {
-    border-bottom-color: rgba(173, 179, 180, 0.3);
-  }
+  &:hover { border-bottom-color: rgba(173, 179, 180, 0.3); }
 }
 
 .infoField__label {
@@ -193,210 +207,124 @@
   margin: 0;
 }
 
-// ─── Style preferences ────────────────────────────────────────
+// ─── Edit form ────────────────────────────────────────────────
 
-.stylePrefs {
-  padding-top: 2rem;
-  border-top: 1px solid rgba(173, 179, 180, 0.15);
-}
-
-.stylePrefs__title {
-  font-family: 'Noto Serif', serif;
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #2d3435;
-  margin: 0 0 1.5rem;
-}
-
-.stylePrefs__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-
-  @media (max-width: 540px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.styleCard {
-  background: #f2f4f4;
-  border: 1px solid rgba(173, 179, 180, 0.15);
-  border-radius: 0.25rem;
-  padding: 1.5rem;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #e4e9ea;
-  }
-}
-
-.styleCard__icon {
-  display: block;
-  font-size: 1.25rem;
-  color: #5f5e5e;
-  margin-bottom: 1rem;
-}
-
-.styleCard__label {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #2d3435;
-  margin: 0 0 0.375rem;
-}
-
-.styleCard__value {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.8125rem;
-  color: #5a6061;
-  line-height: 1.6;
-  font-style: italic;
-  margin: 0;
-}
-
-// ─── Recommendations ──────────────────────────────────────────
-
-.recs {
+.editForm {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 1.5rem;
 }
 
-.recs__header {
+.editField {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editInput {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  color: #2d3435;
+  background: #f2f4f4;
+  border: 1px solid rgba(173, 179, 180, 0.15);
+  padding: 0.875rem 1.25rem;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.25s, box-shadow 0.25s;
+
+  &::placeholder { color: #adb3b4; }
+  &:focus { border-color: #5f5e5e; box-shadow: 0 0 0 3px rgba(95, 94, 94, 0.07); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+}
+
+.editActions {
+  display: flex;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-.recs__title {
-  font-family: 'Noto Serif', serif;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #2d3435;
+.errorMsg {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.8125rem;
+  color: #b94a2c;
   margin: 0;
 }
 
-.recs__link {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6d5f07; // tertiary
-  text-decoration: none;
-  border-bottom: 1px solid rgba(109, 95, 7, 0.2);
-  padding-bottom: 1px;
-  white-space: nowrap;
-  transition: border-color 0.2s;
+// ─── Change password success ──────────────────────────────────
 
-  &:hover {
-    border-color: #6d5f07;
-  }
-}
-
-.recs__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3rem;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 641px) and (max-width: 900px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-// ─── Product card ─────────────────────────────────────────────
-
-.productCard {
-  cursor: pointer;
-
-  // stagger effect — second card is shifted down like the HTML
-  &--offset {
-    margin-top: 2rem;
-  }
-}
-
-.productCard__imgWrap {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  border-radius: 0.125rem;
-  background: #f2f4f4;
-  margin-bottom: 1.25rem;
-
-  &:hover .productCard__img {
-    transform: scale(1.05);
-  }
-
-  &:hover .productCard__wishBtn {
-    opacity: 1;
-  }
-}
-
-.productCard__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 1s ease;
-}
-
-.productCard__wishBtn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
+.passwordSuccess {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
-
-  span {
-    font-size: 1.125rem;
-    color: #2d3435;
-  }
-
-  &:hover {
-    background: #ffffff;
-  }
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.productCard__name {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #2d3435;
-  margin: 0 0 0.3rem;
-  transition: color 0.2s;
-
-  .productCard:hover & {
-    color: #6d5f07; // tertiary on hover
-  }
+.successIcon {
+  font-size: 1.125rem;
+  color: #16a34a;
 }
 
-.productCard__meta {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #5a6061;
-  margin: 0;
+// ─── Skeleton loader ──────────────────────────────────────────
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  display: flex;
+  gap: 4rem;
+  align-items: flex-start;
+}
+
+.skeleton__photo {
+  width: 16rem;
+  height: 20rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(90deg, #f2f4f4 25%, #e4e9ea 50%, #f2f4f4 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  flex-shrink: 0;
+}
+
+.skeleton__lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 1rem;
+}
+
+.skeleton__line {
+  height: 1.25rem;
+  border-radius: 0.25rem;
+  background: linear-gradient(90deg, #f2f4f4 25%, #e4e9ea 50%, #f2f4f4 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+
+  &:nth-child(odd)  { width: 60%; }
+  &:nth-child(even) { width: 80%; }
+}
+
+// ─── Error state ──────────────────────────────────────────────
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 3rem 0;
+
+  p {
+    font-family: 'Manrope', sans-serif;
+    color: #5a6061;
+    font-size: 0.9375rem;
+  }
 }

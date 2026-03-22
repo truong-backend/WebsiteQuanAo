@@ -15,6 +15,7 @@ import {
   ProductVariantPage,
   SizePage,
   OrderPage,
+  ContactPage as AdminContactPage,
 } from '@/pages/admin';
 
 // ── User ──────────────────────────────────────────────────────
@@ -76,8 +77,8 @@ const AppRoutes: React.FC = () => (
     <Route path="/shopping-guide"   element={<ShoppingGuidePage />} />
     <Route path="/order-tracking"   element={<OrderTrackingPage />} />
     <Route path="/orders/history"   element={<OrderHistoryPage />} />
-    <Route path="/products"  element={<ProductListingPage />} />
-    <Route path="/products/:id" element={<ProductDetailPage />} />
+    <Route path="/products"         element={<ProductListingPage />} />
+    <Route path="/products/:id"     element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
 
     {/* <Route path="/payment/momo-return" element={<MomoReturnPage />} /> */}
@@ -87,7 +88,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
     <Route path="/orders/:id"         element={<ProtectedRoute><OrderStatusPage /></ProtectedRoute>} />
     <Route path="/orders/:id/invoice" element={<ProtectedRoute><OrderInvoicePage /></ProtectedRoute>} />
-    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+    <Route path="/profile"            element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
     {/* ── Admin (nested layout) ── */}
     <Route
@@ -103,6 +104,7 @@ const AppRoutes: React.FC = () => (
       <Route path="sizes"             element={<SizePage />} />
       <Route path="colors"            element={<ColorPage />} />
       <Route path="orders"            element={<OrderPage />} />
+      <Route path="contacts"          element={<AdminContactPage />} />
     </Route>
 
     {/* ── 404 ── */}

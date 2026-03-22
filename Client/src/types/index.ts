@@ -15,7 +15,9 @@ export type * from "./cart/cart.types";
 export type * from "./order/order.types";
 export type * from "./payment/payment.types";
 export type * from "./common/common.types";
+export type * from "./contact/contact.types";
 
 // // ─── Re-export const enums (không dùng `export type *`) ───────
 export { OrderStatus, OrderStatusLabels, OrderStatusColors } from "./order/order.types";
 export { PaymentType }                                       from "./payment/payment.types";
+export { ContactStatusLabels, ContactStatusColors }           from "./contact/contact.types";

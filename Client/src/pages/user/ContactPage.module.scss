@@ -1,5 +1,4 @@
 // ─── ContactPage.module.scss ──────────────────────────────────
-// Matches the Atelier Monochrome Contact HTML design
 
 .page {
   background: #f9f9f9;
@@ -158,13 +157,18 @@
   border: 1px solid rgba(173, 179, 180, 0.15);
   padding: 1rem 1.5rem;
   outline: none;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition: border-color 0.25s, box-shadow 0.25s, opacity 0.2s;
 
   &::placeholder { color: #adb3b4; }
 
   &:focus {
     border-color: #5f5e5e;
     box-shadow: 0 0 0 3px rgba(95, 94, 94, 0.07);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 }
 
@@ -173,6 +177,18 @@
   min-height: 10rem;
   line-height: 1.65;
 }
+
+// ─── Error message ────────────────────────────────────────────
+
+.errorMsg {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.8125rem;
+  color: #b94a2c;
+  margin: -1.5rem 0 0;
+  line-height: 1.5;
+}
+
+// ─── Submit button ────────────────────────────────────────────
 
 .submitBtn {
   font-family: 'Manrope', sans-serif;
@@ -188,10 +204,28 @@
   align-self: flex-start;
   transition: opacity 0.2s, transform 0.15s;
 
-  &:hover { opacity: 0.88; }
-  &:active { transform: scale(0.98); }
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:active:not(:disabled) { transform: scale(0.98); }
 
-  &--done { background: #6f5c43; }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  // Gửi thành công
+  &--done {
+    background: #6f5c43;
+  }
+
+  // Đang gửi — nhịp nhàng
+  &--loading {
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1;   }
 }
 
 // ─── Brand image ──────────────────────────────────────────────
@@ -215,7 +249,7 @@
 }
 
 // ─────────────────────────────────────────────────────────────
-// GLOBAL LOCATIONS
+// LOCATIONS (ẩn — giữ lại để dùng sau)
 // ─────────────────────────────────────────────────────────────
 
 .locations {
@@ -262,8 +296,6 @@
     gap: 4rem;
   }
 }
-
-// ─── Location card ────────────────────────────────────────────
 
 .locationCard {
   display: flex;
@@ -320,7 +352,7 @@
 }
 
 // ─────────────────────────────────────────────────────────────
-// MAP SECTION
+// MAP SECTION (ẩn — giữ lại để dùng sau)
 // ─────────────────────────────────────────────────────────────
 
 .mapSection {
