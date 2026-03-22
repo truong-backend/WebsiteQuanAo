@@ -84,13 +84,17 @@ public class AccountController {
         return ResponseEntity.ok(accountService.disableAccount(id));
     }
 
-    @GetMapping("/{id}/orders")
-    public ResponseEntity<List<OrderBasicResponse>> getOrdersByAccountId(@PathVariable Integer id) {
-        return ResponseEntity.ok(accountService.getOrdersByAccountId(id));
-    }
+//    @GetMapping("/{id}/orders")
+//    public ResponseEntity<List<OrderBasicResponse>> getOrdersByAccountId(@PathVariable Integer id) {
+//        return ResponseEntity.ok(accountService.getOrdersByAccountId(id));
+//    }
 
     @GetMapping("/{id}/stats")
     public ResponseEntity<Map<String, Object>> getAccountStats(@PathVariable Integer id) {
         return ResponseEntity.ok(accountService.getAccountStats(id));
+    }
+    @GetMapping("/me/orders")
+    public ResponseEntity<List<OrderBasicResponse>> getMyOrders() {
+        return ResponseEntity.ok(accountService.getOrdersByAccountId());
     }
 }

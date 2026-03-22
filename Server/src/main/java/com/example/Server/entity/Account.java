@@ -10,10 +10,10 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Table(name = "accounts")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "accounts")
 public class Account implements UserDetails {
 
     @Id
@@ -32,6 +32,14 @@ public class Account implements UserDetails {
     @Column(nullable = false)
     private String roles;
 
+    /**
+     * Trạng thái tài khoản — true = hoạt động, false = bị khóa.
+     * Mặc định true khi tạo mới.
+     * Khi false, Spring Security từ chối đăng nhập với lỗi DisabledException.
+     */
+    @Column(nullable = false)
+    private boolean enabled = true;
+
     @OneToMany(mappedBy = "account")
     private List<Order> orders;
 
@@ -41,13 +49,9 @@ public class Account implements UserDetails {
         return List.of(new SimpleGrantedAuthority(roles));
     }
 
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @Override public boolean isAccountNonExpired()     { return true; }
-    @Override public boolean isAccountNonLocked()      { return true; }
-    @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled()               { return true; }
+    @Override public String  getUsername()              { return email; }
+    @Override public boolean isEnabled()                { return enabled; }
+    @Override public boolean isAccountNonExpired()      { return true; }
+    @Override public boolean isAccountNonLocked()       { return true; }
+    @Override public boolean isCredentialsNonExpired()  { return true; }
 }

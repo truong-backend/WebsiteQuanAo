@@ -8,4 +8,6 @@ public class AccountResponse {
     private String name;
     private String email;
     private String roles;
+
+    private boolean enabled;
 }

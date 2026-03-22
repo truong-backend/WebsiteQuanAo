@@ -28,143 +28,89 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Service xử lý toàn bộ business logic liên quan đến Account (tài khoản người dùng).
- *
- * <p>Hỗ trợ hai luồng:
- * <ul>
- *   <li>Admin quản lý tất cả tài khoản (CRUD, phân quyền, enable/disable)</li>
- *   <li>User tự quản lý tài khoản của mình (xem, cập nhật, đổi mật khẩu)</li>
- * </ul>
+ * Service xử lý toàn bộ business logic liên quan đến Account.
  */
 @Service
 @Transactional
 public class AccountService {
 
     private final AccountRepository accountRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder   passwordEncoder;
 
     public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
         this.accountRepository = accountRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder   = passwordEncoder;
     }
 
-    // ─────────────────────────── ADMIN: QUERY ───────────────────────────
+    // ── ADMIN: QUERY ──────────────────────────────────────────
 
-    /**
-     * Lấy danh sách tài khoản với phân trang, tìm kiếm theo tên/email và lọc theo role.
-     *
-     * @param pageable thông tin phân trang và sắp xếp
-     * @param search   từ khóa tìm kiếm (tên hoặc email)
-     * @param role     lọc theo role (VD: "ROLE_USER", "ROLE_ADMIN")
-     * @return trang kết quả AccountResponse
-     */
     @Transactional(Transactional.TxType.SUPPORTS)
     public Page<AccountResponse> findAll(Pageable pageable, String search, String role) {
         Specification<Account> spec = (root, query, cb) -> cb.conjunction();
 
         if (search != null && !search.trim().isEmpty()) {
-            String keyword = "%" + search.trim().toLowerCase() + "%";
+            String kw = "%" + search.trim().toLowerCase() + "%";
             spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("name")), keyword),
-                    cb.like(cb.lower(root.get("email")), keyword)
+                    cb.like(cb.lower(root.get("name")),  kw),
+                    cb.like(cb.lower(root.get("email")), kw)
             ));
         }
-
         if (role != null && !role.trim().isEmpty()) {
-            spec = spec.and((root, query, cb) ->
-                    cb.equal(root.get("roles"), role.trim()));
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("roles"), role.trim()));
         }
 
         return accountRepository.findAll(spec, pageable).map(AccountMapper::toResponse);
     }
 
-    /**
-     * Lấy thông tin tài khoản theo id.
-     *
-     * @param id id của tài khoản
-     * @return AccountResponse
-     */
     @Transactional(Transactional.TxType.SUPPORTS)
     public AccountResponse getById(Integer id) {
         return AccountMapper.toResponse(findAccountById(id));
     }
 
-    // ─────────────────────────── ADMIN: CRUD ───────────────────────────
+    // ── ADMIN: CRUD ───────────────────────────────────────────
 
     /**
-     * Tạo tài khoản mới.
-     * Email sẽ được chuẩn hóa (trim + lowercase) trước khi kiểm tra trùng lặp.
-     *
-     * @param request dữ liệu tạo tài khoản
-     * @return AccountResponse vừa tạo
-     * @throws ResourceAlreadyExistsException nếu email đã tồn tại
+     * Tạo tài khoản mới. Mặc định enabled = true, role = ROLE_USER.
      */
     public AccountResponse create(AccountCreateRequest request) {
         String email = normalizeEmail(request.getEmail());
-
         if (accountRepository.existsByEmail(email)) {
             throw new ResourceAlreadyExistsException("Account", "email", email);
         }
-
         Account account = new Account();
         account.setName(normalize(request.getName()));
         account.setEmail(email);
         account.setPassword(passwordEncoder.encode(request.getPassword()));
         account.setRoles(resolveRole(request.getRoles()));
-
+        account.setEnabled(true);
         return AccountMapper.toResponse(accountRepository.save(account));
     }
 
-    /**
-     * Cập nhật thông tin tài khoản theo id.
-     *
-     * @param id      id của tài khoản
-     * @param request dữ liệu cập nhật
-     * @return AccountResponse đã cập nhật
-     * @throws ResourceAlreadyExistsException nếu email mới đã tồn tại ở tài khoản khác
-     */
     public AccountResponse update(Integer id, AccountUpdateRequest request) {
         Account account = findAccountById(id);
         String email = normalizeEmail(request.getEmail());
-
         if (accountRepository.existsByEmailAndIdNot(email, id)) {
             throw new ResourceAlreadyExistsException("Account", "email", email);
         }
-
         account.setName(normalize(request.getName()));
         account.setEmail(email);
         if (request.getRoles() != null && !request.getRoles().trim().isEmpty()) {
             account.setRoles(request.getRoles().trim());
         }
-
         return AccountMapper.toResponse(accountRepository.save(account));
     }
 
-    /**
-     * Xóa tài khoản theo id.
-     * Không cho xóa nếu tài khoản còn đơn hàng liên quan.
-     *
-     * @param id id của tài khoản
-     * @throws InvalidOperationException nếu tài khoản còn đơn hàng
-     */
     public void delete(Integer id) {
         Account account = findAccountById(id);
-
         if (account.getOrders() != null && !account.getOrders().isEmpty()) {
             throw new InvalidOperationException(
-                    "Cannot delete account that has orders. Please remove or reassign orders first."
-            );
+                    "Cannot delete account that has orders. Please remove or reassign orders first.");
         }
-
         accountRepository.delete(account);
     }
 
     /**
      * Cập nhật role của tài khoản (chỉ Admin).
-     *
-     * @param id      id của tài khoản
-     * @param request chứa role mới
-     * @return AccountResponse đã cập nhật
      */
     public AccountResponse updateRole(Integer id, UpdateRoleRequest request) {
         Account account = findAccountById(id);
@@ -173,106 +119,78 @@ public class AccountService {
     }
 
     /**
-     * Enable tài khoản (kích hoạt).
-     * Lưu ý: cần thêm field {@code enabled} vào entity Account để hoạt động đúng.
-     *
-     * @param id id của tài khoản
-     * @return AccountResponse
+     * Kích hoạt tài khoản — đặt enabled = true.
+     * Tài khoản đã active thì báo lỗi.
      */
     public AccountResponse enableAccount(Integer id) {
         Account account = findAccountById(id);
-        // TODO: account.setEnabled(true) khi field được thêm vào entity
+        if (account.isEnabled()) {
+            throw new InvalidOperationException("Account is already active.");
+        }
+        account.setEnabled(true);
         return AccountMapper.toResponse(accountRepository.save(account));
     }
 
     /**
-     * Disable tài khoản (vô hiệu hóa).
-     * Lưu ý: cần thêm field {@code enabled} vào entity Account để hoạt động đúng.
-     *
-     * @param id id của tài khoản
-     * @return AccountResponse
+     * Vô hiệu hóa tài khoản — đặt enabled = false.
+     * Tài khoản đã bị khóa thì báo lỗi.
+     * Không cho phép tự khóa chính mình.
      */
     public AccountResponse disableAccount(Integer id) {
         Account account = findAccountById(id);
-        // TODO: account.setEnabled(false) khi field được thêm vào entity
+        if (!account.isEnabled()) {
+            throw new InvalidOperationException("Account is already disabled.");
+        }
+        // Không cho phép tự khóa chính mình
+        Account current = getCurrentAccount();
+        if (current.getId().equals(account.getId())) {
+            throw new InvalidOperationException("Cannot disable your own account.");
+        }
+        account.setEnabled(false);
         return AccountMapper.toResponse(accountRepository.save(account));
     }
 
-    // ─────────────────────────── USER: SELF-SERVICE ───────────────────────────
+    // ── USER: SELF-SERVICE ────────────────────────────────────
 
-    /**
-     * Lấy thông tin tài khoản đang đăng nhập.
-     *
-     * @return AccountResponse của user hiện tại
-     */
     @Transactional(Transactional.TxType.SUPPORTS)
     public AccountResponse getCurrentUser() {
         return AccountMapper.toResponse(getCurrentAccount());
     }
 
-    /**
-     * Cập nhật thông tin tài khoản đang đăng nhập.
-     *
-     * @param request dữ liệu cập nhật
-     * @return AccountResponse đã cập nhật
-     */
     public AccountResponse updateCurrentUser(AccountUpdateRequest request) {
-        Account account = getCurrentAccount();
-        return update(account.getId(), request);
+        return update(getCurrentAccount().getId(), request);
     }
 
-    /**
-     * Đổi mật khẩu cho tài khoản đang đăng nhập.
-     * Kiểm tra mật khẩu cũ trước khi cập nhật.
-     *
-     * @param request chứa oldPassword và newPassword
-     * @throws InvalidOperationException nếu mật khẩu cũ không đúng
-     */
     public void changePassword(ChangePasswordRequest request) {
         Account account = getCurrentAccount();
-
         if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
             throw new InvalidOperationException("Current password is incorrect.");
         }
-
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
     }
 
-    // ─────────────────────────── STATS / ORDERS ───────────────────────────
+    // ── STATS / ORDERS ────────────────────────────────────────
 
-    /**
-     * Lấy danh sách đơn hàng theo account id.
-     *
-     * @param accountId id của tài khoản
-     * @return danh sách OrderBasicResponse
-     */
-    @Transactional(Transactional.TxType.SUPPORTS)
-    public List<OrderBasicResponse> getOrdersByAccountId(Integer accountId) {
-        Account account = findAccountById(accountId);
-        return OrderMapper.toResponses(account.getOrders());
+//    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional
+    public List<OrderBasicResponse> getOrdersByAccountId() {
+        return OrderMapper.toResponses(findAccountById(getCurrentUser().getId()).getOrders());
     }
 
-    /**
-     * Lấy thống kê cơ bản của tài khoản (tổng đơn hàng).
-     *
-     * @param accountId id của tài khoản
-     * @return Map chứa các thống kê: totalOrders, accountId, accountName, accountEmail
-     */
     @Transactional(Transactional.TxType.SUPPORTS)
     public Map<String, Object> getAccountStats(Integer accountId) {
         Account account = findAccountById(accountId);
-
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalOrders", account.getOrders() != null ? account.getOrders().size() : 0);
-        stats.put("accountId", accountId);
-        stats.put("accountName", account.getName());
+        stats.put("totalOrders",  account.getOrders() != null ? account.getOrders().size() : 0);
+        stats.put("accountId",    accountId);
+        stats.put("accountName",  account.getName());
         stats.put("accountEmail", account.getEmail());
-
+        stats.put("enabled",      account.isEnabled());
         return stats;
     }
 
-    // ─────────────────────────── PRIVATE HELPERS ───────────────────────────
+    // ── PRIVATE HELPERS ───────────────────────────────────────
 
     private Account findAccountById(Integer id) {
         return accountRepository.findById(id)
@@ -280,13 +198,12 @@ public class AccountService {
     }
 
     private Account getCurrentAccount() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UserDetails ud)) {
             throw new InvalidOperationException("User not authenticated.");
         }
-        String email = ((UserDetails) authentication.getPrincipal()).getUsername();
-        return accountRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", "email", email));
+        return accountRepository.findByEmail(ud.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "email", ud.getUsername()));
     }
 
     private String resolveRole(String roles) {
