@@ -13,7 +13,7 @@ export class BaseApi<
   protected baseURL: string;
 
   constructor(endpoint: string) {
-    this.baseURL = `http://localhost:8080/${endpoint}`;
+    this.baseURL = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"}/${endpoint}`;
     this.axiosInstance = axios.create({
       baseURL: this.baseURL,
       headers: {
