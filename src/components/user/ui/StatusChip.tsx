@@ -1,6 +1,6 @@
 // src/components/user/ui/StatusChip.tsx
 // Chịu trách nhiệm: Badge trạng thái đơn hàng với màu tương ứng
-import { OrderStatus, OrderStatusLabels } from '@/types';
+import { OrderStatus, OrderStatusLabels } from '@/features/orders/types/order.types';
 import styles from './StatusChip.module.scss';
 
 const STATUS_VARIANT: Record<string, string> = {

@@ -1,4 +1,6 @@
-// src/pages/user/HomePage.tsx
+// src/pages/HomePage.tsx
+// Moved from: src/pages/user/HomePage.tsx
+// Static content page — không có business logic, không đổi import nào
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/user/layout/Navbar';

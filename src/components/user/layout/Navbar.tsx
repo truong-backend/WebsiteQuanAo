@@ -1,9 +1,9 @@
 // src/components/user/layout/Navbar.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { CategoryService } from '@/modules';
-import type { NavbarCategory } from '@/modules';
-import { authService } from '@/modules';
+import { CategoryService } from '@/features/categories/services/categoryService';
+import type { NavbarCategory } from '@/features/categories/types/category.types';
+import { authService } from '@/features/auth/services/authService';
 import styles from './Navbar.module.scss';
 
 // ─── Types ────────────────────────────────────────────────────

@@ -1,12 +1,8 @@
-// src/routes/AppRoutes.tsx
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { authService } from '@/modules';
+// src/routes/AppRoutes.tsx — Final version, tất cả imports đã cập nhật
+import { Routes, Route, Navigate } from "react-router-dom";
 
-// ── Auth ──────────────────────────────────────────────────────
-import { LoginPage, RegisterPage } from '@/pages/auth';
-
-// ── Admin ─────────────────────────────────────────────────────
-import { AdminLayout } from '@/components/admin';
+import { authService, LoginPage, RegisterPage } from "@/features/auth";
+import AdminLayout from "@/layouts/admin/AdminLayout";
 import {
   AccountPage,
   CategoryPage,
@@ -16,100 +12,129 @@ import {
   SizePage,
   OrderPage,
   ContactPage as AdminContactPage,
-} from '@/pages/admin';
-
-// ── User ──────────────────────────────────────────────────────
+} from "@/features/admin";
+import { ProductListingPage, ProductDetailPage } from "@/features/products";
+import { CartPage, CheckoutPage } from "@/features/cart";
 import {
-  HomePage,
-  ContactPage,
-  CartPage,
-  CheckoutPage,
-  ProductListingPage,
-  ProductDetailPage,
   OrderStatusPage,
   OrderInvoicePage,
   VnpayReturnPage,
-  AboutPage,
-  ProfilePage,
-  ReturnPolicyPage,
-  ShoppingGuidePage,
   OrderTrackingPage,
-  OrderHistoryPage,
-  NotFoundPage,
-} from '@/pages/user';
+} from "@/features/orders";
+import { ProfilePage, OrderHistoryPage } from "@/features/account";
+import HomePage from "@/pages/user/HomePage";
+import AboutPage from "@/pages/user/AboutPage";
+import ContactPage from "@/pages/user/ContactPage";
+import NotFoundPage from "@/pages/user/NotFoundPage";
+import ReturnPolicyPage from "@/pages/user/ReturnPolicyPage";
+import ShoppingGuidePage from "@/pages/user/ShoppingGuidePage";
+import WishlistPage from "@/pages/user/WishlistPage";
 
-// ── Route guards ──────────────────────────────────────────────
-
-/** Redirect từ "/" dựa vào role */
 const RoleBasedRedirect: React.FC = () => {
   if (authService.isAdmin()) return <Navigate to="/admin/dashboard" replace />;
   return <Navigate to="/products" replace />;
 };
 
-/** Yêu cầu đăng nhập */
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 
-/** Yêu cầu đăng nhập + role ADMIN */
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
-  if (!authService.isAdmin())         return <Navigate to="/products" replace />;
+  if (!authService.isAdmin()) return <Navigate to="/products" replace />;
   return <>{children}</>;
 };
-
-// ── AppRoutes ─────────────────────────────────────────────────
 
 const AppRoutes: React.FC = () => (
   <Routes>
-
-    {/* ── Auth ── */}
-    <Route path="/login"    element={<LoginPage />} />
+    <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
 
-    {/* ── Public ── */}
-    <Route path="/"          element={<RoleBasedRedirect />} />
-    <Route path="/home"      element={<HomePage />} />
-    <Route path="/about"     element={<AboutPage />} />
-    <Route path="/contact"   element={<ContactPage />} />
-    <Route path="/return-policy"    element={<ReturnPolicyPage />} />
-    <Route path="/shopping-guide"   element={<ShoppingGuidePage />} />
-    <Route path="/order-tracking"   element={<OrderTrackingPage />} />
-    <Route path="/orders/history"   element={<OrderHistoryPage />} />
-    <Route path="/products"         element={<ProductListingPage />} />
-    <Route path="/products/:id"     element={<ProductDetailPage />} />
+    <Route path="/" element={<RoleBasedRedirect />} />
+    <Route path="/home" element={<HomePage />} />
+    <Route path="/about" element={<AboutPage />} />
+    <Route path="/contact" element={<ContactPage />} />
+    <Route path="/return-policy" element={<ReturnPolicyPage />} />
+    <Route path="/shopping-guide" element={<ShoppingGuidePage />} />
+    <Route path="/order-tracking" element={<OrderTrackingPage />} />
+    <Route path="/orders/history" element={<OrderHistoryPage />} />
+    <Route path="/products" element={<ProductListingPage />} />
+    <Route path="/products/:id" element={<ProductDetailPage />} />
     <Route path="/payment/vnpay-return" element={<VnpayReturnPage />} />
 
-    {/* <Route path="/payment/momo-return" element={<MomoReturnPage />} /> */}
+    <Route
+      path="/cart"
+      element={
+        <ProtectedRoute>
+          <CartPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/checkout"
+      element={
+        <ProtectedRoute>
+          <CheckoutPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/orders/:id"
+      element={
+        <ProtectedRoute>
+          <OrderStatusPage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/orders/:id/invoice"
+      element={
+        <ProtectedRoute>
+          <OrderInvoicePage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/profile"
+      element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/wishlist"
+      element={
+        <ProtectedRoute>
+          <WishlistPage />
+        </ProtectedRoute>
+      }
+    />
 
-    {/* ── Protected (user) ── */}
-    <Route path="/cart"     element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-    <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-    <Route path="/orders/:id"         element={<ProtectedRoute><OrderStatusPage /></ProtectedRoute>} />
-    <Route path="/orders/:id/invoice" element={<ProtectedRoute><OrderInvoicePage /></ProtectedRoute>} />
-    <Route path="/profile"            element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-
-    {/* ── Admin (nested layout) ── */}
     <Route
       path="/admin"
-      element={<AdminRoute><AdminLayout /></AdminRoute>}
+      element={
+        <AdminRoute>
+          <AdminLayout />
+        </AdminRoute>
+      }
     >
-      <Route index                    element={<Navigate to="/admin/dashboard" replace />} />
-      <Route path="dashboard"         element={<div>Dashboard Page</div>} />
-      <Route path="accounts"          element={<AccountPage />} />
-      <Route path="categories"        element={<CategoryPage />} />
-      <Route path="products"          element={<ProductPage />} />
-      <Route path="product-variants"  element={<ProductVariantPage />} />
-      <Route path="sizes"             element={<SizePage />} />
-      <Route path="colors"            element={<ColorPage />} />
-      <Route path="orders"            element={<OrderPage />} />
-      <Route path="contacts"          element={<AdminContactPage />} />
+      <Route index element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="dashboard" element={<div>Dashboard Page</div>} />
+      <Route path="accounts" element={<AccountPage />} />
+      <Route path="categories" element={<CategoryPage />} />
+      <Route path="products" element={<ProductPage />} />
+      <Route path="product-variants" element={<ProductVariantPage />} />
+      <Route path="sizes" element={<SizePage />} />
+      <Route path="colors" element={<ColorPage />} />
+      <Route path="orders" element={<OrderPage />} />
+      <Route path="contacts" element={<AdminContactPage />} />
     </Route>
 
-    {/* ── 404 ── */}
     <Route path="*" element={<NotFoundPage />} />
-
   </Routes>
 );
 

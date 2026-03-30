@@ -1,8 +1,8 @@
 // src/components/user/ui/ProductCard/ProductCard.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LocalCartService } from '@/modules';
-import type { ProductListItem } from '@/types';
+import { LocalCartService } from '@/features/cart/services/localCartService';
+import type { ProductListItem } from '@/features/products/types/product.types';
 import styles from './ProductCard.module.scss';
 
 interface ProductCardProps {

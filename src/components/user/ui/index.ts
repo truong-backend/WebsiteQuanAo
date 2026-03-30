@@ -10,3 +10,4 @@ export { default as ErrorAlert }     from './ErrorAlert';
 export { default as PriceText }      from './PriceText';
 export { default as Loading }        from './Loading';
 export { default as Sidebar }        from './Sidebar';
+// export { default as ChatWidget }     from './ChatWidget';

@@ -1,32 +1,39 @@
-// src/pages/user/ContactPage.tsx
-import React, { useState } from 'react';
-import PageLayout from '@/components/user/layout/PageLayout';
-import { ContactService } from '@/modules';
-import type { ContactCreateRequest } from '@/types';
-import styles from './ContactPage.module.scss';
-
-// ─── Constants ────────────────────────────────────────────────
+// src/pages/ContactPage.tsx
+// Moved from: src/pages/user/ContactPage.tsx
+// Changed imports: @/modules → @/features/admin/services/contactService
+// Lý do: ContactService.submit() là public API, dùng chung với admin feature
+import React, { useState } from "react";
+import PageLayout from "@/layouts/user/PageLayout";
+import { ContactService } from "@/features/admin/services/contactService";
+import type { ContactCreateRequest } from "@/features/admin/types/contact.types";
+import styles from "./ContactPage.module.scss";
 
 const SOCIALS = [
-  { label: 'Instagram', href: 'https://www.instagram.com/quyhacde/' },
-  { label: 'YouTube',   href: 'https://www.youtube.com/@ThanhTruongNguyen-u1b' },
-  { label: 'TikTok',    href: 'https://www.tiktok.com/@ng_thanh_truong' },
+  { label: "Instagram", href: "https://www.instagram.com/quyhacde/" },
+  { label: "YouTube", href: "https://www.youtube.com/@ThanhTruongNguyen-u1b" },
+  { label: "TikTok", href: "https://www.tiktok.com/@ng_thanh_truong" },
 ];
 
 const INITIAL_FORM: ContactCreateRequest = {
-  name: '',
-  email: '',
-  subject: '',
-  message: '',
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
 };
 
-// ─── Component ────────────────────────────────────────────────
-
 const ContactPage: React.FC = () => {
-  const [form, setForm]       = useState<ContactCreateRequest>(INITIAL_FORM);
+  const [form, setForm] = useState<ContactCreateRequest>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // ── Flow ────────────────────────────────────────────────────
+  // 1. User điền form → handleChange cập nhật state
+  // 2. handleSubmit → gọi ContactService.submit(form)
+  //    Request: POST /contacts { name, email, subject, message }
+  //    Response: ContactResponse
+  // 3. Thành công → setSubmitted(true) → reset form → tự ẩn sau 4s
+  // 4. Thất bại  → hiện error message
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -39,16 +46,15 @@ const ContactPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       await ContactService.submit(form);
       setSubmitted(true);
       setForm(INITIAL_FORM);
-
-      // Reset trạng thái sau 4 giây
       setTimeout(() => setSubmitted(false), 4000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra. Vui lòng thử lại.');
+      setError(
+        err instanceof Error ? err.message : "Có lỗi xảy ra. Vui lòng thử lại.",
+      );
     } finally {
       setLoading(false);
     }
@@ -57,18 +63,16 @@ const ContactPage: React.FC = () => {
   return (
     <PageLayout>
       <div className={styles.page}>
-
-        {/* ── Hero ── */}
+        {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.hero__grid}>
             <div className={styles.hero__left}>
               <h1 className={styles.hero__title}>Liên hệ</h1>
               <p className={styles.hero__lead}>
-                Các câu hỏi về sản phẩm, đơn hàng, hợp tác hoặc bộ sưu tập theo mùa.
-                Chúng tôi luôn sẵn sàng lắng nghe bạn.
+                Các câu hỏi về sản phẩm, đơn hàng, hợp tác hoặc bộ sưu tập theo
+                mùa. Chúng tôi luôn sẵn sàng lắng nghe bạn.
               </p>
             </div>
-
             <div className={styles.hero__right}>
               <p className={styles.hero__socialLabel}>Kênh mạng xã hội</p>
               <div className={styles.hero__socials}>
@@ -88,13 +92,10 @@ const ContactPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Form + Image ── */}
+        {/* Form + Image */}
         <section className={styles.formSection}>
           <div className={styles.formSection__grid}>
-
-            {/* Form */}
             <form className={styles.form} onSubmit={handleSubmit} noValidate>
-
               <div className={styles.form__row}>
                 <div className={styles.field}>
                   <label className={styles.label}>Họ và tên</label>
@@ -131,7 +132,7 @@ const ContactPage: React.FC = () => {
                   type="text"
                   name="subject"
                   placeholder="Câu hỏi chung"
-                  value={form.subject}
+                  value={form.subject ?? ""}
                   onChange={handleChange}
                   disabled={loading}
                 />
@@ -151,29 +152,27 @@ const ContactPage: React.FC = () => {
                 />
               </div>
 
-              {/* Error message */}
-              {error && (
-                <p className={styles.errorMsg}>{error}</p>
-              )}
+              {error && <p className={styles.errorMsg}>{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading || submitted}
                 className={[
                   styles.submitBtn,
-                  submitted ? styles['submitBtn--done'] : '',
-                  loading   ? styles['submitBtn--loading'] : '',
-                ].filter(Boolean).join(' ')}
+                  submitted ? styles["submitBtn--done"] : "",
+                  loading ? styles["submitBtn--loading"] : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {submitted
-                  ? '✓ Đã gửi thành công!'
+                  ? "✓ Đã gửi thành công!"
                   : loading
-                  ? 'Đang gửi...'
-                  : 'Gửi tin nhắn'}
+                    ? "Đang gửi..."
+                    : "Gửi tin nhắn"}
               </button>
             </form>
 
-            {/* Brand image */}
             <div className={styles.brandImg}>
               <img
                 className={styles.brandImg__photo}
@@ -183,7 +182,6 @@ const ContactPage: React.FC = () => {
             </div>
           </div>
         </section>
-
       </div>
     </PageLayout>
   );

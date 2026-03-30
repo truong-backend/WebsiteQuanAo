@@ -1,7 +1,7 @@
 // src/components/user/layout/index.ts
-export { default as PageLayout } from './PageLayout';
-export { default as Navbar }     from './Navbar';
-export { default as Footer }     from './Footer';
+export { default as PageLayout } from "../../../layouts/user/PageLayout";
+export { default as Navbar } from "./Navbar";
+export { default as Footer } from "./Footer";
 
 // src/components/user/ui/index.ts  (copy này vào ui/index.ts)
 // export { default as ProductCard }    from './ProductCard';

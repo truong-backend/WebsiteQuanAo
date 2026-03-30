@@ -1,42 +1,37 @@
-// src/pages/user/AboutPage.tsx
-// Trang Giới thiệu — "Về Chúng Tôi"
-// Sections: Hero → Story → Philosophy → Artisans bento → Statement CTA
-import { useNavigate } from 'react-router-dom';
-import PageLayout from '@/components/user/layout/PageLayout';
-import styles from './AboutPage.module.scss';
-
-// ─── Data ─────────────────────────────────────────────────────
+// src/pages/AboutPage.tsx
+// Moved from: src/pages/user/AboutPage.tsx
+// Static content page — không đổi import nào
+import { useNavigate } from "react-router-dom";
+import PageLayout from "@/layouts/user/PageLayout";
+import styles from "./AboutPage.module.scss";
 
 const PILLARS = [
   {
-    title: 'Minh bạch tuyệt đối',
-    body: 'Chúng tôi truy xuất nguồn gốc từng sản phẩm — từ nhà máy dệt đến tay bạn. Bền vững không phải mục tiêu; đó là nền tảng.',
+    title: "Minh bạch tuyệt đối",
+    body: "Chúng tôi truy xuất nguồn gốc từng sản phẩm — từ nhà máy dệt đến tay bạn. Bền vững không phải mục tiêu; đó là nền tảng.",
   },
   {
-    title: 'Kỹ thuật lưu truyền',
-    body: 'Kết hợp nghề may gia truyền với công nghệ hiện đại. Các mẫu thiết kế được tạo ra để vượt thời gian — cả về kết cấu lẫn thẩm mỹ.',
+    title: "Kỹ thuật lưu truyền",
+    body: "Kết hợp nghề may gia truyền với công nghệ hiện đại. Các mẫu thiết kế được tạo ra để vượt thời gian — cả về kết cấu lẫn thẩm mỹ.",
   },
   {
-    title: 'Dáng vẻ hiện đại',
-    body: 'Kiến trúc cho cơ thể. Chúng tôi khám phá mối quan hệ giữa chuyển động và hình học, tạo ra những trang phục thích ứng với nhịp sống của bạn.',
+    title: "Dáng vẻ hiện đại",
+    body: "Kiến trúc cho cơ thể. Chúng tôi khám phá mối quan hệ giữa chuyển động và hình học, tạo ra những trang phục thích ứng với nhịp sống của bạn.",
   },
 ];
 
 const BENTO_SIDE = [
   {
-    title: 'Hoàn thiện thủ công',
-    imgAlt: 'Artisan hands sewing delicate fabric',
-    // replace with real image paths
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnJvkc-u5Dp-XS23gEG0ADMcsgT0EZnKHIM4DEUxC5bbQq-qbM1qC6xlBiUrfJGhdbpwYxBcofRTNIyhRpNjSkxEcd6zn7oN5nAmVF-K8XwLHku_hHW1JQ-qjUH8t-xSN_nKfLJvysWX-_Q8gGocrbbodmOnO0AKcBp4uqg3L4AhqfIHeqJmPbqIITDr_UK1VBjaLGAHn5ficvXjjpS5Bast4J75OdvM6Ez9poWTlPv5vgclShoaQOt5faouVo_xWI9utxcP0E67A',
+    title: "Hoàn thiện thủ công",
+    imgAlt: "Artisan hands sewing delicate fabric",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAnJvkc-u5Dp-XS23gEG0ADMcsgT0EZnKHIM4DEUxC5bbQq-qbM1qC6xlBiUrfJGhdbpwYxBcofRTNIyhRpNjSkxEcd6zn7oN5nAmVF-K8XwLHku_hHW1JQ-qjUH8t-xSN_nKfLJvysWX-_Q8gGocrbbodmOnO0AKcBp4uqg3L4AhqfIHeqJmPbqIITDr_UK1VBjaLGAHn5ficvXjjpS5Bast4J75OdvM6Ez9poWTlPv5vgclShoaQOt5faouVo_xWI9utxcP0E67A",
   },
   {
-    title: 'Thành phẩm hoàn hảo',
-    imgAlt: 'Row of minimalist white shirts in atelier',
-    img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHCyT0GITYExxzw1BdH77HZDMDGu0jukELmsXOa9JjZT9zIdkqQpX8I3Lx9rwxVbTJudDnR23MtGADJi8Ff5sxdffoXSdqtHH-4JUtA9qI0wyUfIodXYbd7ki3wQj3-8InKbUXt-ODryrLtWHpvNzpDugQZLLfIz1Nqh4AMIk_GuFrw6jKSrF4vXC4e7KHdotKFHKhx6RjWhTPUMKXBC1ZhA9E9GVOiNlkgQngDJ3sxuEs_xI2JXTslmZ1shToEN31Pei69Ndic4Q',
+    title: "Thành phẩm hoàn hảo",
+    imgAlt: "Row of minimalist white shirts in atelier",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDHCyT0GITYExxzw1BdH77HZDMDGu0jukELmsXOa9JjZT9zIdkqQpX8I3Lx9rwxVbTJudDnR23MtGADJi8Ff5sxdffoXSdqtHH-4JUtA9qI0wyUfIodXYbd7ki3wQj3-8InKbUXt-ODryrLtWHpvNzpDugQZLLfIz1Nqh4AMIk_GuFrw6jKSrF4vXC4e7KHdotKFHKhx6RjWhTPUMKXBC1ZhA9E9GVOiNlkgQngDJ3sxuEs_xI2JXTslmZ1shToEN31Pei69Ndic4Q",
   },
 ];
-
-// ─── Component ────────────────────────────────────────────────
 
 const AboutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,8 +39,7 @@ const AboutPage: React.FC = () => {
   return (
     <PageLayout>
       <div className={styles.page}>
-
-        {/* ── Hero ── */}
+        {/* Hero */}
         <section className={styles.hero}>
           <div className={styles.hero__bg}>
             <img
@@ -61,34 +55,38 @@ const AboutPage: React.FC = () => {
               giữa <em>tĩnh lặng</em> &amp; <em>kiến trúc.</em>
             </h1>
             <p className={styles.hero__lead}>
-              ShopVN là nơi trú ẩn cho những ai tìm kiếm vẻ đẹp trong sự tinh giản.
-              Chúng tôi mang đến những trang phục vượt thời gian cho người hiện đại đầy suy nghĩ.
+              ShopVN là nơi trú ẩn cho những ai tìm kiếm vẻ đẹp trong sự tinh
+              giản. Chúng tôi mang đến những trang phục vượt thời gian cho người
+              hiện đại đầy suy nghĩ.
             </p>
           </div>
         </section>
 
-        {/* ── Story ── */}
+        {/* Story */}
         <section className={styles.story}>
           <div className={styles.story__grid}>
             <div>
-              <span className={styles.story__eyebrow}>Câu chuyện của chúng tôi</span>
+              <span className={styles.story__eyebrow}>
+                Câu chuyện của chúng tôi
+              </span>
               <h2 className={styles.story__title}>
-                Nghệ thuật của<br />Xa xỉ Im Lặng
+                Nghệ thuật của
+                <br />
+                Xa xỉ Im Lặng
               </h2>
               <div className={styles.story__body}>
                 <p>
-                  Được thành lập từ niềm đam mê thời trang bền vững, ShopVN ra đời như một phản ứng
-                  trước thế giới thời trang nhanh ồn ào. Chúng tôi tìm kiếm những sản phẩm mang lại
-                  giá trị thực sự — từ chất liệu đến thiết kế.
+                  Được thành lập từ niềm đam mê thời trang bền vững, ShopVN ra
+                  đời như một phản ứng trước thế giới thời trang nhanh ồn ào.
                 </p>
                 <p>
-                  Chúng tôi tin rằng xa xỉ không phải là tuyên ngôn; đó là tiếng thì thầm. Là đường
-                  may ẩn, viền hoàn thiện tay, và sự tự tin thầm lặng của một bộ trang phục tồn tại
-                  để phục vụ người mặc, không phải xu hướng.
+                  Chúng tôi tin rằng xa xỉ không phải là tuyên ngôn; đó là tiếng
+                  thì thầm. Là đường may ẩn, viền hoàn thiện tay, và sự tự tin
+                  thầm lặng của một bộ trang phục tồn tại để phục vụ người mặc,
+                  không phải xu hướng.
                 </p>
               </div>
             </div>
-
             <div className={styles.story__imgWrap}>
               <img
                 className={styles.story__img}
@@ -102,7 +100,7 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Philosophy ── */}
+        {/* Philosophy */}
         <section className={styles.philosophy}>
           <div className={styles.philosophy__inner}>
             {PILLARS.map((p) => (
@@ -114,7 +112,7 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Artisans ── */}
+        {/* Artisans bento */}
         <section className={styles.artisans}>
           <div className={styles.artisans__inner}>
             <div className={styles.artisans__header}>
@@ -122,12 +120,11 @@ const AboutPage: React.FC = () => {
                 Bàn tay của <em>Xưởng may</em>
               </h2>
               <p className={styles.artisans__quote}>
-                "Một bộ trang phục chỉ đẹp bằng tinh thần của người đã tạo ra nó."
+                "Một bộ trang phục chỉ đẹp bằng tinh thần của người đã tạo ra
+                nó."
               </p>
             </div>
-
             <div className={styles.bentoGrid}>
-              {/* Main large image */}
               <div className={styles.bentoMain}>
                 <img
                   className={styles.bentoMain__img}
@@ -136,11 +133,11 @@ const AboutPage: React.FC = () => {
                 />
                 <div className={styles.bentoMain__overlay}>
                   <h4 className={styles.bentoMain__title}>Bàn cắt may</h4>
-                  <p className={styles.bentoMain__sub}>May đo &amp; Tạo mẫu bậc thầy</p>
+                  <p className={styles.bentoMain__sub}>
+                    May đo &amp; Tạo mẫu bậc thầy
+                  </p>
                 </div>
               </div>
-
-              {/* Side column */}
               <div className={styles.bentoSide}>
                 {BENTO_SIDE.map((item) => (
                   <div key={item.title} className={styles.bentoSmall}>
@@ -159,23 +156,24 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ── Statement ── */}
+        {/* Statement CTA */}
         <section className={styles.statement}>
           <div className={styles.statement__inner}>
             <h2 className={styles.statement__quote}>
               Một tủ quần áo bền vững là hình thức tự trọng.
             </h2>
             <div className={styles.statement__line} />
-            <p className={styles.statement__sub}>Tham gia hành trình của sự chủ tâm</p>
+            <p className={styles.statement__sub}>
+              Tham gia hành trình của sự chủ tâm
+            </p>
             <button
               className={styles.statement__btn}
-              onClick={() => navigate('/products')}
+              onClick={() => navigate("/products")}
             >
               Khám phá bộ sưu tập
             </button>
           </div>
         </section>
-
       </div>
     </PageLayout>
   );

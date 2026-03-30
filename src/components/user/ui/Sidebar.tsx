@@ -7,7 +7,7 @@ import {
   MenuItem, Button, InputAdornment, IconButton,
 } from '@mui/material';
 import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
-import type { SelectOption } from '@/types';
+import type { SelectOption } from '@/types/common.types';
 
 interface SidebarProps {
   searchInput:      string;
