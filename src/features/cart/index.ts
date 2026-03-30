@@ -1,9 +1,16 @@
 // src/features/cart/index.ts
-export { LocalCartService }        from './services/localCartService';
-export { ServerCartService }       from './services/serverCartService';
-export { CartItemService }         from './services/cartItemService';
-export { useCart }                 from './hooks/useCart';
-export type { CartItem }           from './services/localCartService';
+// Public API của cart feature — import từ '@/features/cart'
+
+// ─── Services ────────────────────────────────────────────────
+export { LocalCartService }  from './services/localCartService';
+export { ServerCartService } from './services/serverCartService';
+export { CartItemService }   from './services/cartItemService';
+
+// ─── Hooks ────────────────────────────────────────────────────
+export { useCart } from './hooks/useCart';
+
+// ─── Types ────────────────────────────────────────────────────
+export type { CartItem } from './services/localCartService';
 export type {
   CartResponse,
   CartItemDto,
@@ -12,6 +19,20 @@ export type {
   CartItemCreateRequest,
   CartItemUpdateRequest,
   LocalCartItem,
-}                                  from './types/cart.types';
+  CartCreateRequest,
+  CartUpdateRequest,
+} from './types/cart.types';
+
+// ─── Constants ───────────────────────────────────────────────
+export {
+  CART_STORAGE_KEY,
+  MIN_QUANTITY,
+  MAX_QUANTITY,
+  API_BASE_URL,
+  PAY_OPTIONS,
+} from './constants/cart.constants';
+export type { PaymentMethod } from './constants/cart.constants';
+
+// ─── Components ───────────────────────────────────────────────
 export { default as CartPage }     from './components/CartPage';
 export { default as CheckoutPage } from './components/CheckoutPage';

@@ -8,9 +8,9 @@ import type {
 
 class ContactApi extends BaseApi<ContactResponse, ContactCreateRequest, ContactStatusUpdateRequest> {
   constructor() { super('contacts'); }
-  getStats()                                            { return this.axiosInstance.get<Record<string, number>>('/stats'); }
-  updateStatus(id: number, payload: ContactStatusUpdateRequest) { return this.axiosInstance.patch<ContactResponse>(`/${id}/status`, payload); }
-  sendReply(id: number, payload: ContactReplyRequest)  { return this.axiosInstance.post<ContactResponse>(`/${id}/reply`, payload); }
+  getStats()                                                     { return this.axiosInstance.get<Record<string, number>>('/stats'); }
+  updateStatus(id: number, payload: ContactStatusUpdateRequest)  { return this.axiosInstance.patch<ContactResponse>(`/${id}/status`, payload); }
+  sendReply(id: number, payload: ContactReplyRequest)            { return this.axiosInstance.post<ContactResponse>(`/${id}/reply`, payload); }
 }
 
 export const contactApi = new ContactApi();
