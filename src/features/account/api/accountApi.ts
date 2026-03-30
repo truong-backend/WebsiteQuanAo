@@ -1,5 +1,3 @@
-// src/features/account/api/accountApi.ts
-// Moved from: src/modules/account/account.module.ts (class AccountApi)
 import { BaseApi } from '@/services/baseApi';
 import type { AccountResponse, AccountCreateRequest, AccountUpdateRequest } from '../types/account.types';
 import type { OrderBasicResponse } from '@/features/orders/types/order.types';

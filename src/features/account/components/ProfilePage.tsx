@@ -1,6 +1,4 @@
-// src/features/account/components/ProfilePage.tsx
-// Moved from: src/pages/user/ProfilePage.tsx
-// Changed imports: @/modules → ../services/accountService | @/types → ../types/account.types
+
 import React, { useState, useEffect } from "react";
 import ProfileLayout from "@/layouts/user/ProfileLayout";
 import { AccountService } from "../services/accountService";

@@ -1,6 +1,4 @@
-// src/features/account/components/OrderHistoryPage.tsx
-// Moved from: src/pages/user/OrderHistoryPage.tsx
-// Changed imports: @/modules → ../services/accountService | @/types → @/features/orders
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLayout from "@/layouts/user/ProfileLayout";
