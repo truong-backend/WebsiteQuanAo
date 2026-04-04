@@ -1,12 +1,15 @@
-# WebsiteQuanAo — Backend 
+# WebsiteQuanAo — Frontend
+
+> Đồ án tốt nghiệp — Trường ĐH Công Nghệ Sài Gòn, Khoa CNTT  
 > Đề tài: **Xây dựng ứng dụng bán quần áo trực tuyến**  
+> Người hướng dẫn: ThS. Nguyễn Kiều Oanh  
 > Sinh viên thực hiện: **Nguyễn Thanh Trường**
 
 ---
 
 ## Giới thiệu
 
-Backend của ứng dụng bán quần áo trực tuyến, cung cấp REST API phục vụ các nghiệp vụ: xác thực người dùng, quản lý sản phẩm, đơn hàng, giỏ hàng và thanh toán. Hệ thống được xây dựng bằng **Spring Boot 3** theo kiến trúc phân lớp (Layered Architecture) với bảo mật JWT.
+Frontend của ứng dụng bán quần áo trực tuyến, xây dựng bằng **React 19 + Vite + TypeScript** theo kiến trúc **Feature-Sliced Design (FSD)**. Ứng dụng hỗ trợ hai giao diện riêng biệt: giao diện khách hàng và giao diện quản trị viên, với thiết kế responsive tông màu đen-trắng-xám, tải trang dưới 2 giây.
 
 ---
 
@@ -14,257 +17,184 @@ Backend của ứng dụng bán quần áo trực tuyến, cung cấp REST API p
 
 | Thành phần | Công nghệ |
 |---|---|
-| Framework | Spring Boot 3.5 |
-| Bảo mật | Spring Security + JWT (JJWT) |
-| ORM | Spring Data JPA (Hibernate) |
-| Cơ sở dữ liệu | MySQL 8 |
-| Upload file | Cloudinary (qua UploadService) |
-| Email | Spring Mail (Gmail SMTP) |
-| Thanh toán | VNPay |
-| API Docs | Swagger (SpringDoc OpenAPI) |
-| Build | Maven |
-| IDE | IntelliJ IDEA |
+| Framework | React 19 |
+| Build tool | Vite 7 |
+| Ngôn ngữ | TypeScript 5.9 |
+| Routing | React Router v7 |
+| HTTP Client | Axios |
+| Styling | Tailwind CSS 4 + SCSS Modules |
+| UI Components | MUI (Material UI) v7, Ant Design v6 |
+| Icons | Lucide React |
+| WebSocket | STOMP.js + SockJS |
+| Linting | ESLint 9 |
+| IDE | Visual Studio Code |
 
 ---
 
 ## Kiến trúc
 
-Dự án theo kiến trúc **Layered Architecture** tiêu chuẩn Spring Boot:
+Dự án áp dụng **Feature-Sliced Design (FSD)** — tổ chức code theo domain/feature thay vì theo loại file, giúp dễ mở rộng và bảo trì.
+
+### Cấu trúc thư mục
 
 ```
-presentation  →  controller/
-business      →  service/
-data access   →  repository/
-data model    →  entity/, dto/, mapper/
-cross-cutting →  config/, exception/, enums/
+src/
+├── pages/                  # Static pages (không thuộc feature cụ thể)
+│   └── user/
+│       ├── HomePage.tsx
+│       ├── AboutPage.tsx
+│       ├── ContactPage.tsx
+│       ├── NotFoundPage.tsx
+│       ├── ReturnPolicyPage.tsx
+│       ├── ShoppingGuidePage.tsx
+│       └── WishlistPage.tsx
+├── layouts/                # Layout wrappers
+│   ├── user/
+│   │   ├── PageLayout.tsx       # Layout chung cho trang user
+│   │   └── ProfileLayout.tsx    # Layout trang cá nhân
+│   └── admin/
+│       ├── AdminLayout.tsx      # Layout dashboard admin
+│       └── AdminPageState.tsx   # Loading/error state cho admin
+├── features/               # Feature modules (FSD core)
+│   ├── auth/               # Đăng nhập, đăng ký
+│   │   ├── api/            # authApi.ts
+│   │   ├── services/       # authService.ts
+│   │   ├── hooks/          # useAuth.ts
+│   │   ├── types/          # auth.types.ts
+│   │   ├── constants/      # auth.constants.ts
+│   │   ├── components/     # LoginPage, RegisterPage
+│   │   └── index.ts        # Barrel export
+│   ├── products/           # Xem & tìm kiếm sản phẩm
+│   │   ├── api/, services/, hooks/, types/, constants/
+│   │   └── components/     # ProductListingPage, ProductDetailPage, ProductCard
+│   ├── cart/               # Giỏ hàng
+│   │   ├── services/       # cartItemService, localCartService, serverCartService
+│   │   ├── hooks/          # useCart.ts
+│   │   └── components/     # CartPage, CheckoutPage
+│   ├── orders/             # Đơn hàng & thanh toán
+│   │   ├── services/       # orderService, paymentService, paymentGatewayService
+│   │   └── components/     # OrderStatusPage, OrderInvoicePage, OrderTrackingPage, VnpayReturnPage
+│   ├── account/            # Hồ sơ cá nhân
+│   │   └── components/     # ProfilePage, OrderHistoryPage
+│   ├── categories/         # Danh mục sản phẩm
+│   └── admin/              # Quản trị viên
+│       ├── api/            # colorApi, sizeApi, contactApi, productVariantApi
+│       ├── services/       # colorService, sizeService, contactService, uploadService
+│       ├── types/          # color, size, contact, productVariant types
+│       └── components/     # AccountPage, CategoryPage, ProductPage, ProductVariantPage,
+│                           #  ColorPage, SizePage, OrderPage, ContactPage
+├── components/             # Shared components (dùng lại nhiều feature)
+│   ├── user/
+│   │   ├── layout/         # Navbar, Footer
+│   │   └── ui/             # Button, Loading, ErrorAlert, EmptyState,
+│   │                       #  ProductCard, StatusChip, PriceText, Sidebar, BackButton
+│   └── admin/
+│       ├── Dynamic/        # DynamicForm, DynamicList (generic admin table/form)
+│       └── ui/             # AdminModal
+├── routes/
+│   └── AppRoutes.tsx       # React Router — định nghĩa toàn bộ route + guard
+├── services/
+│   └── baseApi.ts          # BaseApi class generic (Axios wrapper)
+├── types/
+│   └── common.types.ts     # Shared TypeScript types
+└── main.tsx
 ```
-
-### Cấu trúc package
-
-```
-src/main/java/com/example/Server/
-├── config/                 # Cấu hình bảo mật, JWT, WebSocket, static resource
-│   ├── ApplicationConfiguration.java
-│   ├── JwtAuthenticationFilter.java
-│   ├── SecurityConfiguration.java
-│   ├── ChatClientConfig.java
-│   ├── StaticResourceConfig.java
-│   └── WebSocketConfig.java
-├── controller/             # REST Controllers (12 controllers)
-│   ├── AuthenticationController.java
-│   ├── ProductController.java
-│   ├── CategoryController.java
-│   ├── CartController.java
-│   ├── CartItemController.java
-│   ├── OrderController.java
-│   ├── OrderItemController.java
-│   ├── PaymentController.java
-│   ├── AccountController.java
-│   ├── ColorController.java
-│   ├── SizeController.java
-│   ├── ContactController.java
-│   ├── ChatController.java
-│   └── UploadController.java
-├── service/                # Business logic
-│   ├── AuthenticationService.java
-│   ├── ProductService.java
-│   ├── CartService.java, CartItemService.java
-│   ├── OrderService.java, OrderItemService.java
-│   ├── PaymentService.java
-│   ├── AccountService.java
-│   ├── CategoryService.java
-│   ├── ColorService.java, SizeService.java
-│   ├── ContactService.java
-│   ├── EmailService.java
-│   ├── JwtService.java
-│   ├── UploadService.java
-│   ├── AiChatService.java
-│   ├── MomoService.java, VnpayService.java
-│   └── ProactiveWebSocketService.java
-├── repository/             # Spring Data JPA Repositories
-├── entity/                 # JPA Entities (13 entities)
-│   ├── Account.java, Cart.java, CartItem.java
-│   ├── Category.java, Color.java, Size.java
-│   ├── Product.java, ProductVariant.java
-│   ├── Order.java, OrderItem.java, Payment.java
-│   ├── Contact.java, ChatMessage.java, BehaviorEvent.java
-├── dto/
-│   ├── request/            # Request DTOs (phân theo domain)
-│   └── response/           # Response DTOs (phân theo domain)
-├── mapper/                 # Entity ↔ DTO mappers (thủ công)
-├── enums/                  # OrderStatus, ContactStatus, PaymentType
-└── exception/              # Custom exceptions + GlobalExceptionHandler
-    ├── BaseException.java
-    ├── BusinessException.java
-    ├── ResourceNotFoundException.java
-    ├── AuthenticationException.java
-    ├── AuthorizationException.java
-    ├── ValidationException.java
-    ├── InvalidOperationException.java
-    ├── ExternalServiceException.java
-    ├── ResourceAlreadyExistsException.java
-    └── GlobalExceptionHandler.java
-```
-
----
-
-## Mô hình dữ liệu
-
-Cơ sở dữ liệu MySQL gồm 13 bảng chính:
-
-```
-USER, VERIFY_CODE, LOGGED_OUT_TOKEN
-PRODUCT_TYPE, PRODUCT, COLOR, SIZE, PRODUCT_VARIANT
-CART, CART_ITEM
-ORDER, ORDER_ITEM, PAYMENT
-```
-
-**Ràng buộc nghiệp vụ chính:**
-- Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt
-- Đăng nhập sai 5 lần → khóa tài khoản 15 phút
-- Email phải được xác thực trước khi đăng nhập
-- Mã xác thực hết hạn sau 15 phút
-- Giỏ hàng tối đa 10 đơn vị cùng sản phẩm
 
 ---
 
 ## Chức năng đã thực hiện
 
-### Xác thực & Phân quyền
-- [x] Đăng ký tài khoản với xác thực email
-- [x] Đăng nhập bằng email/password → trả về JWT access token
-- [x] Bảo vệ API theo role (ADMIN / USER)
-- [x] Khóa tài khoản sau 5 lần nhập sai mật khẩu
-- [x] Đăng xuất (blacklist token)
-
-### Quản lý sản phẩm (Admin)
-- [x] CRUD sản phẩm (tên, mô tả, giá, ảnh, loại)
-- [x] CRUD biến thể sản phẩm (màu sắc, size, số lượng, ảnh riêng)
-- [x] CRUD danh mục (category), màu sắc (color), kích cỡ (size)
-- [x] Tìm kiếm, lọc, phân trang sản phẩm
-- [x] Upload ảnh sản phẩm lên Cloudinary
-
-### Xem & Tìm kiếm sản phẩm (Public)
+### Phía người dùng chưa đăng nhập
+- [x] Xem trang chủ, giới thiệu, chính sách
+- [x] Đăng ký tài khoản với validation form
+- [x] Đăng nhập với email/password
 - [x] Xem danh sách sản phẩm với phân trang
 - [x] Lọc sản phẩm theo tên, danh mục, khoảng giá
-- [x] Xem chi tiết sản phẩm
-- [x] Xem danh sách danh mục cho navbar
+- [x] Xem chi tiết sản phẩm (ảnh, mô tả, biến thể màu/size)
 
-### Quản lý giỏ hàng (Customer)
-- [x] Xem giỏ hàng
-- [x] Thêm sản phẩm vào giỏ hàng
-- [x] Cập nhật số lượng sản phẩm trong giỏ hàng
-- [x] Xóa sản phẩm khỏi giỏ hàng
-- [x] Thêm nhanh vào giỏ hàng (AddToCart API)
+### Phía khách hàng
+- [x] Quản lý giỏ hàng (thêm, xoá, cập nhật số lượng)
+- [x] Giỏ hàng local (lưu localStorage khi chưa đăng nhập) + đồng bộ lên server khi đăng nhập
+- [x] Thanh toán qua VNPay — xử lý callback return URL
+- [x] Theo dõi trạng thái đơn hàng (OrderStatusPage, OrderTrackingPage)
+- [x] Xem hoá đơn đơn hàng (OrderInvoicePage)
+- [x] Xem lịch sử đơn hàng (OrderHistoryPage)
+- [x] Cập nhật hồ sơ cá nhân (ProfilePage)
+- [x] Wishlist sản phẩm (WishlistPage)
 
-### Đặt hàng & Thanh toán (Customer)
-- [x] Tạo đơn hàng từ giỏ hàng
-- [x] Thanh toán qua VNPay (sandbox)
-- [x] Thanh toán qua MoMo (sandbox)
-- [x] Xem lịch sử đơn hàng
-- [x] Xem chi tiết đơn hàng
+### Phía quản trị viên
+- [x] Dashboard bảo vệ bằng AdminRoute (redirect nếu không có quyền)
+- [x] Quản lý tài khoản — xem danh sách, tạo mới, đổi role
+- [x] Quản lý sản phẩm — CRUD đầy đủ, upload ảnh
+- [x] Quản lý biến thể sản phẩm (ProductVariantPage)
+- [x] Quản lý danh mục sản phẩm (CategoryPage)
+- [x] Quản lý màu sắc (ColorPage) và kích cỡ (SizePage)
+- [x] Quản lý đơn hàng — xem, cập nhật trạng thái
+- [x] Quản lý liên hệ — xem, phản hồi, cập nhật trạng thái
+- [x] DynamicForm / DynamicList — component generic tái sử dụng cho các trang admin
 
-### Quản lý đơn hàng (Admin)
-- [x] Xem toàn bộ danh sách đơn hàng
-- [x] Tìm kiếm đơn hàng
-- [x] Cập nhật trạng thái đơn hàng (PENDING → PROCESSING → SHIPPED → DELIVERED / CANCELLED)
-
-### Quản lý tài khoản (Admin)
-- [x] Xem danh sách tài khoản
-- [x] Tạo tài khoản mới
-- [x] Cập nhật thông tin tài khoản
-- [x] Đổi role người dùng
-- [x] Đổi mật khẩu
-
-### Liên hệ & Hỗ trợ
-- [x] Gửi liên hệ từ khách hàng
-- [x] Xem và phản hồi liên hệ (Admin)
-- [x] Cập nhật trạng thái liên hệ
-
-### AI Chat
-- [x] Chat với AI trợ lý tư vấn sản phẩm (tích hợp Gemini qua Spring AI)
-- [x] Gửi/nhận tin nhắn qua WebSocket (STOMP)
-- [x] Thu thập BehaviorEvent (hành vi người dùng) để cải thiện gợi ý AI
+### Kỹ thuật & UX
+- [x] Route guard: `ProtectedRoute` (yêu cầu đăng nhập) và `AdminRoute` (yêu cầu role ADMIN)
+- [x] `BaseApi` class generic TypeScript — DRY cho tất cả API calls (getAll, getById, create, update, delete, customGet/Post/Put/Delete)
+- [x] Axios interceptor tự động gắn Bearer token và xử lý 401 (logout tự động)
+- [x] CSS Modules (`.module.scss`) co-location với component
+- [x] Barrel exports (`index.ts`) cho mỗi feature
+- [x] Responsive design — hoạt động tốt trên desktop, tablet, mobile
+- [x] Tông màu đen-trắng-xám nhất quán toàn bộ ứng dụng
 
 ---
 
 ## Cài đặt & Chạy dự án
 
 ### Yêu cầu
-- Java 17+
-- Maven 3.6+
-- MySQL 8
-- (Tuỳ chọn) Docker
+- Node.js 18+
+- npm hoặc yarn
 
 ### 1. Clone repository
 
 ```bash
 git clone <repo-url>
-cd WebsiteQuanAo
+cd WebsiteQuanAoFE
 ```
 
-### 2. Cấu hình môi trường
+### 2. Cài đặt dependencies
 
-Tạo file `.env` ở thư mục gốc (xem `.env.example`):
+```bash
+npm install
+```
+
+### 3. Cấu hình môi trường
+
+Tạo file `.env` ở thư mục gốc:
 
 ```env
-DB_URL=jdbc:mysql://localhost:3306/databasequanao?useSSL=false&serverTimezone=UTC
-DB_USERNAME=root
-DB_PASSWORD=your_password
-
-JWT_SECRET=your_jwt_secret_256bit
-
-VNPAY_TMN_CODE=your_tmn_code
-VNPAY_HASH_SECRET=your_hash_secret
-VNPAY_RETURN_URL=http://localhost:8080/payments/vnpay/return
-VNPAY_FRONTEND_RETURN_URL=http://localhost:5173/payment/vnpay-return
-VNPAY_IPN_URL=http://your-domain/payments/vnpay/ipn
-
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
-
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
-### 3. Tạo database
+> ⚠️ **Không commit file `.env` lên Git.** Thêm vào `.gitignore`.
 
-```sql
-CREATE DATABASE databasequanao CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 4. Chạy ứng dụng
+### 4. Chạy development server
 
 ```bash
-./mvnw spring-boot:run
+npm run dev
 ```
 
-Hoặc với Docker:
+Ứng dụng mặc định chạy tại: `http://localhost:5173`
+
+### 5. Build production
 
 ```bash
-docker build -t websitequanao-be .
-docker run -p 8080:8080 --env-file .env websitequanao-be
+npm run build
 ```
-
-### 5. Kiểm tra
-
-API mặc định chạy tại: `http://localhost:8080`
 
 ---
 
-## API chính
+## Tài khoản mặc định (dev)
 
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| POST | `/auth/register` | Đăng ký tài khoản | Public |
-| POST | `/auth/login` | Đăng nhập | Public |
-| GET | `/products` | Danh sách sản phẩm (phân trang) | Public |
-| GET | `/products/listing` | Danh sách sản phẩm cho trang listing | Public |
-| GET | `/products/{id}` | Chi tiết sản phẩm | Public |
-| GET | `/cart` | Xem giỏ hàng | USER |
-| POST | `/cart/add` | Thêm vào giỏ hàng | USER |
-| POST | `/orders` | Tạo đơn hàng | USER |
-| GET | `/payments/vnpay` | Tạo link thanh toán VNPay | USER |
-| PUT | `/orders/{id}/status` | Cập nhật trạng thái đơn | ADMIN |
-| GET | `/accounts` | Danh sách tài khoản | ADMIN |
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@example.com | Admin@123 |
+| User | user@example.com | User@123 |
 
 ---
 
@@ -272,3 +202,4 @@ API mặc định chạy tại: `http://localhost:8080`
 
 - **Sinh viên:** Nguyễn Thanh Trường
 - **Trường:** ĐH Công Nghệ Sài Gòn — Khoa CNTT
+- **Năm học:** 2024–2025
