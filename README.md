@@ -1,8 +1,6 @@
 # WebsiteQuanAo — Frontend
 
-> Đồ án tốt nghiệp — Trường ĐH Công Nghệ Sài Gòn, Khoa CNTT  
 > Đề tài: **Xây dựng ứng dụng bán quần áo trực tuyến**  
-> Người hướng dẫn: ThS. Nguyễn Kiều Oanh  
 > Sinh viên thực hiện: **Nguyễn Thanh Trường**
 
 ---
@@ -25,7 +23,6 @@ Frontend của ứng dụng bán quần áo trực tuyến, xây dựng bằng *
 | Styling | Tailwind CSS 4 + SCSS Modules |
 | UI Components | MUI (Material UI) v7, Ant Design v6 |
 | Icons | Lucide React |
-| WebSocket | STOMP.js + SockJS |
 | Linting | ESLint 9 |
 | IDE | Visual Studio Code |
 
