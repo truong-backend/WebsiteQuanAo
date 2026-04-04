@@ -1,349 +1,274 @@
-# 🛍️ Fashion Shop — Full-stack E-commerce
-
-Ứng dụng thương mại điện tử bán quần áo, xây dựng với **Spring Boot** (BE) + **React + TypeScript** (FE).
-
----
-
-## 📋 Mục lục
-
-- [Tổng quan](#-tổng-quan)
-- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
-- [Cấu trúc dự án](#-cấu-trúc-dự-án)
-- [Cài đặt & Chạy dự án](#-cài-đặt--chạy-dự-án)
-- [Biến môi trường](#-biến-môi-trường)
-- [API Overview](#-api-overview)
-- [Luồng xác thực](#-luồng-xác-thực)
-- [Tích hợp thanh toán](#-tích-hợp-thanh-toán)
-- [Phân quyền](#-phân-quyền)
-- [Quy tắc code](#-quy-tắc-code)
-- [Thêm tính năng mới](#-thêm-tính-năng-mới)
+# WebsiteQuanAo — Backend 
+> Đề tài: **Xây dựng ứng dụng bán quần áo trực tuyến**  
+> Sinh viên thực hiện: **Nguyễn Thanh Trường**
 
 ---
 
-## 🎯 Tổng quan
+## Giới thiệu
 
-| Tính năng | Mô tả |
-|-----------|-------|
-| Xem sản phẩm | Danh sách, lọc theo danh mục/giá, xem chi tiết theo slug |
-| Giỏ hàng | Thêm/sửa/xóa item, tính tổng tiền, đồng bộ tồn kho |
-| Đặt hàng | Mua ngay hoặc từ giỏ hàng, tự động giảm tồn kho |
-| Thanh toán | COD, VNPAY, MoMo (sandbox) |
-| Tài khoản | Đăng ký, đăng nhập JWT, đổi mật khẩu, xem lịch sử đơn |
-| Admin panel | Quản lý sản phẩm, đơn hàng, tài khoản, danh mục, màu sắc, kích thước |
-| Liên hệ | Form gửi liên hệ, admin xem + phản hồi qua email |
+Backend của ứng dụng bán quần áo trực tuyến, cung cấp REST API phục vụ các nghiệp vụ: xác thực người dùng, quản lý sản phẩm, đơn hàng, giỏ hàng và thanh toán. Hệ thống được xây dựng bằng **Spring Boot 3** theo kiến trúc phân lớp (Layered Architecture) với bảo mật JWT.
 
 ---
 
-## 🔧 Công nghệ sử dụng
+## Công nghệ sử dụng
 
-### Backend
-- **Java 17** + **Spring Boot 3.x**
-- **Spring Security** + **JWT** (jjwt)
-- **Spring Data JPA** + **JpaSpecificationExecutor** (filter động)
-- **Spring Mail** (gửi email phản hồi liên hệ)
-- **Lombok** (giảm boilerplate)
-- **MySQL** / **PostgreSQL**
-
-### Frontend
-- **React 18** + **TypeScript**
-- **React Router v6** (routing + route guard)
-- **Axios** (HTTP client + interceptors)
-- **SCSS Modules** (styling theo component)
+| Thành phần | Công nghệ |
+|---|---|
+| Framework | Spring Boot 3.5 |
+| Bảo mật | Spring Security + JWT (JJWT) |
+| ORM | Spring Data JPA (Hibernate) |
+| Cơ sở dữ liệu | MySQL 8 |
+| Upload file | Cloudinary (qua UploadService) |
+| Email | Spring Mail (Gmail SMTP) |
+| Thanh toán | VNPay |
+| API Docs | Swagger (SpringDoc OpenAPI) |
+| Build | Maven |
+| IDE | IntelliJ IDEA |
 
 ---
 
-## 📁 Cấu trúc dự án
+## Kiến trúc
+
+Dự án theo kiến trúc **Layered Architecture** tiêu chuẩn Spring Boot:
 
 ```
-project/
-├── backend/                          # Spring Boot
-│   └── src/main/java/com/example/server/
-│       ├── config/                   # Security, JWT filter, CORS, static files
-│       ├── controller/               # REST endpoints — nhận request, trả response
-│       ├── service/                  # Business logic, @Transactional
-│       ├── repository/               # JPA repositories — truy vấn DB
-│       ├── entity/                   # JPA entities — ánh xạ bảng DB
-│       ├── dto/
-│       │   ├── request/              # DTO nhận dữ liệu vào (có @Valid)
-│       │   └── response/             # DTO trả dữ liệu ra
-│       ├── mapper/                   # Chuyển Entity → Response DTO (static methods)
-│       ├── exception/                # BaseException, GlobalExceptionHandler
-│       └── enums/                    # OrderStatus, PaymentType
-│
-└── frontend/                         # React + TypeScript
-    └── src/
-        ├── api/BaseApi/              # BaseApi class — axios + interceptors
-        ├── modules/                  # *Api class + *Service object mỗi domain
-        ├── pages/
-        │   ├── admin/                # Trang quản trị
-        │   └── user/                 # Trang người dùng
-        ├── types/                    # TypeScript interfaces, tập trung tại index.ts
-        ├── components/               # DynamicList, DynamicForm, AdminModal, ...
-        └── routes/                   # AppRoutes + route guards
+presentation  →  controller/
+business      →  service/
+data access   →  repository/
+data model    →  entity/, dto/, mapper/
+cross-cutting →  config/, exception/, enums/
 ```
 
-### Luồng request (mỗi request đi qua 5 lớp)
+### Cấu trúc package
 
 ```
-HTTP Request
-    → JwtAuthFilter          (xác thực token, set SecurityContext)
-    → Controller             (validate @Valid, parse params)
-    → Service                (business logic, @Transactional)
-    → Repository             (truy vấn DB)
-    → DB
-    ← Entity → Mapper → DTO → JSON
+src/main/java/com/example/Server/
+├── config/                 # Cấu hình bảo mật, JWT, WebSocket, static resource
+│   ├── ApplicationConfiguration.java
+│   ├── JwtAuthenticationFilter.java
+│   ├── SecurityConfiguration.java
+│   ├── ChatClientConfig.java
+│   ├── StaticResourceConfig.java
+│   └── WebSocketConfig.java
+├── controller/             # REST Controllers (12 controllers)
+│   ├── AuthenticationController.java
+│   ├── ProductController.java
+│   ├── CategoryController.java
+│   ├── CartController.java
+│   ├── CartItemController.java
+│   ├── OrderController.java
+│   ├── OrderItemController.java
+│   ├── PaymentController.java
+│   ├── AccountController.java
+│   ├── ColorController.java
+│   ├── SizeController.java
+│   ├── ContactController.java
+│   ├── ChatController.java
+│   └── UploadController.java
+├── service/                # Business logic
+│   ├── AuthenticationService.java
+│   ├── ProductService.java
+│   ├── CartService.java, CartItemService.java
+│   ├── OrderService.java, OrderItemService.java
+│   ├── PaymentService.java
+│   ├── AccountService.java
+│   ├── CategoryService.java
+│   ├── ColorService.java, SizeService.java
+│   ├── ContactService.java
+│   ├── EmailService.java
+│   ├── JwtService.java
+│   ├── UploadService.java
+│   ├── AiChatService.java
+│   ├── MomoService.java, VnpayService.java
+│   └── ProactiveWebSocketService.java
+├── repository/             # Spring Data JPA Repositories
+├── entity/                 # JPA Entities (13 entities)
+│   ├── Account.java, Cart.java, CartItem.java
+│   ├── Category.java, Color.java, Size.java
+│   ├── Product.java, ProductVariant.java
+│   ├── Order.java, OrderItem.java, Payment.java
+│   ├── Contact.java, ChatMessage.java, BehaviorEvent.java
+├── dto/
+│   ├── request/            # Request DTOs (phân theo domain)
+│   └── response/           # Response DTOs (phân theo domain)
+├── mapper/                 # Entity ↔ DTO mappers (thủ công)
+├── enums/                  # OrderStatus, ContactStatus, PaymentType
+└── exception/              # Custom exceptions + GlobalExceptionHandler
+    ├── BaseException.java
+    ├── BusinessException.java
+    ├── ResourceNotFoundException.java
+    ├── AuthenticationException.java
+    ├── AuthorizationException.java
+    ├── ValidationException.java
+    ├── InvalidOperationException.java
+    ├── ExternalServiceException.java
+    ├── ResourceAlreadyExistsException.java
+    └── GlobalExceptionHandler.java
 ```
 
 ---
 
-## 🚀 Cài đặt & Chạy dự án
+## Mô hình dữ liệu
+
+Cơ sở dữ liệu MySQL gồm 13 bảng chính:
+
+```
+USER, VERIFY_CODE, LOGGED_OUT_TOKEN
+PRODUCT_TYPE, PRODUCT, COLOR, SIZE, PRODUCT_VARIANT
+CART, CART_ITEM
+ORDER, ORDER_ITEM, PAYMENT
+```
+
+**Ràng buộc nghiệp vụ chính:**
+- Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt
+- Đăng nhập sai 5 lần → khóa tài khoản 15 phút
+- Email phải được xác thực trước khi đăng nhập
+- Mã xác thực hết hạn sau 15 phút
+- Giỏ hàng tối đa 10 đơn vị cùng sản phẩm
+
+---
+
+## Chức năng đã thực hiện
+
+### Xác thực & Phân quyền
+- [x] Đăng ký tài khoản với xác thực email
+- [x] Đăng nhập bằng email/password → trả về JWT access token
+- [x] Bảo vệ API theo role (ADMIN / USER)
+- [x] Khóa tài khoản sau 5 lần nhập sai mật khẩu
+- [x] Đăng xuất (blacklist token)
+
+### Quản lý sản phẩm (Admin)
+- [x] CRUD sản phẩm (tên, mô tả, giá, ảnh, loại)
+- [x] CRUD biến thể sản phẩm (màu sắc, size, số lượng, ảnh riêng)
+- [x] CRUD danh mục (category), màu sắc (color), kích cỡ (size)
+- [x] Tìm kiếm, lọc, phân trang sản phẩm
+- [x] Upload ảnh sản phẩm lên Cloudinary
+
+### Xem & Tìm kiếm sản phẩm (Public)
+- [x] Xem danh sách sản phẩm với phân trang
+- [x] Lọc sản phẩm theo tên, danh mục, khoảng giá
+- [x] Xem chi tiết sản phẩm
+- [x] Xem danh sách danh mục cho navbar
+
+### Quản lý giỏ hàng (Customer)
+- [x] Xem giỏ hàng
+- [x] Thêm sản phẩm vào giỏ hàng
+- [x] Cập nhật số lượng sản phẩm trong giỏ hàng
+- [x] Xóa sản phẩm khỏi giỏ hàng
+- [x] Thêm nhanh vào giỏ hàng (AddToCart API)
+
+### Đặt hàng & Thanh toán (Customer)
+- [x] Tạo đơn hàng từ giỏ hàng
+- [x] Thanh toán qua VNPay (sandbox)
+- [x] Thanh toán qua MoMo (sandbox)
+- [x] Xem lịch sử đơn hàng
+- [x] Xem chi tiết đơn hàng
+
+### Quản lý đơn hàng (Admin)
+- [x] Xem toàn bộ danh sách đơn hàng
+- [x] Tìm kiếm đơn hàng
+- [x] Cập nhật trạng thái đơn hàng (PENDING → PROCESSING → SHIPPED → DELIVERED / CANCELLED)
+
+### Quản lý tài khoản (Admin)
+- [x] Xem danh sách tài khoản
+- [x] Tạo tài khoản mới
+- [x] Cập nhật thông tin tài khoản
+- [x] Đổi role người dùng
+- [x] Đổi mật khẩu
+
+### Liên hệ & Hỗ trợ
+- [x] Gửi liên hệ từ khách hàng
+- [x] Xem và phản hồi liên hệ (Admin)
+- [x] Cập nhật trạng thái liên hệ
+
+### AI Chat
+- [x] Chat với AI trợ lý tư vấn sản phẩm (tích hợp Gemini qua Spring AI)
+- [x] Gửi/nhận tin nhắn qua WebSocket (STOMP)
+- [x] Thu thập BehaviorEvent (hành vi người dùng) để cải thiện gợi ý AI
+
+---
+
+## Cài đặt & Chạy dự án
 
 ### Yêu cầu
-
 - Java 17+
-- Node.js 18+
-- MySQL 8+ hoặc PostgreSQL 14+
+- Maven 3.6+
+- MySQL 8
+- (Tuỳ chọn) Docker
 
-### Backend
+### 1. Clone repository
 
 ```bash
-# 1. Clone project
 git clone <repo-url>
-cd backend
+cd WebsiteQuanAo
+```
 
-# 2. Cấu hình database và biến môi trường (xem phần bên dưới)
-cp src/main/resources/application.properties.example src/main/resources/application.properties
+### 2. Cấu hình môi trường
 
-# 3. Chạy
+Tạo file `.env` ở thư mục gốc (xem `.env.example`):
+
+```env
+DB_URL=jdbc:mysql://localhost:3306/databasequanao?useSSL=false&serverTimezone=UTC
+DB_USERNAME=root
+DB_PASSWORD=your_password
+
+JWT_SECRET=your_jwt_secret_256bit
+
+VNPAY_TMN_CODE=your_tmn_code
+VNPAY_HASH_SECRET=your_hash_secret
+VNPAY_RETURN_URL=http://localhost:8080/payments/vnpay/return
+VNPAY_FRONTEND_RETURN_URL=http://localhost:5173/payment/vnpay-return
+VNPAY_IPN_URL=http://your-domain/payments/vnpay/ipn
+
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+
+```
+
+### 3. Tạo database
+
+```sql
+CREATE DATABASE databasequanao CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 4. Chạy ứng dụng
+
+```bash
 ./mvnw spring-boot:run
-# hoặc build jar
-./mvnw clean package -DskipTests
-java -jar target/*.jar
 ```
 
-Backend chạy tại `http://localhost:8080`
-
-### Frontend
+Hoặc với Docker:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+docker build -t websitequanao-be .
+docker run -p 8080:8080 --env-file .env websitequanao-be
 ```
 
-Frontend chạy tại `http://localhost:5173`
+### 5. Kiểm tra
+
+API mặc định chạy tại: `http://localhost:8080`
 
 ---
 
-## ⚙️ Biến môi trường
+## API chính
 
-Tạo file `application.properties` (hoặc dùng environment variables):
-
-```properties
-# ── Database ──────────────────────────────────────────────────
-spring.datasource.url=jdbc:mysql://localhost:3306/fashionshop
-spring.datasource.username=root
-spring.datasource.password=your_password
-spring.jpa.hibernate.ddl-auto=update
-
-# ── JWT ───────────────────────────────────────────────────────
-security.jwt.secret-key=your-base64-encoded-secret-key-min-256-bits
-security.jwt.expiration-time=86400000   # 24h tính bằng ms
-
-# ── VNPAY ─────────────────────────────────────────────────────
-vnpay.tmn-code=YOUR_TMN_CODE
-vnpay.hash-secret=YOUR_HASH_SECRET
-vnpay.pay-url=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-vnpay.return-url=http://localhost:8080/payments/vnpay/return
-vnpay.frontend-return-url=http://localhost:5173/payment/vnpay-return
-vnpay.ipn-url=http://localhost:8080/payments/vnpay/ipn
-
-# ── MoMo ──────────────────────────────────────────────────────
-momo.partner-code=MOMO_PARTNER_CODE
-momo.access-key=MOMO_ACCESS_KEY
-momo.secret-key=MOMO_SECRET_KEY
-momo.endpoint=https://test-payment.momo.vn/v2/gateway/api/create
-momo.redirect-url=http://localhost:5173/payment/momo-return
-momo.ipn-url=http://localhost:8080/payments/momo/ipn
-
-# ── Email (Gmail SMTP — dùng App Password) ────────────────────
-spring.mail.host=smtp.gmail.com
-spring.mail.port=587
-spring.mail.username=your-email@gmail.com
-spring.mail.password=your-app-password
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-app.mail.from=your-email@gmail.com
-app.mail.from-name=Shop Support
-```
-
-> **Lưu ý:** Không commit file `application.properties` lên Git. Thêm vào `.gitignore`.
+| Method | Endpoint | Mô tả | Auth |
+|--------|----------|-------|------|
+| POST | `/auth/register` | Đăng ký tài khoản | Public |
+| POST | `/auth/login` | Đăng nhập | Public |
+| GET | `/products` | Danh sách sản phẩm (phân trang) | Public |
+| GET | `/products/listing` | Danh sách sản phẩm cho trang listing | Public |
+| GET | `/products/{id}` | Chi tiết sản phẩm | Public |
+| GET | `/cart` | Xem giỏ hàng | USER |
+| POST | `/cart/add` | Thêm vào giỏ hàng | USER |
+| POST | `/orders` | Tạo đơn hàng | USER |
+| GET | `/payments/vnpay` | Tạo link thanh toán VNPay | USER |
+| PUT | `/orders/{id}/status` | Cập nhật trạng thái đơn | ADMIN |
+| GET | `/accounts` | Danh sách tài khoản | ADMIN |
 
 ---
 
-## 📡 API Overview
+## Thông tin tác giả
 
-### Auth (public)
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| POST | `/auth/signup` | Đăng ký tài khoản mới |
-| POST | `/auth/login` | Đăng nhập, nhận JWT token |
-
-### Sản phẩm (public — GET)
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| GET | `/products` | Danh sách có phân trang |
-| GET | `/products/listing` | Danh sách với filter danh mục/giá |
-| GET | `/products/{id}` | Chi tiết sản phẩm + variants |
-| GET | `/products/path/{slug}` | Chi tiết theo URL slug |
-| GET | `/categories/navbar` | Danh mục cho navbar |
-
-### Giỏ hàng (yêu cầu đăng nhập)
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| GET | `/carts/me` | Lấy giỏ hàng hiện tại |
-| POST | `/carts/me/items` | Thêm sản phẩm vào giỏ |
-| PUT | `/carts/me/items/{id}?quantity=3` | Cập nhật số lượng |
-| DELETE | `/carts/me/items/{id}` | Xóa item khỏi giỏ |
-| DELETE | `/carts/me` | Xóa toàn bộ giỏ |
-
-### Đơn hàng (yêu cầu đăng nhập)
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| POST | `/orders` | Tạo đơn hàng mới |
-| GET | `/orders/{id}` | Chi tiết đơn hàng |
-| GET | `/orders/me` | Lịch sử đơn hàng |
-
-### Thanh toán
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| POST | `/payments/vnpay/create` | Tạo URL thanh toán VNPAY |
-| POST | `/payments/momo/create` | Tạo URL thanh toán MoMo |
-| GET | `/payments/vnpay/return` | VNPAY redirect về (public) |
-| GET | `/payments/vnpay/ipn` | VNPAY callback (public) |
-| POST | `/payments/momo/ipn` | MoMo callback (public) |
-
-### Liên hệ
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| POST | `/contacts` | Gửi liên hệ (public) |
-| GET | `/contacts` | Danh sách liên hệ (Admin) |
-| GET | `/contacts/stats` | Thống kê theo trạng thái (Admin) |
-| GET | `/contacts/{id}` | Chi tiết, tự đổi UNREAD→READ (Admin) |
-| PATCH | `/contacts/{id}/status` | Đổi trạng thái (Admin) |
-| POST | `/contacts/{id}/reply` | Gửi email phản hồi (Admin) |
-| DELETE | `/contacts/{id}` | Xóa liên hệ (Admin) |
-
----
-
-## 🔐 Luồng xác thực
-
-```
-1. POST /auth/login  →  nhận { token, expiresIn }
-2. Lưu token vào localStorage
-3. Mọi request tiếp theo: Header  Authorization: Bearer <token>
-4. JwtAuthFilter xác thực token → set SecurityContext
-5. Token hết hạn (401) → axios interceptor tự xóa token + redirect /login
-```
-
-**Tạo JWT secret key:**
-```bash
-openssl rand -base64 64
-```
-
----
-
-## 💳 Tích hợp thanh toán
-
-### VNPAY
-1. Đăng ký tài khoản sandbox tại [sandbox.vnpayment.vn](https://sandbox.vnpayment.vn)
-2. Lấy `TmnCode` và `HashSecret`
-3. Điền vào `application.properties`
-4. `VnpayService` tạo URL ký HMAC-SHA512 theo chuẩn VNPAY demo
-
-### MoMo
-1. Đăng ký tại [developers.momo.vn](https://developers.momo.vn)
-2. Lấy `partnerCode`, `accessKey`, `secretKey`
-3. `MomoService` gọi API `captureWallet`, ký HMAC-SHA256
-
-### COD
-Không cần cấu hình. Đơn đặt với `paymentType: "COD"` sẽ có `payTime = Instant.now()` ngay lập tức.
-
----
-
-## 👥 Phân quyền
-
-| Role | Quyền |
-|------|-------|
-| **Guest** | Xem sản phẩm, danh mục, màu sắc, kích thước. Gửi liên hệ. Đăng ký/đăng nhập |
-| **ROLE_USER** | Guest + giỏ hàng, tạo đơn hàng, xem đơn của mình, thanh toán, profile |
-| **ROLE_ADMIN** | User + quản lý tất cả (account, product, order, category, payment, contact...) |
-
-> **Dev mode:** `SecurityConfiguration` hiện đang `anyRequest().permitAll()`. Bật production mode bằng cách đổi sang method `productionFilterChain()` trước khi deploy.
-
----
-
-## 📏 Quy tắc code
-
-### Backend
-
-- **Constructor injection** — không dùng `@Autowired` field
-- **`@Transactional(TxType.SUPPORTS)`** cho method read-only, mặc định `REQUIRED` cho write
-- **Mapper là static class thuần** — không phải Spring bean, không dùng MapStruct
-- **UUID làm ID** — `UUID.randomUUID().toString()`, không để DB tự sinh với String ID
-- **Normalize input:** `.trim()` + `.toLowerCase()` cho email, `.replaceAll("\\s+", " ")` cho tên
-- **Exception hierarchy:** tất cả kế thừa `BaseException` → `GlobalExceptionHandler` bắt tập trung
-- **`JpaSpecificationExecutor`** dùng xuyên suốt — filter động không cần viết query tay
-
-### Frontend
-
-- **Tách `*Api` và `*Service`:** `*Api` gọi HTTP, `*Service` xử lý lỗi và expose cho UI
-- **Import type từ `@/types`** — không import trực tiếp từ file type con
-- **`BaseApi<T>`** là class gốc — mọi domain Api đều extend
-- **Axios interceptor** bắt `401` → tự logout và redirect
-
----
-
-## ➕ Thêm tính năng mới
-
-Ví dụ thêm **Review sản phẩm**:
-
-**Backend (theo thứ tự):**
-```
-1. entity/Review.java              — @Entity, quan hệ với Product và Account
-2. enums/                          — thêm enum nếu cần (VD: ReviewStatus)
-3. dto/request/review/             — ReviewCreateRequest.java
-4. dto/response/review/            — ReviewResponse.java
-5. mapper/ReviewMapper.java        — toResponse() static method
-6. repository/ReviewRepository.java
-7. service/ReviewService.java      — business logic, @Transactional
-8. controller/ReviewController.java — @RestController, @RequestMapping("/reviews")
-9. config/SecurityConfiguration    — thêm phân quyền cho endpoint mới
-```
-
-**Frontend (theo thứ tự):**
-```
-1. types/review/review.types.ts    — interface ReviewResponse, ReviewCreateRequest
-2. types/index.ts                  — thêm export
-3. modules/review/review.module.ts — ReviewApi extends BaseApi + ReviewService
-4. modules/index.ts                — export ReviewService
-5. pages/user/ReviewSection.tsx    — UI component
-6. routes/AppRoutes.tsx            — thêm route nếu cần
-```
-
----
-
-## 🐛 Các vấn đề đã biết
-
-| Vấn đề | Vị trí | Trạng thái |
-|--------|--------|------------|
-| `MomoConfig`, `VnpayConfig` đặt trong `service/` thay vì `config/` | `service/MomoConfig.java` | Cần di chuyển |
-| Security đang `permitAll()` | `SecurityConfiguration.java` | Bật production mode trước deploy |
-| `enableAccount()` / `disableAccount()` chưa thực sự hoạt động | `AccountService.java` | Cần thêm field `enabled` vào entity `Account` |
-| `RegisterAccount` chưa có `@NotBlank` validation | `dto/request/register/RegisterAccount.java` | Cần thêm |
-
----
-
-## 📄 License
-
-MIT
+- **Sinh viên:** Nguyễn Thanh Trường
+- **Trường:** ĐH Công Nghệ Sài Gòn — Khoa CNTT
