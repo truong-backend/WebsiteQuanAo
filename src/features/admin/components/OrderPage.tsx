@@ -5,12 +5,12 @@ import { useState, useEffect } from "react";
 import DynamicList from "@/components/admin/Dynamic/DynamicList";
 import type { Column, Action } from "@/components/admin/Dynamic/DynamicList";
 import AdminPageState from "@/layouts/admin/AdminPageState";
-import { OrderService } from "@/features/orders/services/orderService";
-import type { OrderResponse } from "@/features/orders/types/order.types";
+import { OrderService } from "@/features/user/orders/services/orderService";
+import type { OrderResponse } from "@/features/user/orders/types/order.types";
 import {
   OrderStatus,
   OrderStatusLabels,
-} from "@/features/orders/types/order.types";
+} from "@/features/user/orders/types/order.types";
 import styles from "./OrderPage.module.scss";
 
 type SortDir = "asc" | "desc";

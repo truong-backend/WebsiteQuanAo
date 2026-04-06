@@ -8,12 +8,12 @@ import DynamicForm from "@/components/admin/Dynamic/DynamicForm";
 import type { FormField } from "@/components/admin/Dynamic/DynamicForm";
 import AdminModal from "@/components/admin/ui/AdminModal";
 import AdminPageState from "@/layouts/admin/AdminPageState";
-import { AccountService } from "@/features/account/services/accountService";
+import { AccountService } from "@/features/user/account/services/accountService";
 import type {
   AccountResponse,
   AccountCreateRequest,
   AccountUpdateRequest,
-} from "@/features/account/types/account.types";
+} from "@/features/user/account/types/account.types";
 import styles from "./AccountPage.module.scss";
 
 type AccountRecord = AccountResponse & Record<string, unknown>;

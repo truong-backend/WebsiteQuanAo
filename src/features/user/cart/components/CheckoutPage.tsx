@@ -3,9 +3,9 @@
 // Changed imports: @/modules → @/features/cart + @/features/orders
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { OrderService } from "@/features/orders/services/orderService";
+import { OrderService } from "@/features/user/orders/services/orderService";
 import { LocalCartService } from "../services/localCartService";
-import { PaymentGatewayService } from "@/features/orders/services/paymentGatewayService";
+import { PaymentGatewayService } from "@/features/user/orders/services/paymentGatewayService";
 import PageLayout from "@/layouts/user/PageLayout";
 import PriceText from "@/components/user/ui/PriceText";
 import styles from "./CheckoutPage.module.scss";

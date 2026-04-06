@@ -1,8 +1,10 @@
-// src/components/user/ui/ProductCard/ProductCard.tsx
+// src/features/products/components/ProductCard.tsx
+// Moved from: src/components/user/ui/ProductCard.tsx
+// Changed imports: @/modules → @/features/cart | @/types → ../types/product.types
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LocalCartService } from "@/features/user/cart/services/localCartService";
-import type { ProductListItem } from "@/features/user/products/types/product.types";
+import type { ProductListItem } from "../types/product.types";
 import styles from "./ProductCard.module.scss";
 
 interface ProductCardProps {
@@ -49,7 +51,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div className={styles.card} onClick={goDetail}>
-      {/* ── Image ── */}
       <div className={styles.imgWrap}>
         {!imgOk && <div className={styles.skeleton} />}
         <img
@@ -63,8 +64,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             setImgOk(true);
           }}
         />
-
-        {/* Hover action bar */}
         <div className={styles.actionBar}>
           {onAddToCart ? (
             <button
@@ -73,7 +72,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               disabled={isAdded}
             >
               <span className="material-symbols-outlined">
-                {isAdded ? "check" : ""}
+                {isAdded ? "check" : "shopping_bag"}
               </span>
               {isAdded ? "Đã thêm" : "Thêm vào giỏ"}
             </button>
@@ -91,12 +90,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
             }}
             aria-label="Xem nhanh"
           >
-            <span className="material-symbols-outlined">XEM</span>
+            <span className="material-symbols-outlined">visibility</span>
           </button>
         </div>
       </div>
-
-      {/* ── Body ── */}
       <div className={styles.body}>
         <p className={styles.name}>{product.name}</p>
         {product.description && (

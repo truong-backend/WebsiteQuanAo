@@ -12,7 +12,7 @@ import type {
 import AdminModal from "@/components/admin/ui/AdminModal";
 import AdminPageState from "@/layouts/admin/AdminPageState";
 import { ProductVariantService } from "../services/productVariantService";
-import { ProductService } from "@/features/products/services/productService";
+import { ProductService } from "@/features/user/products/services/productService";
 import { ColorService } from "../services/colorService";
 import { SizeService } from "../services/sizeService";
 import type {

@@ -13,15 +13,18 @@ import {
   OrderPage,
   ContactPage as AdminContactPage,
 } from "@/features/admin";
-import { ProductListingPage, ProductDetailPage } from "@/features/products";
-import { CartPage, CheckoutPage } from "@/features/cart";
+import {
+  ProductListingPage,
+  ProductDetailPage,
+} from "@/features/user/products";
+import { CartPage, CheckoutPage } from "@/features/user/cart";
 import {
   OrderStatusPage,
   OrderInvoicePage,
   VnpayReturnPage,
   OrderTrackingPage,
-} from "@/features/orders";
-import { ProfilePage, OrderHistoryPage } from "@/features/account";
+} from "@/features/user/orders";
+import { ProfilePage, OrderHistoryPage } from "@/features/user/account";
 import HomePage from "@/pages/user/HomePage";
 import AboutPage from "@/pages/user/AboutPage";
 import ContactPage from "@/pages/user/ContactPage";

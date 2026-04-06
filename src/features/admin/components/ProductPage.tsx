@@ -11,13 +11,13 @@ import type {
 } from "@/components/admin/Dynamic/DynamicForm";
 import AdminModal from "@/components/admin/ui/AdminModal";
 import AdminPageState from "@/layouts/admin/AdminPageState";
-import { ProductService } from "@/features/products/services/productService";
-import { CategoryService } from "@/features/categories/services/categoryService";
+import { ProductService } from "@/features/user/products/services/productService";
+import { CategoryService } from "@/features/user/categories/services/categoryService";
 import type {
   ProductResponse,
   ProductCreateRequest,
   ProductUpdateRequest,
-} from "@/features/products/types/product.types";
+} from "@/features/user/products/types/product.types";
 import styles from "./ProductPage.module.scss";
 
 type ProductRecord = ProductResponse & Record<string, unknown>;

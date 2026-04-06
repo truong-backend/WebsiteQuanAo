@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ProfileLayout from "@/layouts/user/ProfileLayout";
 import { AccountService } from "../services/accountService";
-import type { OrderBasicResponse } from "@/features/orders/types/order.types";
+import type { OrderBasicResponse } from "@/features/user/orders/types/order.types";
 import {
   OrderStatus,
   OrderStatusLabels,
-} from "@/features/orders/types/order.types";
+} from "@/features/user/orders/types/order.types";
 import styles from "./OrderHistoryPage.module.scss";
 
 // ─── Helpers ──────────────────────────────────────────────────

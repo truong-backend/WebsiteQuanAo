@@ -7,7 +7,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ProductService } from "../services/productService";
-import { LocalCartService } from "@/features/cart/services/localCartService";
+import { LocalCartService } from "@/features/user/cart/services/localCartService";
 import type {
   ProductDetailResponse,
   ColorDto,

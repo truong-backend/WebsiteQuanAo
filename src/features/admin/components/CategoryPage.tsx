@@ -11,11 +11,11 @@ import type {
 } from "@/components/admin/Dynamic/DynamicForm";
 import AdminModal from "@/components/admin/ui/AdminModal";
 import AdminPageState from "@/layouts/admin/AdminPageState";
-import { CategoryService } from "@/features/categories/services/categoryService";
+import { CategoryService } from "@/features/user/categories/services/categoryService";
 import type {
   CategoryResponse,
   CategoryCreateAndUpdateRequest,
-} from "@/features/categories/types/category.types";
+} from "@/features/user/categories/types/category.types";
 import styles from "./CategoryPage.module.scss";
 
 type CategoryRecord = CategoryResponse & Record<string, unknown>;
