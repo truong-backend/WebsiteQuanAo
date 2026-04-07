@@ -76,6 +76,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderDto>> updateStatus(
             @PathVariable String id,
             @RequestParam String status) {
+
+        System.out.println("STATUS RAW = [" + status + "]");
         return ResponseEntity.ok(ApiResponse.ok(
                 orderService.updateStatus(id, com.example.fashionstore.module.order.Order.OrderStatus.valueOf(status.toUpperCase()))
         ));

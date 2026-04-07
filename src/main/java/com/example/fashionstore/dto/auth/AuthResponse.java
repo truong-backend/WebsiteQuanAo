@@ -6,8 +6,11 @@ import lombok.*;
 @Builder
 public class AuthResponse {
     private String  accessToken;
+    private String  refreshToken;
     private String  tokenType;
     private long    expiresIn;
+    /** Thời gian hết hạn của refresh token (giây) */
+    private long    refreshExpiresIn;
     /** true khi user vừa register và chưa verify email */
     private boolean requiresEmailVerification;
     private UserInfo user;

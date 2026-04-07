@@ -3,8 +3,10 @@ package com.example.fashionstore;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
+@EnableScheduling
 public class ServerApplication {
 
 	public static void main(String[] args) {
@@ -35,7 +37,7 @@ public class ServerApplication {
 		setIfPresent(dotenv, "VNPAY_IPN_URL",             "vnpay.ipnUrl");
 
 		// ================= GEMINI =================
-		setIfPresent(dotenv, "GEMINI_API_KEY", "gemini.api.key");      // ← thêm
+//		setIfPresent(dotenv, "GEMINI_API_KEY", "gemini.api.key");      // ← thêm
 
 		SpringApplication.run(ServerApplication.class, args);
 	}

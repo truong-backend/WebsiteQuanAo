@@ -202,8 +202,10 @@ public class OrderService {
         if (current == Order.OrderStatus.CANCELLED || current == Order.OrderStatus.REFUNDED)
             throw new BusinessException("Không thể cập nhật đơn hàng ở trạng thái " + current);
         // DELIVERED chỉ có thể → REFUNDED
-        if (current == Order.OrderStatus.DELIVERED && next != Order.OrderStatus.REFUNDED)
-            throw new BusinessException("Đơn đã giao chỉ có thể chuyển sang REFUNDED");
+        if (current == Order.OrderStatus.DELIVERED
+                && next != Order.OrderStatus.REFUNDED
+                && next != Order.OrderStatus.COMPLETED)
+            throw new BusinessException("Đơn đã giao chỉ có thể chuyển sang COMPLETED hoặc REFUNDED");
     }
 
     private record OrderItemData(ProductVariant variant, int quantity) {}
