@@ -38,5 +38,6 @@ export async function updateOrderStatusApi(id: string, status: OrderStatus): Pro
   const res = await apiClient.patch<ApiResponse<OrderDto>>(`/orders/${id}/status`, null, {
     params: { status },
   })
+  
   return res.data.data
 }

@@ -47,3 +47,32 @@ export async function verifyResetOtpApi(data: VerifyEmailRequest): Promise<void>
 export async function resetPasswordApi(data: ResetPasswordRequest): Promise<void> {
   await apiClient.post<ApiResponse<null>>('/auth/reset-password', data)
 }
+
+/**
+ * POST /api/v1/auth/refresh
+ * Dùng axios thuần (không qua apiClient) để tránh interceptor loop
+ */
+export async function refreshTokenApi(refreshToken: string): Promise<AuthResponse> {
+  const { default: axios } = await import('axios')
+  const { API_BASE } = await import('@shared/config')
+  const res = await axios.post<ApiResponse<AuthResponse>>(
+    `${API_BASE}/api/v1/auth/refresh`,
+    { refreshToken },
+    { headers: { 'Content-Type': 'application/json' } },
+  )
+  return res.data.data
+}
+
+/**
+ * POST /api/v1/auth/logout
+ * Gửi refreshToken lên BE để revoke — dùng axios thuần tránh interceptor
+ */
+export async function logoutApi(refreshToken: string): Promise<void> {
+  const { default: axios } = await import('axios')
+  const { API_BASE } = await import('@shared/config')
+  await axios.post(
+    `${API_BASE}/api/v1/auth/logout`,
+    { refreshToken },
+    { headers: { 'Content-Type': 'application/json' } },
+  ).catch(() => { /* ignore — logout locally regardless */ })
+}

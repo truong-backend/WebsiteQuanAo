@@ -23,6 +23,7 @@ import {
   adminCreateProduct,
   adminUpdateProduct,
   adminCreateCategory,
+  adminUpdateCategory,
   adminDeleteCategory,
   fetchAllColors,
   fetchAllSizes,
@@ -1359,6 +1360,8 @@ function AdminCategories() {
   const queryClient = useQueryClient();
   const [newName, setNewName] = useState("");
   const [newParent, setNewParent] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ["categories"],
@@ -1378,6 +1381,18 @@ function AdminCategories() {
       setNewParent("");
     },
     onError: () => toast("Tạo thất bại", "error"),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      adminUpdateCategory(id, { categoryName: name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast("Đã cập nhật danh mục");
+      setEditingId(null);
+      setEditingName("");
+    },
+    onError: () => toast("Cập nhật thất bại", "error"),
   });
 
   const deleteMutation = useMutation({
@@ -1432,41 +1447,99 @@ function AdminCategories() {
             {(categories ?? []).map((cat) => (
               <li key={cat.categoryId}>
                 <div className="flex items-center justify-between py-3 px-4 border border-brand-light hover:border-brand-mid transition-colors">
-                  <div>
-                    <p className="font-medium">{cat.categoryName}</p>
-                    {cat.childCategories?.length > 0 && (
-                      <p className="text-xs text-brand-mid">
-                        {cat.childCategories.length} danh mục con
-                      </p>
+                  <div className="flex-1 mr-3">
+                    {editingId === cat.categoryId ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="py-1 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          loading={updateMutation.isPending}
+                          disabled={!editingName.trim()}
+                          onClick={() => updateMutation.mutate({ id: cat.categoryId, name: editingName })}
+                        >
+                          Lưu
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="font-medium">{cat.categoryName}</p>
+                        {cat.childCategories?.length > 0 && (
+                          <p className="text-xs text-brand-mid">
+                            {cat.childCategories.length} danh mục con
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Xóa danh mục "${cat.categoryName}"?`))
-                        deleteMutation.mutate(cat.categoryId);
-                    }}
-                    className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
-                  >
-                    Xóa
-                  </button>
+                  {editingId !== cat.categoryId && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => { setEditingId(cat.categoryId); setEditingName(cat.categoryName); }}
+                        className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Xóa danh mục "${cat.categoryName}"?`))
+                            deleteMutation.mutate(cat.categoryId);
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {cat.childCategories?.map((child) => (
                   <div
                     key={child.categoryId}
                     className="flex items-center justify-between py-2 px-4 ml-6 border-l border-brand-light hover:bg-brand-cream/50 transition-colors"
                   >
-                    <p className="text-sm text-brand-charcoal">
-                      └ {child.categoryName}
-                    </p>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Xóa danh mục "${child.categoryName}"?`))
-                          deleteMutation.mutate(child.categoryId);
-                      }}
-                      className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
-                    >
-                      Xóa
-                    </button>
+                    {editingId === child.categoryId ? (
+                      <div className="flex items-center gap-2 flex-1 mr-3">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="py-1 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          loading={updateMutation.isPending}
+                          disabled={!editingName.trim()}
+                          onClick={() => updateMutation.mutate({ id: child.categoryId, name: editingName })}
+                        >
+                          Lưu
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-brand-charcoal">└ {child.categoryName}</p>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => { setEditingId(child.categoryId); setEditingName(child.categoryName); }}
+                            className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Xóa danh mục "${child.categoryName}"?`))
+                                deleteMutation.mutate(child.categoryId);
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </li>
@@ -2071,7 +2144,10 @@ function EditUserModal({ user, open, onClose, onUpdated }: {
   const mutation = useMutation({
     mutationFn: () => import('@features/user/api/userApi').then((m) => m.adminUpdateUser(user.id, form)),
     onSuccess:  () => { toast('Đã cập nhật'); onUpdated() },
-    onError:    (err: any) => toast(err?.response?.data?.message ?? 'Thất bại', 'error'),
+    onError:    (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast(msg ?? 'Thất bại', 'error')
+    },
   })
 
   return (
@@ -2081,8 +2157,13 @@ function EditUserModal({ user, open, onClose, onUpdated }: {
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
         <Input label="Số điện thoại" value={form.phone}
           onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-        <Input label="URL ảnh đại diện" value={form.avatarUrl}
-          onChange={(e) => setForm((f) => ({ ...f, avatarUrl: e.target.value }))} />
+        <ImageUploader
+          label="Ảnh đại diện"
+          value={form.avatarUrl || null}
+          folder="avatars"
+          variant="inline"
+          onChange={(url) => setForm((f) => ({ ...f, avatarUrl: url }))}
+        />
       </div>
       <div className="flex gap-3 mt-6 justify-end">
         <Button variant="ghost" onClick={onClose}>Hủy</Button>

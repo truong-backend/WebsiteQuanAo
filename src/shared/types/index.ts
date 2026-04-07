@@ -30,8 +30,10 @@ export interface UserInfo {
 
 export interface AuthResponse {
   accessToken:                string
+  refreshToken:               string
   tokenType:                  string
-  expiresIn:                  number
+  expiresIn:                  number   // giây
+  refreshExpiresIn:           number   // giây
   requiresEmailVerification:  boolean
   user:                       UserInfo
 }

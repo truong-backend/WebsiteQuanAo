@@ -36,7 +36,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setLoading(true)
     try {
       const res = await loginApi(form)
-      setAuth(res.user, res.accessToken)
+      setAuth(res.user, res.accessToken, res.refreshToken)
       toast('Đăng nhập thành công')
       if (onSuccess) onSuccess()
       else navigate(ROUTES.home)
@@ -212,7 +212,7 @@ export function VerifyEmailForm() {
     setLoading(true)
     try {
       const res = await verifyEmailApi({ email: pendingEmail!, otp })
-      setAuth(res.user, res.accessToken)
+      setAuth(res.user, res.accessToken, res.refreshToken)
       toast('Xác thực email thành công!')
       navigate(ROUTES.home)
     } catch (err: unknown) {

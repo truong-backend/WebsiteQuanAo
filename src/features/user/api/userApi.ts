@@ -30,43 +30,43 @@ export async function changePasswordApi(data: ChangePasswordRequest): Promise<vo
 
 // ─── Admin: User Management ───────────────────────────────────────────────────
 
-/** GET /api/v1/users */
+/** GET /api/v1/admin/users */
 export async function fetchAllUsersAdmin(params: UserFilterDto = {}): Promise<PageResponse<UserDto>> {
   const cleanParams = Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== null),
   )
-  const res = await apiClient.get<ApiResponse<PageResponse<UserDto>>>('/users', { params: cleanParams })
+  const res = await apiClient.get<ApiResponse<PageResponse<UserDto>>>('/admin/users', { params: cleanParams })
   return res.data.data
 }
 
-/** GET /api/v1/users/{id} */
+/** GET /api/v1/admin/users/{id} */
 export async function fetchUserByIdAdmin(id: number): Promise<UserDto> {
-  const res = await apiClient.get<ApiResponse<UserDto>>(`/users/${id}`)
+  const res = await apiClient.get<ApiResponse<UserDto>>(`/admin/users/${id}`)
   return res.data.data
 }
 
-/** PUT /api/v1/users/{id} */
+/** PUT /api/v1/admin/users/{id} */
 export async function adminUpdateUser(id: number, data: AdminUpdateUserRequest): Promise<UserDto> {
-  const res = await apiClient.put<ApiResponse<UserDto>>(`/users/${id}`, data)
+  const res = await apiClient.put<ApiResponse<UserDto>>(`/admin/users/${id}`, data)
   return res.data.data
 }
 
-/** DELETE /api/v1/users/{id} */
+/** DELETE /api/v1/admin/users/{id} */
 export async function adminDeleteUser(id: number): Promise<void> {
-  await apiClient.delete(`/users/${id}`)
+  await apiClient.delete(`/admin/users/${id}`)
 }
 
-/** PATCH /api/v1/users/{id}/status?enabled=true|false */
+/** PATCH /api/v1/admin/users/{id}/status?enabled=true|false */
 export async function adminToggleUserStatus(id: number, enabled: boolean): Promise<UserDto> {
-  const res = await apiClient.patch<ApiResponse<UserDto>>(`/users/${id}/status`, null, {
+  const res = await apiClient.patch<ApiResponse<UserDto>>(`/admin/users/${id}/status`, null, {
     params: { enabled },
   })
   return res.data.data
 }
 
-/** PATCH /api/v1/users/{id}/role?role=ROLE_ADMIN|ROLE_USER */
+/** PATCH /api/v1/admin/users/{id}/role?role=ROLE_ADMIN|ROLE_USER */
 export async function adminChangeUserRole(id: number, role: 'ROLE_USER' | 'ROLE_ADMIN'): Promise<UserDto> {
-  const res = await apiClient.patch<ApiResponse<UserDto>>(`/users/${id}/role`, null, {
+  const res = await apiClient.patch<ApiResponse<UserDto>>(`/admin/users/${id}/role`, null, {
     params: { role },
   })
   return res.data.data
