@@ -23,10 +23,8 @@ export const ORDER_STATUS_VARIANT: Record<OrderStatus, 'default' | 'gold' | 'suc
 }
 
 export const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  COD:     'Thanh toán khi nhận hàng',
-  BANKING: 'Chuyển khoản ngân hàng',
-  MOMO:    'Ví MoMo',
-  VNPAY:   'VNPay',
+  COD:   'Thanh toán khi nhận hàng',
+  VNPAY: 'VNPay',
 }
 
 export function canCancelOrder(order: Pick<OrderDto, 'status'>): boolean {

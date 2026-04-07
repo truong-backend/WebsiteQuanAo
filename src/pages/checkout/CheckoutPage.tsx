@@ -7,13 +7,12 @@ import { ROUTES } from '@shared/config'
 import { useCartStore } from '@features/cart/model/cartStore'
 import { useAuthStore } from '@features/auth/model/authStore'
 import { createOrderApi } from '@features/orders/api/ordersApi'
+import { createVNPayUrl } from '@features/payment/api/paymentApi'
 import type { PaymentMethod } from '@shared/types'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
-  { value: 'COD',     label: 'Thanh toán khi nhận hàng', icon: '💵', desc: 'Thanh toán bằng tiền mặt khi nhận hàng' },
-  { value: 'BANKING', label: 'Chuyển khoản',             icon: '🏦', desc: 'Chuyển khoản ngân hàng trực tiếp' },
-  { value: 'MOMO',    label: 'Ví MoMo',                  icon: '📱', desc: 'Thanh toán qua ví điện tử MoMo' },
-  { value: 'VNPAY',   label: 'VNPay',                    icon: '💳', desc: 'Thanh toán qua cổng VNPay' },
+  { value: 'COD',   label: 'Thanh toán khi nhận hàng', icon: '💵', desc: 'Thanh toán bằng tiền mặt khi nhận hàng' },
+  { value: 'VNPAY', label: 'VNPay',                    icon: '💳', desc: 'Thanh toán qua cổng thanh toán VNPay' },
 ]
 
 export default function CheckoutPage() {
@@ -30,12 +29,27 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD')
   const [errors, setErrors]               = useState<Record<string, string>>({})
 
+  const [isRedirectingVNPay, setIsRedirectingVNPay] = useState(false)
+
   const orderMutation = useMutation({
     mutationFn: createOrderApi,
     onSuccess: async (order) => {
       await clearCart()
-      toast('Đặt hàng thành công!')
-      navigate(ROUTES.orderPath(order.id))
+      if (paymentMethod === 'VNPAY') {
+        try {
+          setIsRedirectingVNPay(true)
+          toast('Đang chuyển đến trang thanh toán VNPay...')
+          const vnpayRes = await createVNPayUrl(order.id)
+          window.location.href = vnpayRes.paymentUrl
+        } catch {
+          setIsRedirectingVNPay(false)
+          toast('Không thể tạo link thanh toán VNPay, vui lòng thử lại từ trang đơn hàng', 'error')
+          navigate(ROUTES.orderPath(order.id))
+        }
+      } else {
+        toast('Đặt hàng thành công!')
+        navigate(ROUTES.orderPath(order.id))
+      }
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })
@@ -222,10 +236,10 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 size="lg"
-                loading={orderMutation.isPending}
+                loading={orderMutation.isPending || isRedirectingVNPay}
                 className="w-full"
               >
-                Đặt hàng ngay
+                {paymentMethod === 'VNPAY' ? 'Đặt hàng & Thanh toán VNPay' : 'Đặt hàng ngay'}
               </Button>
 
               <p className="text-xs text-center text-brand-mid">

@@ -270,7 +270,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED'
 
-export type PaymentMethod = 'COD' | 'BANKING' | 'MOMO' | 'VNPAY'
+export type PaymentMethod = 'COD' | 'VNPAY'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
 
 export interface OrderItemDto {

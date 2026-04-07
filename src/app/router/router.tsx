@@ -25,6 +25,7 @@ const RegisterPage       = lazy(() => import('@pages/auth/AuthPages').then(m => 
 // New pages for email verification & password reset flows
 const VerifyEmailPage    = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.VerifyEmailPage })))
 const ForgotPasswordPage = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.ForgotPasswordPage })))
+const VNPayReturnPage    = lazy(() => import('@pages/payment/VNPayReturnPage'))
 
 function PageLoader() {
   return (
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       // New auth routes
       { path: '/verify-email',          element: <VerifyEmailPage /> },
       { path: '/forgot-password',       element: <ForgotPasswordPage /> },
+      { path: '/payment/vnpay-return',  element: <VNPayReturnPage /> },
       { path: ROUTES.checkout,          element: <RequireAuth><CheckoutPage /></RequireAuth> },
       { path: ROUTES.orders,            element: <RequireAuth><OrdersPage /></RequireAuth> },
       { path: ROUTES.orderDetail,       element: <RequireAuth><OrderDetailPage /></RequireAuth> },
