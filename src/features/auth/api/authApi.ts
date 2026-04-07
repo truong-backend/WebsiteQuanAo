@@ -1,25 +1,49 @@
-// src/features/auth/api/authApi.ts
-// Moved from: src/api/BaseApi/AuthApi.ts
-import { BaseApi } from "@/services/baseApi";
+import { apiClient } from '@shared/api/client'
 import type {
+  ApiResponse,
+  AuthResponse,
   LoginRequest,
-  LoginResponse,
   RegisterRequest,
-} from "../types/auth.types";
-import type { AccountResponse } from "@/features/user/account/types/account.types";
+  VerifyEmailRequest,
+  ResendOtpRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+} from '@shared/types'
 
-class AuthApi extends BaseApi<LoginRequest, LoginResponse> {
-  constructor() {
-    super("auth");
-  }
-
-  async login(request: LoginRequest): Promise<LoginResponse> {
-    return this.customPost<LoginResponse>("/login", request);
-  }
-
-  async register(request: RegisterRequest): Promise<AccountResponse> {
-    return this.customPost<AccountResponse>("/signup", request);
-  }
+/** POST /api/v1/auth/login */
+export async function loginApi(data: LoginRequest): Promise<AuthResponse> {
+  const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', data)
+  return res.data.data
 }
 
-export const authApi = new AuthApi();
+/** POST /api/v1/auth/register */
+export async function registerApi(data: RegisterRequest): Promise<AuthResponse> {
+  const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', data)
+  return res.data.data
+}
+
+/** POST /api/v1/auth/verify-email */
+export async function verifyEmailApi(data: VerifyEmailRequest): Promise<AuthResponse> {
+  const res = await apiClient.post<ApiResponse<AuthResponse>>('/auth/verify-email', data)
+  return res.data.data
+}
+
+/** POST /api/v1/auth/resend-otp */
+export async function resendOtpApi(data: ResendOtpRequest): Promise<void> {
+  await apiClient.post<ApiResponse<null>>('/auth/resend-otp', data)
+}
+
+/** POST /api/v1/auth/forgot-password */
+export async function forgotPasswordApi(data: ForgotPasswordRequest): Promise<void> {
+  await apiClient.post<ApiResponse<null>>('/auth/forgot-password', data)
+}
+
+/** POST /api/v1/auth/verify-reset-otp */
+export async function verifyResetOtpApi(data: VerifyEmailRequest): Promise<void> {
+  await apiClient.post<ApiResponse<null>>('/auth/verify-reset-otp', data)
+}
+
+/** POST /api/v1/auth/reset-password */
+export async function resetPasswordApi(data: ResetPasswordRequest): Promise<void> {
+  await apiClient.post<ApiResponse<null>>('/auth/reset-password', data)
+}

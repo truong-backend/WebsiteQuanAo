@@ -9,9 +9,26 @@
     "skipLibCheck": true,
 
     "baseUrl": ".",
+    "ignoreDeprecations": "5.0",
     "paths": {
-        "@/*": ["src/*"]
-},
+      "@/*":                    ["src/*"],
+      "@app/*":                 ["src/app/*"],
+      "@app/providers":         ["src/app/providers/index.tsx"],
+      "@app/router/router":     ["src/app/router/router.tsx"],
+      "@shared/*":              ["src/shared/*"],
+      "@shared/types":          ["src/shared/types/index.ts"],
+      "@shared/config":         ["src/shared/config/index.ts"],
+      "@shared/lib":            ["src/shared/lib/index.ts"],
+      "@shared/api":            ["src/shared/api/client.ts"],
+      "@entities/*":            ["src/entities/*"],
+      "@entities/product/model":["src/entities/product/model/index.ts"],
+      "@entities/product/ui":   ["src/entities/product/ui/index.tsx"],
+      "@features/*":            ["src/features/*"],
+      "@features/cart/model/cartStore": ["src/features/cart/model/cartStore.ts"],
+      "@features/auth/model/authStore": ["src/features/auth/model/authStore.ts"],
+      "@widgets/*":             ["src/widgets/*"],
+      "@pages/*":               ["src/pages/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
