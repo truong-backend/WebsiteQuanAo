@@ -1,0 +1,23 @@
+package com.example.fashionstore.dto.product;
+
+import lombok.*;
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+@Builder
+public class ProductListDto {
+    private String     id;
+    private String     name;
+    private String     slug;
+    private BigDecimal basePrice;
+    private BigDecimal salePrice;
+    private String     mainImage;
+    private String     hoverImage;
+    private Double     ratingAvg;
+    private Integer    ratingCount;
+    private String     categoryName;
+    private List<String> availableColors;  // ["Đỏ", "Xanh Navy"]
+    private List<String> availableSizes;   // ["S", "M", "L"]
+    private boolean    inStock;
+}
