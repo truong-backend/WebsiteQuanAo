@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDate, toast, cn } from '@shared/lib'
-import { Button, Spinner, EmptyState } from '@shared/ui'
+import { Button, Spinner, EmptyState, Select } from '@shared/ui'
 import { StarRating } from '@entities/product/ui'
-import { fetchReviews, createReviewApi } from '@features/reviews/api/reviewsApi'
+import {
+  fetchReviews,
+  createReviewApi,
+  fetchReviewableOrders,
+} from '@features/reviews/api/reviewsApi'
 import { useAuthStore } from '@features/auth/model/authStore'
+import type { ReviewableOrderDto } from '@shared/types'
 
 interface ReviewListProps {
   productId: string
@@ -21,25 +26,56 @@ export function ReviewList({ productId }: ReviewListProps) {
     queryFn:  () => fetchReviews(productId, page),
   })
 
+  // Lấy danh sách đơn hàng có thể review (chỉ khi đã đăng nhập)
+  const { data: reviewableOrders } = useQuery({
+    queryKey: ['reviewable-orders', productId],
+    queryFn:  () => fetchReviewableOrders(productId),
+    enabled:  isAuth,
+  })
+
   const createMutation = useMutation({
-    mutationFn: (payload: { rating: number; comment: string }) =>
+    mutationFn: (payload: { rating: number; comment: string; orderId: string }) =>
       createReviewApi(productId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] })
-      toast('Đã gửi đánh giá')
+      queryClient.invalidateQueries({ queryKey: ['reviewable-orders', productId] })
+      toast('Đã gửi đánh giá — chờ admin duyệt')
     },
-    onError: () => toast('Gửi đánh giá thất bại', 'error'),
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message ?? 'Gửi đánh giá thất bại'
+      toast(msg, 'error')
+    },
   })
+
+  // Kiểm tra có đơn hàng chưa review không
+  const availableOrders = (reviewableOrders ?? []).filter((o) => !o.alreadyReviewed)
+  const canReview = isAuth && availableOrders.length > 0
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Write review */}
+      {/* Write review — chỉ hiện nếu user đã mua và chưa review */}
       {isAuth && (
-        <ReviewForm
-          userName={user?.name ?? ''}
-          onSubmit={(rating, comment) => createMutation.mutate({ rating, comment })}
-          loading={createMutation.isPending}
-        />
+        <>
+          {canReview ? (
+            <ReviewForm
+              userName={user?.name ?? ''}
+              availableOrders={availableOrders}
+              onSubmit={(rating, comment, orderId) =>
+                createMutation.mutate({ rating, comment, orderId })
+              }
+              loading={createMutation.isPending}
+            />
+          ) : reviewableOrders !== undefined && reviewableOrders.length > 0 ? (
+            <div className="p-5 bg-brand-cream border border-brand-light text-sm text-brand-mid">
+              Bạn đã đánh giá sản phẩm này cho tất cả đơn hàng.
+            </div>
+          ) : reviewableOrders !== undefined && reviewableOrders.length === 0 ? (
+            <div className="p-5 bg-brand-cream border border-brand-light text-sm text-brand-mid">
+              Chỉ khách hàng đã mua sản phẩm mới có thể đánh giá.
+            </div>
+          ) : null}
+        </>
       )}
 
       {/* List */}
@@ -99,19 +135,34 @@ export function ReviewList({ productId }: ReviewListProps) {
   )
 }
 
-function ReviewForm({ userName, onSubmit, loading }: {
-  userName: string
-  onSubmit: (rating: number, comment: string) => void
-  loading:  boolean
+// ── ReviewForm ────────────────────────────────────────────────────────────────
+
+function ReviewForm({
+  userName,
+  availableOrders,
+  onSubmit,
+  loading,
+}: {
+  userName:       string
+  availableOrders: ReviewableOrderDto[]
+  onSubmit:       (rating: number, comment: string, orderId: string) => void
+  loading:        boolean
 }) {
-  const [rating,  setRating]  = useState(5)
-  const [comment, setComment] = useState('')
-  const [hover,   setHover]   = useState(0)
+  const [rating,   setRating]  = useState(5)
+  const [comment,  setComment] = useState('')
+  const [hover,    setHover]   = useState(0)
+  const [orderId,  setOrderId] = useState(availableOrders[0]?.orderId ?? '')
+
+  const orderOptions = availableOrders.map((o) => ({
+    value: o.orderId,
+    label: `Đơn #${o.orderId.substring(0, 8).toUpperCase()} — ${new Date(o.orderTime).toLocaleDateString('vi-VN')}`,
+  }))
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!comment.trim()) { toast('Vui lòng nhập nội dung', 'error'); return }
-    onSubmit(rating, comment)
+    if (!orderId)       { toast('Vui lòng chọn đơn hàng', 'error'); return }
+    if (!comment.trim()) { toast('Vui lòng nhập nội dung đánh giá', 'error'); return }
+    onSubmit(rating, comment, orderId)
     setComment('')
     setRating(5)
   }
@@ -119,7 +170,17 @@ function ReviewForm({ userName, onSubmit, loading }: {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 bg-brand-cream">
       <h3 className="font-display text-xl">Viết đánh giá của bạn</h3>
-      <p className="text-xs text-brand-mid">Đăng với tư cách: <strong>{userName}</strong></p>
+      <p className="text-xs text-brand-mid">
+        Đăng với tư cách: <strong>{userName}</strong>
+      </p>
+
+      {/* Chọn đơn hàng */}
+      <Select
+        label="Chọn đơn hàng đã mua *"
+        options={orderOptions}
+        value={orderId}
+        onChange={(e) => setOrderId(e.target.value)}
+      />
 
       {/* Star selector */}
       <div className="flex items-center gap-1">
@@ -136,7 +197,8 @@ function ReviewForm({ userName, onSubmit, loading }: {
                 'w-7 h-7 transition-colors',
                 star <= (hover || rating) ? 'text-brand-gold' : 'text-brand-light',
               )}
-              viewBox="0 0 20 20" fill="currentColor"
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>

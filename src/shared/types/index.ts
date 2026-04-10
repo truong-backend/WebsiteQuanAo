@@ -18,7 +18,6 @@ export interface PageResponse<T> {
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
-// BE: AuthResponse.UserInfo { id: Integer, name, email, role: String, avatarUrl, emailVerified }
 export interface UserInfo {
   id:            number
   name:          string
@@ -32,8 +31,8 @@ export interface AuthResponse {
   accessToken:                string
   refreshToken:               string
   tokenType:                  string
-  expiresIn:                  number   // giây
-  refreshExpiresIn:           number   // giây
+  expiresIn:                  number
+  refreshExpiresIn:           number
   requiresEmailVerification:  boolean
   user:                       UserInfo
 }
@@ -142,7 +141,6 @@ export interface ProductFilterDto {
   sortDir?:    'asc' | 'desc'
 }
 
-// Admin create — matches BE ProductCreateRequest
 export interface ProductCreateRequest {
   name:         string
   slug:         string
@@ -154,7 +152,6 @@ export interface ProductCreateRequest {
   categoryId:   number
 }
 
-// Admin update — matches BE ProductUpdateRequest
 export interface ProductUpdateRequest {
   name:         string
   slug:         string
@@ -167,7 +164,7 @@ export interface ProductUpdateRequest {
   active?:      boolean
 }
 
-// ─── Variant (full DTO from VariantController) ───────────────────────────────
+// ─── Variant ─────────────────────────────────────────────────────────────────
 export interface VariantFullDto {
   id:          string
   sku:         string
@@ -184,7 +181,6 @@ export interface VariantFullDto {
   imageUrl:    string | null
 }
 
-// BE ProductVariantCreateRequest — uses colorId/sizeId (NOT colorCode/colorName)
 export interface VariantCreateRequest {
   sku:       string
   colorId:   number
@@ -193,7 +189,6 @@ export interface VariantCreateRequest {
   imageUrl?: string
 }
 
-// BE ProductVariantUpdateRequest
 export interface VariantUpdateRequest {
   colorId:   number
   sizeId:    number
@@ -201,7 +196,7 @@ export interface VariantUpdateRequest {
   imageUrl?: string
 }
 
-// ─── Color (NEW in BE) ───────────────────────────────────────────────────────
+// ─── Color ───────────────────────────────────────────────────────────────────
 export interface ColorDto {
   id:        number
   code:      string
@@ -218,7 +213,7 @@ export interface ColorRequest {
   active?: boolean
 }
 
-// ─── Size (NEW in BE) ────────────────────────────────────────────────────────
+// ─── Size ────────────────────────────────────────────────────────────────────
 export interface SizeDto {
   id:        number
   code:      string
@@ -320,6 +315,7 @@ export interface CreateOrderRequest {
   shippingAddress: string
   note?:           string
   paymentMethod:   PaymentMethod
+  voucherId?:      number          // ← thêm dòng này
   items: {
     variantId: string
     quantity:  number
@@ -327,7 +323,7 @@ export interface CreateOrderRequest {
   clearCart?: boolean
 }
 
-// ─── Payment (NEW in BE) ─────────────────────────────────────────────────────
+// ─── Payment ─────────────────────────────────────────────────────────────────
 export interface PaymentDto {
   id:            string
   orderId:       string
@@ -348,22 +344,63 @@ export interface VNPayCreateResponse {
 
 // ─── Review ──────────────────────────────────────────────────────────────────
 export interface ReviewDto {
-  id:         number
-  productId:  string
-  userId:     number
-  userName:   string
-  userAvatar: string | null
-  orderId:    string | null
-  rating:     number
-  comment:    string | null
-  createdAt:  string
+  id:             number
+  productId:      string
+  userId:         number
+  userName:       string
+  userAvatar:     string | null
+  orderId:        string | null
+  rating:         number
+  comment:        string | null
+  approved:       boolean
+  createdAt:      string
 }
 
+/** orderId bắt buộc — user phải chọn đơn hàng đã mua */
 export interface CreateReviewRequest {
-  rating:    number
-  comment?:  string
-  orderId?:  string
+  rating:   number
+  comment?: string
+  orderId:  string
 }
+
+/** Đơn hàng mà user đã mua sản phẩm này, dùng để chọn khi viết review */
+export interface ReviewableOrderDto {
+  orderId:        string
+  orderTime:      string
+  alreadyReviewed: boolean
+}
+
+// ─── Voucher (mới) ───────────────────────────────────────────────────────────
+export type VoucherType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING'
+
+export interface VoucherDto {
+  id:              number
+  code:            string
+  description:     string | null
+  type:            VoucherType
+  value:           number
+  minOrderAmount:  number
+  maxDiscount:     number | null
+  usageLimit:      number | null
+  usedCount:       number
+  startDate:       string | null
+  endDate:         string | null
+  active:          boolean
+  createdAt:       string
+}
+
+export interface ApplyVoucherRequest {
+  code:     string
+  subtotal: number
+}
+
+export interface ApplyVoucherResponse {
+  voucherId:      number
+  code:           string
+  discountAmount: number
+  message:        string
+}
+
 // ─── User Management ─────────────────────────────────────────────────────────
 export interface UserDto {
   id:            number
@@ -371,7 +408,7 @@ export interface UserDto {
   email:         string
   phone:         string | null
   avatarUrl:     string | null
-  role:          string          // "ROLE_USER" | "ROLE_ADMIN"
+  role:          string
   enabled:       boolean
   emailVerified: boolean
   createdAt:     string
@@ -403,4 +440,98 @@ export interface UserFilterDto {
   enabled?: boolean
   sortBy?:  string
   sortDir?: string
+}
+
+// ─── Dashboard / Report ──────────────────────────────────────────────────────
+export interface DashboardStatsDto {
+  totalRevenue:       number
+  revenueThisMonth:   number
+  totalOrders:        number
+  ordersThisMonth:    number
+  totalProducts:      number
+  totalUsers:         number
+  pendingOrders:      number
+  pendingReviews:     number
+}
+
+export interface RevenueByDayDto {
+  date:    string  // "2025-01-15"
+  revenue: number
+  orders:  number
+}
+
+export interface TopProductDto {
+  productId:   string
+  productName: string
+  mainImage:   string
+  totalSold:   number
+  totalRevenue: number
+}
+
+export interface OrderStatusCountDto {
+  status: OrderStatus
+  count:  number
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+export type InventoryChangeType = 'IMPORT' | 'EXPORT_SALE' | 'RETURN' | 'ADJUST'
+
+export interface InventoryLogDto {
+  id:            number
+  variantId:     string
+  variantSku:    string
+  productId:     string
+  productName:   string
+  colorName:     string
+  sizeCode:      string
+  changeType:    InventoryChangeType
+  quantity:      number
+  quantityAfter: number
+  note:          string | null
+  orderId:       string | null
+  createdByName: string
+  createdAt:     string
+}
+
+export interface ImportStockRequest {
+  variantId: string
+  quantity:  number
+  note?:     string
+}
+
+export interface AdjustStockRequest {
+  variantId:   string
+  newQuantity: number
+  note?:       string
+}
+
+// ─── VoucherRequest (for admin form) ─────────────────────────────────────────
+export interface VoucherRequest {
+  code:           string
+  description?:   string
+  type:           VoucherType
+  value:          number
+  minOrderAmount: number
+  maxDiscount?:   number
+  usageLimit?:    number
+  startDate?:     string
+  endDate?:       string
+  active:         boolean
+}
+
+// ─── Address Book ─────────────────────────────────────────────────────────────
+export interface AddressDto {
+  id:              number
+  recipientName:   string
+  phone:           string
+  address:         string
+  defaultAddress:  boolean
+  createdAt:       string
+}
+
+export interface AddressRequest {
+  recipientName:  string
+  phone:          string
+  address:        string
+  defaultAddress: boolean
 }

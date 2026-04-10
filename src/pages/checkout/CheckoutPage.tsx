@@ -8,7 +8,8 @@ import { useCartStore } from '@features/cart/model/cartStore'
 import { useAuthStore } from '@features/auth/model/authStore'
 import { createOrderApi } from '@features/orders/api/ordersApi'
 import { createVNPayUrl } from '@features/payment/api/paymentApi'
-import type { PaymentMethod } from '@shared/types'
+import { applyVoucherApi } from '@features/admin/api/adminApi'
+import type { PaymentMethod, ApplyVoucherResponse } from '@shared/types'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
   { value: 'COD',   label: 'Thanh toán khi nhận hàng', icon: '💵', desc: 'Thanh toán bằng tiền mặt khi nhận hàng' },
@@ -29,8 +30,39 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD')
   const [errors, setErrors]               = useState<Record<string, string>>({})
 
+  // ── Voucher state ──────────────────────────────────────────────────
+  const [voucherCode,     setVoucherCode]     = useState('')
+  const [appliedVoucher,  setAppliedVoucher]  = useState<ApplyVoucherResponse | null>(null)
+  const [voucherError,    setVoucherError]    = useState('')
+
   const [isRedirectingVNPay, setIsRedirectingVNPay] = useState(false)
 
+  // ── Apply voucher ──────────────────────────────────────────────────
+  const applyVoucherMutation = useMutation({
+    mutationFn: () => applyVoucherApi({
+      code:     voucherCode.trim(),
+      subtotal: cart?.subtotal ?? 0,
+    }),
+    onSuccess: (res) => {
+      setAppliedVoucher(res)
+      setVoucherError('')
+      toast('Áp dụng voucher thành công!')
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message ?? 'Mã voucher không hợp lệ'
+      setVoucherError(msg)
+      setAppliedVoucher(null)
+    },
+  })
+
+  function handleRemoveVoucher() {
+    setAppliedVoucher(null)
+    setVoucherCode('')
+    setVoucherError('')
+  }
+
+  // ── Create order ───────────────────────────────────────────────────
   const orderMutation = useMutation({
     mutationFn: createOrderApi,
     onSuccess: async (order) => {
@@ -43,7 +75,7 @@ export default function CheckoutPage() {
           window.location.href = vnpayRes.paymentUrl
         } catch {
           setIsRedirectingVNPay(false)
-          toast('Không thể tạo link thanh toán VNPay, vui lòng thử lại từ trang đơn hàng', 'error')
+          toast('Không thể tạo link thanh toán VNPay', 'error')
           navigate(ROUTES.orderPath(order.id))
         }
       } else {
@@ -76,6 +108,7 @@ export default function CheckoutPage() {
       shippingAddress: form.address,
       note:            form.note || undefined,
       paymentMethod,
+      voucherId:       appliedVoucher?.voucherId ?? undefined,
       items: cart.items.map((item) => ({
         variantId: item.variantId,
         quantity:  item.quantity,
@@ -93,8 +126,9 @@ export default function CheckoutPage() {
     )
   }
 
-  const SHIPPING_FEE = cart.subtotal >= 500_000 ? 0 : 30_000
-  const total = cart.subtotal + SHIPPING_FEE
+  const SHIPPING_FEE   = cart.subtotal >= 500_000 ? 0 : 30_000
+  const discountAmount = appliedVoucher?.discountAmount ?? 0
+  const total          = Math.max(cart.subtotal + SHIPPING_FEE - discountAmount, 0)
 
   return (
     <main className="container mx-auto px-6 max-w-screen-xl py-10">
@@ -103,7 +137,7 @@ export default function CheckoutPage() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12">
-          {/* Left: Shipping + payment */}
+          {/* Left: Shipping + voucher + payment */}
           <div className="flex flex-col gap-10">
             {/* Shipping info */}
             <section className="flex flex-col gap-6">
@@ -154,6 +188,50 @@ export default function CheckoutPage() {
               </div>
             </section>
 
+            {/* Voucher */}
+            <section className="flex flex-col gap-4">
+              <h2 className="font-display text-2xl">Mã giảm giá</h2>
+              {appliedVoucher ? (
+                <div className="flex items-center justify-between p-4 border border-green-200 bg-green-50">
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      {appliedVoucher.code}
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Giảm {formatPrice(appliedVoucher.discountAmount)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveVoucher}
+                    className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Nhập mã voucher..."
+                    value={voucherCode}
+                    onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherError('') }}
+                    error={voucherError}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    loading={applyVoucherMutation.isPending}
+                    disabled={!voucherCode.trim()}
+                    onClick={() => applyVoucherMutation.mutate()}
+                    className="flex-shrink-0"
+                  >
+                    Áp dụng
+                  </Button>
+                </div>
+              )}
+            </section>
+
             {/* Payment method */}
             <section className="flex flex-col gap-6">
               <h2 className="font-display text-2xl">Phương thức thanh toán</h2>
@@ -192,7 +270,6 @@ export default function CheckoutPage() {
             <div className="sticky top-24 bg-brand-cream p-6 flex flex-col gap-6">
               <h2 className="font-display text-2xl">Tóm tắt đơn hàng</h2>
 
-              {/* Items */}
               <ul className="flex flex-col gap-4 max-h-72 overflow-y-auto">
                 {cart.items.map((item) => (
                   <li key={item.cartItemId} className="flex gap-3">
@@ -215,7 +292,6 @@ export default function CheckoutPage() {
                 ))}
               </ul>
 
-              {/* Price breakdown */}
               <div className="flex flex-col gap-3 pt-4 border-t border-brand-light">
                 <div className="flex justify-between text-sm">
                   <span className="text-brand-mid">Tạm tính</span>
@@ -227,6 +303,12 @@ export default function CheckoutPage() {
                     {SHIPPING_FEE === 0 ? 'Miễn phí' : formatPrice(SHIPPING_FEE)}
                   </span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-700">
+                    <span>Giảm giá ({appliedVoucher?.code})</span>
+                    <span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-medium pt-3 border-t border-brand-light">
                   <span className="text-xs uppercase tracking-wider">Tổng cộng</span>
                   <span className="font-display text-xl">{formatPrice(total)}</span>
