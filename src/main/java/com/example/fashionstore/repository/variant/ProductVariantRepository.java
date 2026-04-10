@@ -1,8 +1,9 @@
 package com.example.fashionstore.repository.variant;
 
 import com.example.fashionstore.module.variant.ProductVariant;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
@@ -21,4 +22,13 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
             @Param("productId") String productId,
             @Param("colorId")   Long colorId,
             @Param("sizeId")    Long sizeId);
+
+    /**
+     * SELECT FOR UPDATE — dùng khi tạo order để tránh oversell.
+     * Khoá row variant cho đến khi transaction commit.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
+    @Query("SELECT v FROM ProductVariant v WHERE v.id = :id")
+    Optional<ProductVariant> findByIdForUpdate(@Param("id") String id);
 }

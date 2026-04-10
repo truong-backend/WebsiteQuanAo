@@ -13,8 +13,13 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
 
     Page<Review> findByProductIdAndApprovedTrue(String productId, Pageable pageable);
 
+    Page<Review> findByApproved(boolean approved, Pageable pageable);
+
     boolean existsByUserIdAndProductIdAndOrderId(Integer userId, String productId, String orderId);
 
     @Query("SELECT r.rating FROM Review r WHERE r.product.id = :productId AND r.approved = true")
     List<Integer> findRatingsByProductId(@Param("productId") String productId);
+
+    /** Đếm review chưa duyệt — dùng cho dashboard */
+    long countByApproved(boolean approved);
 }

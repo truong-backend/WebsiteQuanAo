@@ -1,11 +1,12 @@
 package com.example.fashionstore.dto.review;
 
-import com.example.fashionstore.module.review.Review;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReviewDto {
     private Integer       id;
     private String        productId;
@@ -15,5 +16,6 @@ public class ReviewDto {
     private String        orderId;
     private Integer       rating;
     private String        comment;
+    private boolean       approved;
     private LocalDateTime createdAt;
 }

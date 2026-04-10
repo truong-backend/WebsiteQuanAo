@@ -6,6 +6,7 @@ import com.example.fashionstore.common.util.SecurityUtils;
 import com.example.fashionstore.dto.review.CreateReviewRequest;
 import com.example.fashionstore.dto.review.ReviewDto;
 import com.example.fashionstore.mapper.review.ReviewMapper;
+import com.example.fashionstore.module.order.Order;
 import com.example.fashionstore.repository.order.OrderRepository;
 import com.example.fashionstore.module.product.Product;
 import com.example.fashionstore.repository.product.ProductRepository;
@@ -23,7 +24,7 @@ import java.util.List;
 @Transactional
 public class ReviewService {
 
-    private final ReviewRepository reviewRepository;
+    private final ReviewRepository  reviewRepository;
     private final ProductRepository productRepository;
     private final OrderRepository   orderRepository;
 
@@ -33,23 +34,42 @@ public class ReviewService {
                 .map(ReviewMapper::toDto);
     }
 
+    /**
+     * Tạo review.
+     * Rule quan trọng: User PHẢI đã mua sản phẩm này (có order COMPLETED hoặc DELIVERED).
+     * Mỗi orderId chỉ review 1 lần / sản phẩm.
+     */
     public ReviewDto createReview(CreateReviewRequest req) {
         User user = SecurityUtils.getCurrentUser();
         Product product = productRepository.findById(req.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", req.getProductId()));
 
-        // Verify user đã mua sản phẩm này (optional nhưng nên có)
-        if (req.getOrderId() != null) {
-            boolean hasPurchased = orderRepository.existsByIdAndUserIdAndItemsProductVariantProductId(
-                    req.getOrderId(), user.getId(), req.getProductId()
-            );
-            if (!hasPurchased)
-                throw new BusinessException("Bạn chưa mua sản phẩm này trong đơn hàng đã chỉ định");
+        // ── Bắt buộc phải có orderId ───────────────────────────────────
+        if (req.getOrderId() == null || req.getOrderId().isBlank())
+            throw new BusinessException("Bạn cần chọn đơn hàng đã mua để đánh giá sản phẩm này");
 
-            if (reviewRepository.existsByUserIdAndProductIdAndOrderId(
-                    user.getId(), req.getProductId(), req.getOrderId()))
-                throw new BusinessException("Bạn đã đánh giá sản phẩm này rồi");
-        }
+        // ── Verify order tồn tại, thuộc về user này, và đã hoàn thành ──
+        Order order = orderRepository.findById(req.getOrderId())
+                .orElseThrow(() -> new BusinessException("Không tìm thấy đơn hàng"));
+
+        if (order.getUser() == null || !order.getUser().getId().equals(user.getId()))
+            throw new BusinessException("Đơn hàng không thuộc về bạn");
+
+        if (order.getStatus() != Order.OrderStatus.DELIVERED
+                && order.getStatus() != Order.OrderStatus.COMPLETED)
+            throw new BusinessException("Chỉ có thể đánh giá sau khi đơn hàng đã được giao");
+
+        // ── Verify sản phẩm có trong đơn hàng ─────────────────────────
+        boolean hasPurchased = orderRepository.existsByIdAndUserIdAndItemsProductVariantProductId(
+                req.getOrderId(), user.getId(), req.getProductId()
+        );
+        if (!hasPurchased)
+            throw new BusinessException("Sản phẩm này không có trong đơn hàng đã chỉ định");
+
+        // ── Mỗi order chỉ review 1 lần / sản phẩm ─────────────────────
+        if (reviewRepository.existsByUserIdAndProductIdAndOrderId(
+                user.getId(), req.getProductId(), req.getOrderId()))
+            throw new BusinessException("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi");
 
         Review review = Review.builder()
                 .product(product)
@@ -57,11 +77,12 @@ public class ReviewService {
                 .orderId(req.getOrderId())
                 .rating(req.getRating())
                 .comment(req.getComment())
+                .approved(false) // Chờ admin duyệt
                 .build();
 
         Review saved = reviewRepository.save(review);
 
-        // Cập nhật rating trung bình của sản phẩm
+        // Cập nhật rating trung bình
         updateProductRating(product);
 
         return ReviewMapper.toDto(saved);
@@ -72,7 +93,6 @@ public class ReviewService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
 
-        // Admin có thể xóa mọi review, user chỉ xóa review của mình
         boolean isAdmin = user.getRole() == User.Role.ROLE_ADMIN;
         if (!isAdmin && !review.getUser().getId().equals(user.getId()))
             throw new BusinessException("Bạn không có quyền xóa review này");
@@ -82,9 +102,47 @@ public class ReviewService {
         updateProductRating(product);
     }
 
+    /** Admin duyệt review */
+    public ReviewDto approveReview(Integer reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
+        review.setApproved(true);
+        Review saved = reviewRepository.save(review);
+        updateProductRating(saved.getProduct());
+        return ReviewMapper.toDto(saved);
+    }
+
+    /** Admin lấy tất cả review (kể cả chưa duyệt) để quản lý */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<ReviewDto> getAllReviewsAdmin(Pageable pageable, Boolean approved) {
+        if (approved != null) {
+            return reviewRepository.findByApproved(approved, pageable).map(ReviewMapper::toDto);
+        }
+        return reviewRepository.findAll(pageable).map(ReviewMapper::toDto);
+    }
+
+    /** User lấy danh sách đơn hàng có thể review sản phẩm (DELIVERED/COMPLETED) */
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<ReviewableOrderDto> getReviewableOrders(String productId) {
+        User user = SecurityUtils.getCurrentUser();
+        List<Order> orders = orderRepository.findReviewableOrdersByUserAndProduct(
+                user.getId(), productId
+        );
+        return orders.stream()
+                .map(o -> new ReviewableOrderDto(
+                        o.getId(),
+                        o.getOrderTime().toString(),
+                        reviewRepository.existsByUserIdAndProductIdAndOrderId(
+                                user.getId(), productId, o.getId())
+                ))
+                .toList();
+    }
+
     private void updateProductRating(Product product) {
         List<Integer> ratings = reviewRepository.findRatingsByProductId(product.getId());
         product.recalculateRating(ratings);
         productRepository.save(product);
     }
+
+    public record ReviewableOrderDto(String orderId, String orderTime, boolean alreadyReviewed) {}
 }

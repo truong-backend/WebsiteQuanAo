@@ -11,6 +11,8 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/products/{productId}/reviews")
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    /** GET /api/v1/products/{productId}/reviews */
+    /** GET /api/v1/products/{productId}/reviews — danh sách review đã duyệt */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ReviewDto>>> getReviews(
             @PathVariable String productId,
@@ -27,6 +29,17 @@ public class ReviewController {
         Page<ReviewDto> result = reviewService.getProductReviews(
                 productId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    /**
+     * GET /api/v1/products/{productId}/reviews/reviewable-orders
+     * Trả về danh sách đơn hàng mà user đã mua sản phẩm này và có thể review.
+     */
+    @GetMapping("/reviewable-orders")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<ReviewService.ReviewableOrderDto>>> getReviewableOrders(
+            @PathVariable String productId) {
+        return ResponseEntity.ok(ApiResponse.ok(reviewService.getReviewableOrders(productId)));
     }
 
     /** POST /api/v1/products/{productId}/reviews */

@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class CreateOrderRequest {
+
     @NotBlank(message = "Số điện thoại không được để trống")
     @Pattern(regexp = "^[0-9]{10,11}$", message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
@@ -19,7 +20,10 @@ public class CreateOrderRequest {
     private String note;
 
     @NotBlank(message = "Phương thức thanh toán không được để trống")
-    private String paymentMethod;  // COD, BANKING, MOMO, VNPAY
+    private String paymentMethod;  // COD, VNPAY
+
+    /** ID voucher đã apply — null nếu không dùng */
+    private Long voucherId;
 
     @NotEmpty(message = "Đơn hàng phải có ít nhất 1 sản phẩm")
     @Valid

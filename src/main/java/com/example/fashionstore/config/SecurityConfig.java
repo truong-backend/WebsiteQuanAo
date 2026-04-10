@@ -15,11 +15,11 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity   // Cho phép @PreAuthorize trên Controller
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthFilter       jwtAuthFilter;
     private final AuthenticationProvider authProvider;
 
     @Bean
@@ -34,91 +34,93 @@ public class SecurityConfig {
                         //  PUBLIC — không cần token
                         // ════════════════════════════════════════════════════════
 
-                        // Auth: register, login, verify-email, resend-otp,
-                        //       forgot-password, verify-reset-otp, reset-password,
-                        //       refresh, logout
+                        // Auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
 
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // Static files served by Spring (images, uploads)
+                        // Static files
                         .requestMatchers("/images/**", "/uploads/**").permitAll()
 
-                        // Products — browse (GET list, GET by id, GET by slug)
+                        // Products — browse
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()   // /{id}, /slug/**, /*/variants, /*/variants/**, /*/reviews
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 
-                        // Categories — GET list, GET roots
+                        // Categories — GET
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll() // /roots, /{id}
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
 
-                        // Colors & Sizes — GET active list (public filter bar)
-                        // NOTE: GET /colors/all và GET /sizes/all (admin) được chặn phía dưới
-                        //       Spring Security đánh giá rule theo thứ tự → /all phải đứng TRƯỚC /**
+                        // Colors & Sizes — active list only (public)
                         .requestMatchers(HttpMethod.GET, "/api/v1/colors").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/sizes").permitAll()
 
-                        // VNPay callbacks — VNPay server gọi trực tiếp, không mang token
+                        // VNPay callbacks
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay/return").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay/ipn").permitAll()
 
                         // ════════════════════════════════════════════════════════
-                        //  ADMIN ONLY — hasRole("ADMIN")
-                        //  (defense-in-depth: controller đã có @PreAuthorize)
+                        //  ADMIN ONLY
                         // ════════════════════════════════════════════════════════
 
-                        // User management: GET/PUT/DELETE /admin/users/**,
-                        //                  PATCH /admin/users/{id}/status|role
+                        // Dashboard
+                        .requestMatchers("/api/v1/admin/dashboard/**").hasRole("ADMIN")
+
+                        // Reviews — admin management
+                        .requestMatchers("/api/v1/admin/reviews/**").hasRole("ADMIN")
+
+                        // User management
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                        // Colors — all (inactive included), CUD
+                        // Colors — all + CUD
                         .requestMatchers(HttpMethod.GET,    "/api/v1/colors/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/api/v1/colors").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/colors/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/colors/**").hasRole("ADMIN")
 
-                        // Sizes — all (inactive included), CUD
+                        // Sizes — all + CUD
                         .requestMatchers(HttpMethod.GET,    "/api/v1/sizes/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/api/v1/sizes").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/sizes/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/sizes/**").hasRole("ADMIN")
 
-                        // Categories — CUD (GET đã permit all bên trên)
+                        // Categories — CUD
                         .requestMatchers(HttpMethod.POST,   "/api/v1/categories").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/categories/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/categories/**").hasRole("ADMIN")
 
-                        // Products — CUD (GET đã permit all bên trên)
+                        // Products — CUD
                         .requestMatchers(HttpMethod.POST,   "/api/v1/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/products/**").hasRole("ADMIN")
 
-                        // Variants — CUD  (GET đã permit all qua /products/**)
+                        // Variants — CUD
                         .requestMatchers(HttpMethod.POST,   "/api/v1/products/*/variants").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/v1/products/*/variants/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/products/*/variants/**").hasRole("ADMIN")
 
-                        // Upload image — admin only (FE comment: "Admin only")
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/upload/**").hasRole("ADMIN")
+                        // Upload
+                        .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").hasRole("ADMIN")
 
-                        // Orders — admin: GET all list, PATCH status
-                        .requestMatchers(HttpMethod.GET,    "/api/v1/orders").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH,  "/api/v1/orders/*/status").hasRole("ADMIN")
+                        // Orders — admin list + status update
+                        .requestMatchers(HttpMethod.GET,   "/api/v1/orders").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/orders/*/status").hasRole("ADMIN")
 
-                        // Payments — admin: COD confirm, refund
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/payments/cod/confirm/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST,   "/api/v1/payments/refund/**").hasRole("ADMIN")
+                        // Payments — admin actions
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/cod/confirm/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/refund/**").hasRole("ADMIN")
+
+                        // Vouchers — GET all list và CUD chỉ admin
+                        //  POST /vouchers/apply (user dùng) được xử lý bên dưới (authenticated)
+                        .requestMatchers(HttpMethod.GET,    "/api/v1/vouchers").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET,    "/api/v1/vouchers/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/api/v1/vouchers").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/api/v1/vouchers/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/vouchers/**").hasRole("ADMIN")
 
                         // ════════════════════════════════════════════════════════
-                        //  AUTHENTICATED — đã đăng nhập (user hoặc admin)
+                        //  AUTHENTICATED — đã đăng nhập
                         // ════════════════════════════════════════════════════════
-                        // Cart:    GET/POST /cart, PUT/DELETE /cart/items/**, DELETE /cart
-                        // Orders:  POST /orders, GET /orders/my, GET /orders/{id}, POST /orders/{id}/cancel
-                        // Payments: GET /payments/order/{id}, GET /payments/{id},
-                        //           POST /payments/vnpay/create/{id}
-                        // Reviews: POST /products/*/reviews, DELETE /products/*/reviews/**
-                        // Users:   GET/PUT /users/me, POST /users/me/change-password
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authProvider)

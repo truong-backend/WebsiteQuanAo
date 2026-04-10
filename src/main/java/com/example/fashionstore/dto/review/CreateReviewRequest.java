@@ -1,15 +1,16 @@
 package com.example.fashionstore.dto.review;
 
-
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
 public class CreateReviewRequest {
-//    @NotBlank
+
     private String productId;
 
-    private String orderId;  // Optional — để verify đã mua
+    /** Bắt buộc — dùng để verify user đã mua sản phẩm trong đơn này */
+    @NotBlank(message = "Vui lòng chọn đơn hàng đã mua để đánh giá")
+    private String orderId;
 
     @NotNull
     @Min(1) @Max(5)

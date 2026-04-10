@@ -10,11 +10,15 @@ import com.example.fashionstore.mapper.order.OrderMapper;
 import com.example.fashionstore.module.order.Order;
 import com.example.fashionstore.module.order.OrderItem;
 import com.example.fashionstore.module.order.Payment;
+import com.example.fashionstore.module.voucher.Voucher;
 import com.example.fashionstore.repository.cart.CartRepository;
 import com.example.fashionstore.module.user.User;
 import com.example.fashionstore.module.variant.ProductVariant;
 import com.example.fashionstore.repository.order.OrderRepository;
 import com.example.fashionstore.repository.variant.ProductVariantRepository;
+import com.example.fashionstore.repository.voucher.VoucherRepository;
+import com.example.fashionstore.service.inventory.InventoryService;
+import com.example.fashionstore.service.voucher.VoucherService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -28,24 +32,30 @@ import java.util.*;
 @Transactional
 public class OrderService {
 
-    private final OrderRepository orderRepository;
+    private final OrderRepository          orderRepository;
     private final ProductVariantRepository variantRepository;
     private final CartRepository           cartRepository;
-    private final OrderMapper orderMapper;
+    private final VoucherRepository        voucherRepository;
+    private final VoucherService           voucherService;
+    private final InventoryService         inventoryService;
+    private final OrderMapper              orderMapper;
 
     // ── Tạo đơn hàng ────────────────────────────────────────────────
 
     /**
-     * User tạo đơn hàng.
-     * Luồng: validate items → trừ kho → tạo Order + OrderItems + Payment
+     * Tạo đơn hàng với:
+     * - Pessimistic lock variant (chống oversell)
+     * - Re-check stock sau khi lock
+     * - Ghi inventory log (EXPORT_SALE)
+     * - Áp dụng voucher (nếu có)
      */
     public OrderDto createOrder(CreateOrderRequest req) {
         User user = SecurityUtils.getCurrentUser();
 
-        // 1. Validate và load variants
+        // 1. Lock variants và validate stock
         List<OrderItemData> itemDataList = new ArrayList<>();
         for (var itemReq : req.getItems()) {
-            ProductVariant variant = variantRepository.findById(itemReq.getVariantId())
+            ProductVariant variant = variantRepository.findByIdForUpdate(itemReq.getVariantId())
                     .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", "id", itemReq.getVariantId()));
 
             if (variant.getQuantity() < itemReq.getQuantity())
@@ -53,6 +63,10 @@ public class OrderService {
                         "Sản phẩm '" + variant.getProduct().getName()
                                 + " - " + variant.getVariantInfo() + "' chỉ còn " + variant.getQuantity() + " cái"
                 );
+
+            if (!variant.getProduct().isActive())
+                throw new BusinessException("Sản phẩm '" + variant.getProduct().getName() + "' hiện không còn bán");
+
             itemDataList.add(new OrderItemData(variant, itemReq.getQuantity()));
         }
 
@@ -63,9 +77,29 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal shippingFee = calculateShipping(subtotal);
-        BigDecimal total       = subtotal.add(shippingFee);
 
-        // 3. Tạo Order
+        // 3. Áp dụng voucher
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        Voucher appliedVoucher = null;
+
+        if (req.getVoucherId() != null) {
+            appliedVoucher = voucherRepository.findById(req.getVoucherId())
+                    .orElseThrow(() -> new BusinessException("Voucher không tồn tại"));
+
+            if (!appliedVoucher.isValid())
+                throw new BusinessException("Voucher đã hết hạn hoặc đã sử dụng hết");
+
+            if (subtotal.compareTo(appliedVoucher.getMinOrderAmount()) < 0)
+                throw new BusinessException(
+                        "Đơn hàng phải từ " + appliedVoucher.getMinOrderAmount() + "₫ để dùng voucher này"
+                );
+
+            discountAmount = appliedVoucher.calculateDiscount(subtotal, shippingFee);
+        }
+
+        BigDecimal total = subtotal.add(shippingFee).subtract(discountAmount).max(BigDecimal.ZERO);
+
+        // 4. Tạo Order
         String orderId = UUID.randomUUID().toString();
         Order order = Order.builder()
                 .id(orderId)
@@ -75,11 +109,12 @@ public class OrderService {
                 .note(req.getNote())
                 .subtotal(subtotal)
                 .shippingFee(shippingFee)
+                .discountAmount(discountAmount)
                 .totalAmount(total)
                 .status(Order.OrderStatus.PENDING)
                 .build();
 
-        // 4. Tạo OrderItems (snapshot)
+        // 5. Tạo OrderItems (price snapshot)
         List<OrderItem> orderItems = itemDataList.stream()
                 .map(d -> {
                     var product = d.variant().getProduct();
@@ -87,11 +122,11 @@ public class OrderService {
                             .id(UUID.randomUUID().toString())
                             .order(order)
                             .productVariant(d.variant())
-                            .productName(product.getName())                    // snapshot
-                            .variantInfo(d.variant().getVariantInfo())         // snapshot
+                            .productName(product.getName())
+                            .variantInfo(d.variant().getVariantInfo())
                             .imageUrl(d.variant().getImageUrl() != null
-                                    ? d.variant().getImageUrl() : product.getMainImage()) // snapshot
-                            .unitPrice(product.getEffectivePrice())            // snapshot
+                                    ? d.variant().getImageUrl() : product.getMainImage())
+                            .unitPrice(product.getEffectivePrice())
                             .quantity(d.quantity())
                             .build();
                 })
@@ -99,7 +134,7 @@ public class OrderService {
 
         order.setItems(orderItems);
 
-        // 5. Tạo Payment
+        // 6. Tạo Payment
         Payment payment = Payment.builder()
                 .id(UUID.randomUUID().toString())
                 .order(order)
@@ -110,13 +145,21 @@ public class OrderService {
 
         order.setPayment(payment);
 
-        // 6. Trừ tồn kho
+        // 7. Trừ kho + ghi inventory log EXPORT_SALE
         itemDataList.forEach(d -> {
-            d.variant().setQuantity(d.variant().getQuantity() - d.quantity());
+            int newQty = d.variant().getQuantity() - d.quantity();
+            d.variant().setQuantity(newQty);
             variantRepository.save(d.variant());
+            // Ghi log xuất kho
+            inventoryService.logSale(d.variant(), d.quantity(), newQty, orderId);
         });
 
-        // 7. Xóa cart nếu user checkout từ cart
+        // 8. Tăng usedCount voucher
+        if (appliedVoucher != null) {
+            voucherService.incrementUsage(appliedVoucher.getId());
+        }
+
+        // 9. Xóa cart
         if (req.isClearCart() && user != null) {
             cartRepository.findByUserId(user.getId()).ifPresent(cart -> {
                 cart.getItems().clear();
@@ -130,13 +173,11 @@ public class OrderService {
 
     // ── Hủy đơn ─────────────────────────────────────────────────────
 
-    /** User chỉ được hủy khi status = PENDING */
     public OrderDto cancelOrder(String orderId) {
         User user = SecurityUtils.getCurrentUser();
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
-        // Verify ownership
         if (order.getUser() == null || !order.getUser().getId().equals(user.getId()))
             throw new BusinessException("Bạn không có quyền hủy đơn này");
 
@@ -145,17 +186,19 @@ public class OrderService {
 
         order.setStatus(Order.OrderStatus.CANCELLED);
 
-        // Hoàn trả tồn kho
+        // Hoàn trả kho + ghi inventory log RETURN
         order.getItems().forEach(item -> {
             ProductVariant variant = item.getProductVariant();
-            variant.setQuantity(variant.getQuantity() + item.getQuantity());
+            int newQty = variant.getQuantity() + item.getQuantity();
+            variant.setQuantity(newQty);
             variantRepository.save(variant);
+            inventoryService.logReturn(variant, item.getQuantity(), newQty, orderId);
         });
 
         return orderMapper.toDto(orderRepository.save(order));
     }
 
-    // ── Admin queries ────────────────────────────────────────────────
+    // ── Queries ──────────────────────────────────────────────────────
 
     @Transactional(Transactional.TxType.SUPPORTS)
     public Page<OrderDto> findAll(Pageable pageable, OrderFilterDto filter) {
@@ -163,15 +206,12 @@ public class OrderService {
         return orderRepository.findAll(spec, pageable).map(orderMapper::toDto);
     }
 
-    /** Lấy chi tiết đơn theo id */
     @Transactional(Transactional.TxType.SUPPORTS)
     public OrderDto getById(String orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
-        return orderMapper.toDto(order);
+        return orderMapper.toDto(orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId)));
     }
 
-    /** Lịch sử đơn hàng của user hiện tại */
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<OrderDto> getMyOrders() {
         User user = SecurityUtils.getCurrentUser();
@@ -179,7 +219,6 @@ public class OrderService {
                 .stream().map(orderMapper::toDto).toList();
     }
 
-    /** Admin cập nhật trạng thái */
     public OrderDto updateStatus(String orderId, Order.OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
@@ -190,18 +229,14 @@ public class OrderService {
 
     // ── Helpers ──────────────────────────────────────────────────────
 
-    /** Freeship khi đơn >= 500k */
     private BigDecimal calculateShipping(BigDecimal subtotal) {
         return subtotal.compareTo(new BigDecimal("500000")) >= 0
                 ? BigDecimal.ZERO : new BigDecimal("30000");
     }
 
-    /** Validate chuyển trạng thái hợp lệ */
     private void validateStatusTransition(Order.OrderStatus current, Order.OrderStatus next) {
-        // CANCELLED không thể chuyển về bất cứ trạng thái nào
         if (current == Order.OrderStatus.CANCELLED || current == Order.OrderStatus.REFUNDED)
             throw new BusinessException("Không thể cập nhật đơn hàng ở trạng thái " + current);
-        // DELIVERED chỉ có thể → REFUNDED
         if (current == Order.OrderStatus.DELIVERED
                 && next != Order.OrderStatus.REFUNDED
                 && next != Order.OrderStatus.COMPLETED)
