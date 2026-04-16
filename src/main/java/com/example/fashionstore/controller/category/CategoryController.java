@@ -6,6 +6,8 @@ import com.example.fashionstore.mapper.category.CategoryMapper;
 import com.example.fashionstore.module.category.Category;
 import com.example.fashionstore.repository.category.CategoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,12 +21,14 @@ public class CategoryController {
     private final CategoryMapper categoryMapper;
     private final CategoryRepository categoryRepository;
 
+    @Cacheable(value = "categories", key = "'all'")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryDto>>> getAll() {
         List<Category> cats = categoryRepository.findAllWithChildren();
         return ResponseEntity.ok(ApiResponse.ok(categoryMapper.toDtoList(cats)));
     }
 
+    @Cacheable(value = "categories", key = "'roots'")
     @GetMapping("/roots")
     public ResponseEntity<ApiResponse<List<CategoryDto>>> getRoots() {
         List<Category> roots = categoryRepository.findByParentCategoryIsNull();
@@ -32,6 +36,7 @@ public class CategoryController {
     }
 
     /** POST /api/v1/categories — Admin */
+    @CacheEvict(value = "categories", allEntries = true)
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Category>> create(@RequestBody Category req) {
@@ -41,6 +46,7 @@ public class CategoryController {
     }
 
     /** PUT /api/v1/categories/{id} — Admin */
+    @CacheEvict(value = "categories", allEntries = true)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Category>> update(
@@ -51,6 +57,7 @@ public class CategoryController {
     }
 
     /** DELETE /api/v1/categories/{id} — Admin */
+    @CacheEvict(value = "categories", allEntries = true)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {

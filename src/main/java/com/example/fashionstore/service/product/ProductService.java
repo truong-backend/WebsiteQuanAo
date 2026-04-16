@@ -10,6 +10,9 @@ import com.example.fashionstore.repository.category.CategoryRepository;
 import com.example.fashionstore.repository.product.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,7 @@ public class ProductService {
         return productRepository.findAll(spec, pageable).map(productMapper::toListDto);
     }
 
+    @Cacheable(value = "product-detail", key = "#id")
     @Transactional(Transactional.TxType.SUPPORTS)
     public ProductDetailDto getDetailById(String id) {
         Product p = productRepository.findByIdWithVariants(id)
@@ -39,6 +43,7 @@ public class ProductService {
         return productMapper.toDetailDto(p);
     }
 
+    @Cacheable(value = "product-detail", key = "'slug:' + #slug")
     @Transactional(Transactional.TxType.SUPPORTS)
     public ProductDetailDto getDetailBySlug(String slug) {
         Product p = productRepository.findBySlugWithVariants(slug)
@@ -48,6 +53,7 @@ public class ProductService {
 
     // ── Write ───────────────────────────────────────────────────────
 
+    @CacheEvict(value = "products", allEntries = true)
     public ProductDetailDto create(ProductCreateRequest req) {
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", req.getCategoryId()));
@@ -70,13 +76,16 @@ public class ProductService {
         return productMapper.toDetailDto(productRepository.save(product));
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "product-detail", key = "#id"),
+        @CacheEvict(value = "products", allEntries = true)
+    })
     public ProductDetailDto update(String id, ProductUpdateRequest req) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
         Category category = categoryRepository.findById(req.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", req.getCategoryId()));
 
-        // Kiểm tra slug conflict (nếu đổi slug)
         if (!product.getSlug().equals(req.getSlug()) && productRepository.existsBySlug(req.getSlug()))
             throw new BusinessException("Slug '" + req.getSlug() + "' đã tồn tại");
 
@@ -93,6 +102,10 @@ public class ProductService {
         return productMapper.toDetailDto(productRepository.save(product));
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "product-detail", key = "#id"),
+        @CacheEvict(value = "products", allEntries = true)
+    })
     public void delete(String id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));

@@ -17,6 +17,9 @@ import com.example.fashionstore.module.variant.ProductVariant;
 import com.example.fashionstore.repository.order.OrderRepository;
 import com.example.fashionstore.repository.variant.ProductVariantRepository;
 import com.example.fashionstore.repository.voucher.VoucherRepository;
+import com.example.fashionstore.messaging.dto.OrderCreatedMessage;
+import com.example.fashionstore.messaging.dto.OrderStatusChangedMessage;
+import com.example.fashionstore.messaging.publisher.MessagePublisher;
 import com.example.fashionstore.service.inventory.InventoryService;
 import com.example.fashionstore.service.voucher.VoucherService;
 import jakarta.transaction.Transactional;
@@ -25,6 +28,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -39,6 +43,7 @@ public class OrderService {
     private final VoucherService           voucherService;
     private final InventoryService         inventoryService;
     private final OrderMapper              orderMapper;
+    private final MessagePublisher         messagePublisher;
 
     // ── Tạo đơn hàng ────────────────────────────────────────────────
 
@@ -168,6 +173,18 @@ public class OrderService {
         }
 
         Order saved = orderRepository.save(order);
+
+        // ── Publish event: đơn hàng mới tạo → EmailConsumer gửi email xác nhận
+        messagePublisher.publishOrderCreated(
+                OrderCreatedMessage.builder()
+                        .orderId(saved.getId())
+                        .customerEmail(user.getEmail())
+                        .customerName(user.getName())
+                        .totalAmount(total)
+                        .createdAt(LocalDateTime.now())
+                        .build()
+        );
+
         return orderMapper.toDto(saved);
     }
 
@@ -222,9 +239,26 @@ public class OrderService {
     public OrderDto updateStatus(String orderId, Order.OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
+        String oldStatus = order.getStatus().name();
         validateStatusTransition(order.getStatus(), newStatus);
         order.setStatus(newStatus);
-        return orderMapper.toDto(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+
+        // ── Publish event: trạng thái thay đổi → OrderConsumer gửi email thông báo
+        if (order.getUser() != null) {
+            messagePublisher.publishOrderStatusChanged(
+                    OrderStatusChangedMessage.builder()
+                            .orderId(orderId)
+                            .customerEmail(order.getUser().getEmail())
+                            .customerName(order.getUser().getName())
+                            .oldStatus(oldStatus)
+                            .newStatus(newStatus.name())
+                            .changedAt(LocalDateTime.now())
+                            .build()
+            );
+        }
+
+        return orderMapper.toDto(saved);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

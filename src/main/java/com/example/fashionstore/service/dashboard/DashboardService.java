@@ -7,6 +7,7 @@ import com.example.fashionstore.repository.product.ProductRepository;
 import com.example.fashionstore.repository.review.ReviewRepository;
 import com.example.fashionstore.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -29,6 +30,7 @@ public class DashboardService {
 
     // ── Tổng quan ────────────────────────────────────────────────────
 
+    @Cacheable(value = "dashboard-stats", key = "'stats'")
     public DashboardStatsDto getStats() {
         LocalDateTime startOfMonth = YearMonth.now().atDay(1).atStartOfDay();
         LocalDateTime now          = LocalDateTime.now();
@@ -60,6 +62,7 @@ public class DashboardService {
      * Doanh thu theo ngày trong khoảng [startDate, endDate].
      * Mặc định: 30 ngày gần nhất.
      */
+    @Cacheable(value = "dashboard-stats", key = "'revenue:' + #startDate + ':' + #endDate")
     public List<RevenueByDayDto> getRevenueByDay(LocalDate startDate, LocalDate endDate) {
         if (startDate == null) startDate = LocalDate.now().minusDays(29);
         if (endDate   == null) endDate   = LocalDate.now();
@@ -104,6 +107,7 @@ public class DashboardService {
 
     // ── Top sản phẩm bán chạy ───────────────────────────────────────
 
+    @Cacheable(value = "dashboard-stats", key = "'top-products:' + #limit")
     public List<TopProductDto> getTopProducts(int limit) {
         List<Object[]> raw = orderRepository.topProductsBySold(limit);
         return raw.stream()
@@ -119,6 +123,7 @@ public class DashboardService {
 
     // ── Phân bố trạng thái đơn ──────────────────────────────────────
 
+    @Cacheable(value = "dashboard-stats", key = "'order-status'")
     public List<OrderStatusCountDto> getOrderStatusDistribution() {
         return Arrays.stream(OrderStatus.values())
                 .map(status -> OrderStatusCountDto.builder()
