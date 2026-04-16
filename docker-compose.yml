@@ -2,100 +2,95 @@ version: '3.8'
 name: website-quan-ao
 
 services:
-  # ── MySQL ──────────────────────────────────────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: quan-ao-mysql
+    container_name: quanao-mysql
     ports:
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: databasequanao
     volumes:
-      - quan_ao_mysql_data:/var/lib/mysql
+      - quanao_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "--password=${DB_PASSWORD}"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
+      start_period: 40s
     restart: unless-stopped
 
-  # ── Redis ──────────────────────────────────────────────────────────────────
-  quan-ao-redis:
+  redis:
     image: redis:7.2-alpine
-    container_name: quan-ao-redis
+    container_name: quanao-redis
     ports:
       - "6380:6379"
     volumes:
-      - quan_ao_redis_data:/data
+      - quanao_redis_data:/data
     restart: unless-stopped
 
-  # ── RabbitMQ ───────────────────────────────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
-    container_name: quan-ao-rabbitmq
+    container_name: quanao-rabbitmq
     ports:
-      - "5673:5672"      # AMQP
-      - "15673:15672"    # Management UI
+      - "5673:5672"
+      - "15673:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - quan_ao_rabbitmq_data:/var/lib/rabbitmq
+      - quanao_rabbitmq_data:/var/lib/rabbitmq
     restart: unless-stopped
 
-  # ── MinIO ──────────────────────────────────────────────────────────────────
   minio:
     image: minio/minio:latest
-    container_name: quan-ao-minio
+    container_name: quanao-minio
     ports:
-      - "9100:9000"       # S3 API
-      - "9101:9001"       # Console UI
+      - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     volumes:
-      - quan_ao_minio_data:/data
+      - quanao_minio_data:/data
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
-  # ── Spring Boot API ────────────────────────────────────────────────────────
-  quan-ao-api:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: quan-ao-api
+    container_name: quanao-api
     ports:
       - "8081:8081"
     env_file:
       - .env
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: quan-ao-redis
+      DB_URL: jdbc:mysql://mysql:3306/databasequanao?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      MINIO_URL: http://minio:9000
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_URL: http://localhost:9000
     volumes:
-      - quan_ao_upload:/app/upload
-      - quan_ao_data:/app/data
+      - quanao_upload:/app/upload
+      - quanao_data:/app/data
     depends_on:
       mysql:
         condition: service_healthy
-      quan-ao-redis:
+      redis:
         condition: service_started
       rabbitmq:
+        condition: service_started
+      minio:
         condition: service_started
     restart: unless-stopped
 
 volumes:
-  quan_ao_mysql_data:
-  quan_ao_redis_data:
-  quan_ao_rabbitmq_data:
-  quan_ao_minio_data:
-  quan_ao_upload:
-  quan_ao_data:
+  quanao_mysql_data:
+  quanao_redis_data:
+  quanao_rabbitmq_data:
+  quanao_minio_data:
+  quanao_upload:
+  quanao_data:
