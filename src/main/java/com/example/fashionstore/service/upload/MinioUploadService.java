@@ -1,12 +1,12 @@
 package com.example.fashionstore.service.upload;
 
 import com.example.fashionstore.common.exception.BusinessException;
-import com.example.fashionstore.config.MinioConfig.MinioProperties;
 import com.example.fashionstore.dto.upload.UploadResponse;
 import io.minio.*;
 import io.minio.errors.MinioException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,24 +19,26 @@ import java.util.UUID;
 @Slf4j
 public class MinioUploadService {
 
-    private static final long MAX_FILE_SIZE   = 5 * 1024 * 1024L; // 5 MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024L;
     private static final Set<String> ALLOWED_TYPES = Set.of(
             "image/jpeg", "image/png", "image/webp", "image/gif"
     );
 
-    private final MinioClient     minioClient;
-    private final MinioProperties props;
+    private final MinioClient minioClient;
 
-    /**
-     * Upload ảnh lên MinIO và trả về URL public.
-     * Không lưu file vào DB — chỉ trả URL để caller lưu.
-     */
+    @Value("${minio.bucket}")
+    private String bucket;
+
+    @Value("${minio.public-url}")
+    private String publicUrl;
+
+    // ================== UPLOAD ==================
     public UploadResponse uploadImage(MultipartFile file, String folder) {
         validateFile(file);
 
         String originalFilename = file.getOriginalFilename();
-        String extension        = extractExtension(originalFilename);
-        String storedName       = folder + "/" + UUID.randomUUID() + "." + extension;
+        String extension = extractExtension(originalFilename);
+        String storedName = folder + "/" + UUID.randomUUID() + "." + extension;
 
         try {
             ensureBucketExists();
@@ -45,7 +47,7 @@ public class MinioUploadService {
 
             minioClient.putObject(
                     PutObjectArgs.builder()
-                            .bucket(props.getBucket())
+                            .bucket(bucket)
                             .object(storedName)
                             .stream(inputStream, file.getSize(), -1)
                             .contentType(file.getContentType())
@@ -71,15 +73,14 @@ public class MinioUploadService {
         }
     }
 
-    /** Xóa file khỏi MinIO (gọi khi cập nhật/xóa sản phẩm) */
+    // ================== DELETE ==================
     public void deleteFile(String fileUrl) {
         if (fileUrl == null || fileUrl.isBlank()) return;
         try {
-            // Extract object name từ URL
-            String objectName = fileUrl.replace(props.getPublicUrl() + "/" + props.getBucket() + "/", "");
+            String objectName = fileUrl.replace(publicUrl + "/" + bucket + "/", "");
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
-                            .bucket(props.getBucket())
+                            .bucket(bucket)
                             .object(objectName)
                             .build()
             );
@@ -89,8 +90,7 @@ public class MinioUploadService {
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
-
+    // ================== HELPERS ==================
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty())
             throw new BusinessException("File không được để trống");
@@ -109,18 +109,19 @@ public class MinioUploadService {
     }
 
     private String buildUrl(String objectName) {
-        return props.getPublicUrl() + "/" + props.getBucket() + "/" + objectName;
+        return publicUrl + "/" + bucket + "/" + objectName;
     }
 
     private void ensureBucketExists() throws Exception {
         boolean exists = minioClient.bucketExists(
-                BucketExistsArgs.builder().bucket(props.getBucket()).build()
+                BucketExistsArgs.builder().bucket(bucket).build()
         );
+
         if (!exists) {
             minioClient.makeBucket(
-                    MakeBucketArgs.builder().bucket(props.getBucket()).build()
+                    MakeBucketArgs.builder().bucket(bucket).build()
             );
-            // Set bucket public read policy
+
             String policy = """
                     {
                       "Version": "2012-10-17",
@@ -133,14 +134,16 @@ public class MinioUploadService {
                         }
                       ]
                     }
-                    """.formatted(props.getBucket());
+                    """.formatted(bucket);
+
             minioClient.setBucketPolicy(
                     SetBucketPolicyArgs.builder()
-                            .bucket(props.getBucket())
+                            .bucket(bucket)
                             .config(policy)
                             .build()
             );
-            log.info("Created MinIO bucket: {}", props.getBucket());
+
+            log.info("Created MinIO bucket: {}", bucket);
         }
     }
 }
