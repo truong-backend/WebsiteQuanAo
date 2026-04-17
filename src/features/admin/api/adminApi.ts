@@ -71,8 +71,8 @@ export async function adminCreateCategory(data: {
   return res.data.data
 }
 
-export async function adminUpdateCategory(id: number, data: { categoryName: string }): Promise<Category> {
-  const res = await apiClient.put<ApiResponse<Category>>(`/categories/${id}`, { ...data, categoryId: id })
+export async function adminUpdateCategory(id: number, data: { categoryName: string; parentCategoryId?: number | null }): Promise<Category> {
+  const res = await apiClient.put<ApiResponse<Category>>(`/categories/${id}`, { categoryName: data.categoryName, parentCategoryId: data.parentCategoryId ?? null })
   return res.data.data
 }
 

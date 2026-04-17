@@ -1114,10 +1114,15 @@ function AdminReviews() {
 
 function AdminCategories() {
   const queryClient = useQueryClient()
-  const [newName, setNewName]       = useState('')
-  const [newParent, setNewParent]   = useState('')
-  const [editingId, setEditingId]   = useState<number | null>(null)
-  const [editingName, setEditingName] = useState('')
+  const [newName, setNewName]     = useState('')
+  const [newParent, setNewParent] = useState('')
+
+  // State cho modal sửa
+  const [editingCat, setEditingCat] = useState<{
+    id: number
+    name: string
+    parentCategoryId: number | null
+  } | null>(null)
 
   const { data: categories, isLoading } = useQuery({ queryKey: ['categories'], queryFn: fetchCategories })
 
@@ -1127,9 +1132,13 @@ function AdminCategories() {
     onError: () => toast('Tạo thất bại', 'error'),
   })
   const updateMutation = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => adminUpdateCategory(id, { categoryName: name }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast('Đã cập nhật'); setEditingId(null); setEditingName('') },
-    onError: () => toast('Cập nhật thất bại', 'error'),
+    mutationFn: ({ id, name, parentCategoryId }: { id: number; name: string; parentCategoryId: number | null }) =>
+      adminUpdateCategory(id, { categoryName: name, parentCategoryId }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast('Đã cập nhật'); setEditingCat(null) },
+    onError: (err: unknown) => toast(
+      (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Cập nhật thất bại',
+      'error',
+    ),
   })
   const deleteMutation = useMutation({
     mutationFn: adminDeleteCategory,
@@ -1137,64 +1146,85 @@ function AdminCategories() {
     onError: () => toast('Xóa thất bại', 'error'),
   })
 
+  // Danh sách options cho dropdown danh mục cha (khi TẠO MỚI)
   const rootCatOptions = [
     { value: '', label: 'Không có (danh mục gốc)' },
     ...(categories ?? []).map((c) => ({ value: String(c.categoryId), label: c.categoryName })),
   ]
 
+  // Danh sách options cho dropdown danh mục cha (khi SỬA) — loại bỏ chính nó và con của nó
+  const editParentOptions = editingCat
+    ? [
+        { value: '', label: 'Không có (danh mục gốc)' },
+        ...(categories ?? [])
+          .filter((c) => c.categoryId !== editingCat.id)
+          .map((c) => ({ value: String(c.categoryId), label: c.categoryName })),
+      ]
+    : []
+
+  const openEdit = (id: number, name: string, parentCategoryId: number | null) => {
+    setEditingCat({ id, name, parentCategoryId })
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      {/* Form tạo mới */}
       <div className="flex flex-col gap-5 p-6 bg-brand-cream">
         <h2 className="font-display text-2xl">Thêm danh mục mới</h2>
         <Input label="Tên danh mục" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Áo thun, Quần jeans..." />
         <Select label="Danh mục cha (tuỳ chọn)" options={rootCatOptions} value={newParent} onChange={(e) => setNewParent(e.target.value)} />
         <Button loading={createMutation.isPending} disabled={!newName.trim()} onClick={() => createMutation.mutate()} className="self-start">Tạo danh mục</Button>
       </div>
+
+      {/* Danh sách */}
       <div className="flex flex-col gap-4">
         <h2 className="font-display text-2xl">Danh sách danh mục</h2>
         {isLoading ? <Spinner /> : (
           <ul className="flex flex-col gap-2">
             {(categories ?? []).map((cat) => (
               <li key={cat.categoryId}>
+                {/* Danh mục cha */}
                 <div className="flex items-center justify-between py-3 px-4 border border-brand-light hover:border-brand-mid transition-colors">
-                  <div className="flex-1 mr-3">
-                    {editingId === cat.categoryId ? (
-                      <div className="flex items-center gap-2">
-                        <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="py-1 text-sm" />
-                        <Button size="sm" loading={updateMutation.isPending} disabled={!editingName.trim()} onClick={() => updateMutation.mutate({ id: cat.categoryId, name: editingName })}>Lưu</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="font-medium">{cat.categoryName}</p>
-                        {cat.childCategories?.length > 0 && <p className="text-xs text-brand-mid">{cat.childCategories.length} danh mục con</p>}
-                      </>
+                  <div>
+                    <p className="font-medium">{cat.categoryName}</p>
+                    {cat.childCategories?.length > 0 && (
+                      <p className="text-xs text-brand-mid">{cat.childCategories.length} danh mục con</p>
                     )}
                   </div>
-                  {editingId !== cat.categoryId && (
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => { setEditingId(cat.categoryId); setEditingName(cat.categoryName) }} className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors">Sửa</button>
-                      <button onClick={() => { if (confirm(`Xóa danh mục "${cat.categoryName}"?`)) deleteMutation.mutate(cat.categoryId) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => openEdit(cat.categoryId, cat.categoryName, null)}
+                      className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Xóa danh mục "${cat.categoryName}"?`)) deleteMutation.mutate(cat.categoryId) }}
+                      className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                    >
+                      Xóa
+                    </button>
+                  </div>
                 </div>
+
+                {/* Danh mục con */}
                 {cat.childCategories?.map((child) => (
                   <div key={child.categoryId} className="flex items-center justify-between py-2 px-4 ml-6 border-l border-brand-light hover:bg-brand-cream/50 transition-colors">
-                    {editingId === child.categoryId ? (
-                      <div className="flex items-center gap-2 flex-1 mr-3">
-                        <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="py-1 text-sm" />
-                        <Button size="sm" loading={updateMutation.isPending} disabled={!editingName.trim()} onClick={() => updateMutation.mutate({ id: child.categoryId, name: editingName })}>Lưu</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-brand-charcoal">└ {child.categoryName}</p>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => { setEditingId(child.categoryId); setEditingName(child.categoryName) }} className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors">Sửa</button>
-                          <button onClick={() => { if (confirm(`Xóa danh mục "${child.categoryName}"?`)) deleteMutation.mutate(child.categoryId) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
-                        </div>
-                      </>
-                    )}
+                    <p className="text-sm text-brand-charcoal">└ {child.categoryName}</p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openEdit(child.categoryId, child.categoryName, cat.categoryId)}
+                        className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => { if (confirm(`Xóa danh mục "${child.categoryName}"?`)) deleteMutation.mutate(child.categoryId) }}
+                        className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
+                      >
+                        Xóa
+                      </button>
+                    </div>
                   </div>
                 ))}
               </li>
@@ -1202,6 +1232,50 @@ function AdminCategories() {
           </ul>
         )}
       </div>
+
+      {/* Modal sửa danh mục */}
+      {editingCat && (
+        <Modal
+          open={!!editingCat}
+          onClose={() => setEditingCat(null)}
+          title="Sửa danh mục"
+          className="max-w-md mx-4 p-8"
+        >
+          <div className="flex flex-col gap-4">
+            <Input
+              label="Tên danh mục *"
+              value={editingCat.name}
+              onChange={(e) => setEditingCat((prev) => prev && { ...prev, name: e.target.value })}
+            />
+            <Select
+              label="Danh mục cha"
+              options={editParentOptions}
+              value={editingCat.parentCategoryId != null ? String(editingCat.parentCategoryId) : ''}
+              onChange={(e) => setEditingCat((prev) => prev && {
+                ...prev,
+                parentCategoryId: e.target.value ? Number(e.target.value) : null,
+              })}
+            />
+            <p className="text-xs text-brand-mid">
+              Chọn "Không có" để đặt làm danh mục gốc, hoặc chọn danh mục cha để đặt làm danh mục con.
+            </p>
+          </div>
+          <div className="flex gap-3 mt-6 justify-end border-t border-brand-light pt-4">
+            <Button variant="ghost" onClick={() => setEditingCat(null)}>Hủy</Button>
+            <Button
+              loading={updateMutation.isPending}
+              disabled={!editingCat.name.trim()}
+              onClick={() => updateMutation.mutate({
+                id: editingCat.id,
+                name: editingCat.name,
+                parentCategoryId: editingCat.parentCategoryId,
+              })}
+            >
+              Lưu thay đổi
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
