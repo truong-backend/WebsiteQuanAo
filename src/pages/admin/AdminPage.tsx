@@ -8,16 +8,20 @@ import {
 import { ROUTES } from '@shared/config'
 import { useAuthStore } from '@features/auth/model/authStore'
 import { isAdmin } from '@entities/user/model'
-import { fetchProducts, fetchCategories } from '@features/catalog/api/catalogApi'
+import { fetchCategories } from '@features/catalog/api/catalogApi'
 import {
   adminDeleteProduct, adminCreateProduct, adminUpdateProduct,
+  adminRestoreProduct, adminHardDeleteProduct,
+  adminFetchProducts,
   adminCreateCategory, adminUpdateCategory, adminDeleteCategory,
+  adminRestoreCategory,adminHardDeleteCategory,
   fetchAllColors, fetchAllSizes,
-  adminCreateColor, adminUpdateColor, adminDeleteColor,
-  adminCreateSize, adminUpdateSize, adminDeleteSize,
+  adminCreateColor, adminUpdateColor, adminDeleteColor, adminRestoreColor,
+  adminCreateSize, adminUpdateSize, adminDeleteSize, adminRestoreSize,
   fetchVariants, adminCreateVariant, adminUpdateVariant, adminDeleteVariant,
   fetchAllOrdersAdmin, updateOrderStatusApi,
   adminFetchVouchers, adminCreateVoucher, adminUpdateVoucher, adminDeleteVoucher,
+  adminRestoreVoucher, adminHardDeleteVoucher,
   fetchDashboardStats, fetchRevenueByDay, fetchTopProducts, fetchOrderStatusDistribution,
   adminFetchReviews, adminApproveReview, adminDeleteReviewApi,
 } from '@features/admin/api/adminApi'
@@ -238,7 +242,6 @@ function AdminDashboard() {
                   const pct   = total > 0 ? Math.round((s.count / total) * 100) : 0
                   return (
                     <li key={s.status} className="flex items-center gap-3">
-                      {/* fix: Badge không có className — dùng span wrapper */}
                       <span className="w-28 flex-shrink-0 flex justify-center">
                         <Badge variant={ORDER_STATUS_VARIANT[s.status as OrderStatus]}>
                           {ORDER_STATUS_LABEL[s.status as OrderStatus]}
@@ -264,35 +267,61 @@ function AdminDashboard() {
 // ══════════════════════════════════════════════════════════════════
 
 function AdminProducts() {
-  const [search, setSearch]           = useState('')
-  const [page, setPage]               = useState(0)
-  const [createOpen, setCreateOpen]   = useState(false)
-  const [editProduct, setEditProduct] = useState<ProductListDto | null>(null)
+  const [search, setSearch]               = useState('')
+  const [page, setPage]                   = useState(0)
+  const [includeDeleted, setIncludeDeleted] = useState(false)
+  const [createOpen, setCreateOpen]       = useState(false)
+  const [editProduct, setEditProduct]     = useState<ProductListDto | null>(null)
   const [variantProduct, setVariantProduct] = useState<ProductListDto | null>(null)
   const queryClient = useQueryClient()
 
+  // FIX #9: dùng adminFetchProducts (endpoint /products/admin) thay vì fetchProducts (user endpoint)
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'products', page, search],
-    queryFn:  () => fetchProducts({ page, size: 15, search: search || undefined }),
+    queryKey: ['admin', 'products', page, search, includeDeleted],
+    queryFn:  () => adminFetchProducts({ page, size: 15, search: search || undefined, includeDeleted: includeDeleted || undefined }),
   })
 
   const deleteMutation = useMutation({
     mutationFn: adminDeleteProduct,
-    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); toast('Đã xóa') },
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); toast('Đã xóa (soft)') },
     onError:    () => toast('Xóa thất bại', 'error'),
+  })
+
+  // FIX #9: thêm restore & hard delete mutations
+  const restoreMutation = useMutation({
+    mutationFn: adminRestoreProduct,
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); toast('Đã khôi phục sản phẩm') },
+    onError:    () => toast('Khôi phục thất bại', 'error'),
+  })
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: adminHardDeleteProduct,
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'products'] }); toast('Đã xóa vĩnh viễn') },
+    onError:    () => toast('Xóa vĩnh viễn thất bại', 'error'),
   })
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <Input
-          placeholder="Tìm kiếm sản phẩm..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-          className="max-w-xs"
-        />
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
+          <Input
+            placeholder="Tìm kiếm sản phẩm..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0) }}
+            className="max-w-xs"
+          />
+          <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-brand-mid hover:text-brand-black transition-colors">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => { setIncludeDeleted(e.target.checked); setPage(0) }}
+              className="w-4 h-4 accent-brand-gold"
+            />
+            Hiển thị sản phẩm đã xóa
+          </label>
+        </div>
         <Button onClick={() => setCreateOpen(true)}>+ Thêm sản phẩm</Button>
       </div>
 
@@ -313,13 +342,16 @@ function AdminProducts() {
               </thead>
               <tbody className="divide-y divide-brand-light/50">
                 {data.content.map((p) => (
-                  <tr key={p.id} className="hover:bg-brand-cream/50 transition-colors">
+                  <tr key={p.id} className={cn('transition-colors', p.deleted ? 'opacity-50 bg-red-50/30' : 'hover:bg-brand-cream/50')}>
                     <td className="py-3 pr-4">
                       <img src={p.mainImage} alt={p.name} className="w-12 h-14 object-cover bg-brand-cream" />
                     </td>
                     <td className="py-3 pr-4">
-                      <p className="font-medium line-clamp-1">{p.name}</p>
+                      <p className={cn('font-medium line-clamp-1', p.deleted && 'line-through text-brand-mid')}>{p.name}</p>
                       <p className="text-xs font-mono text-brand-mid">{p.id.substring(0, 8)}</p>
+                      {p.deleted && p.deletedAt && (
+                        <p className="text-[10px] text-red-400 mt-0.5">Đã xóa: {new Date(p.deletedAt).toLocaleDateString('vi-VN')}</p>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-brand-mid">{p.categoryName}</td>
                     <td className="py-3 pr-4">
@@ -327,13 +359,35 @@ function AdminProducts() {
                       {p.salePrice && <p className="text-xs text-brand-mid line-through">{formatPrice(p.basePrice)}</p>}
                     </td>
                     <td className="py-3 pr-4">
-                      <Badge variant={p.inStock ? 'success' : 'error'}>{p.inStock ? 'Còn hàng' : 'Hết hàng'}</Badge>
+                      {p.deleted
+                        ? <Badge variant="error">Đã xóa</Badge>
+                        : <Badge variant={p.inStock ? 'success' : 'error'}>{p.inStock ? 'Còn hàng' : 'Hết hàng'}</Badge>
+                      }
                     </td>
                     <td className="py-3">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setVariantProduct(p)} className="text-xs uppercase tracking-wider text-brand-gold hover:text-brand-black transition-colors">Variants</button>
-                        <button onClick={() => setEditProduct(p)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
-                        <button onClick={() => { if (confirm(`Xóa "${p.name}"?`)) deleteMutation.mutate(p.id) }} className="text-xs text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider">Xóa</button>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {p.deleted ? (
+                          <>
+                            <button
+                              onClick={() => { if (confirm(`Khôi phục "${p.name}"?`)) restoreMutation.mutate(p.id) }}
+                              className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors"
+                            >
+                              Khôi phục
+                            </button>
+                            <button
+                              onClick={() => { if (confirm(`Xóa VĨNH VIỄN "${p.name}"? Không thể hoàn tác!`)) hardDeleteMutation.mutate(p.id) }}
+                              className="text-[10px] text-red-700 hover:text-red-900 uppercase tracking-wider transition-colors font-medium"
+                            >
+                              Xóa vĩnh viễn
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => setVariantProduct(p)} className="text-xs uppercase tracking-wider text-brand-gold hover:text-brand-black transition-colors">Variants</button>
+                            <button onClick={() => setEditProduct(p)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
+                            <button onClick={() => { if (confirm(`Xóa "${p.name}"?`)) deleteMutation.mutate(p.id) }} className="text-xs text-red-500 hover:text-red-700 transition-colors uppercase tracking-wider">Xóa</button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -381,7 +435,10 @@ function CreateProductModal({
 }: {
   open: boolean; onClose: () => void; onCreated: () => void
 }) {
-  const { data: cats } = useQuery({ queryKey: ['categories'], queryFn: fetchCategories })
+const { data: cats } = useQuery({
+  queryKey: ['categories'],
+  queryFn: () => fetchCategories(),
+})
   const [form, setForm] = useState<ProductCreateRequest>({
     name: '', slug: '', description: '', basePrice: 0,
     salePrice: null, mainImage: '', hoverImage: '', categoryId: 0,
@@ -447,14 +504,16 @@ function EditProductModal({
 }: {
   productId: string; open: boolean; onClose: () => void; onUpdated: () => void
 }) {
-  const { data: cats } = useQuery({ queryKey: ['categories'], queryFn: fetchCategories })
+  const { data: cats } = useQuery({
+  queryKey: ['categories'],
+  queryFn: () => fetchCategories(),
+})
   const { data: product, isLoading } = useQuery<ProductDetailDto>({
     queryKey: ['product-detail', productId],
     queryFn:  () => import('@features/catalog/api/catalogApi').then((m) => m.fetchProductById(productId)),
     enabled:  open,
   })
 
-  // fix: type explicit thay vì dùng typeof import(...)
   const [form, setForm] = useState<ProductUpdateRequest | null>(null)
 
   if (product && !form) {
@@ -497,7 +556,6 @@ function EditProductModal({
           <div className="max-h-[70vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                {/* fix: explicit typed setter — no implicit any */}
                 <Input label="Tên sản phẩm" value={form.name}
                   onChange={(e) => setForm((prev): ProductUpdateRequest | null =>
                     prev ? { ...prev, name: e.target.value } : null)} />
@@ -849,13 +907,16 @@ const VOUCHER_TYPE_LABEL: Record<string, string> = {
 }
 
 function AdminVouchers() {
-  const [createOpen, setCreateOpen]   = useState(false)
-  const [editVoucher, setEditVoucher] = useState<VoucherDto | null>(null)
+  const [createOpen, setCreateOpen]       = useState(false)
+  const [editVoucher, setEditVoucher]     = useState<VoucherDto | null>(null)
+  // FIX #10: thêm toggle includeDeleted
+  const [includeDeleted, setIncludeDeleted] = useState(false)
   const queryClient = useQueryClient()
 
+  // FIX #10: truyền includeDeleted vào query
   const { data: vouchers, isLoading } = useQuery({
-    queryKey: ['admin', 'vouchers'],
-    queryFn:  adminFetchVouchers,
+    queryKey: ['admin', 'vouchers', includeDeleted],
+    queryFn:  () => adminFetchVouchers(includeDeleted),
   })
 
   const deleteMutation = useMutation({
@@ -864,12 +925,36 @@ function AdminVouchers() {
     onError:    () => toast('Xóa thất bại', 'error'),
   })
 
+  // FIX #10: thêm restore & hard delete mutations
+  const restoreMutation = useMutation({
+    mutationFn: adminRestoreVoucher,
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'vouchers'] }); toast('Đã khôi phục voucher') },
+    onError:    () => toast('Khôi phục thất bại', 'error'),
+  })
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: adminHardDeleteVoucher,
+    onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['admin', 'vouchers'] }); toast('Đã xóa vĩnh viễn') },
+    onError:    () => toast('Xóa vĩnh viễn thất bại', 'error'),
+  })
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['admin', 'vouchers'] })
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-brand-mid">{vouchers?.length ?? 0} voucher</p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-brand-mid">{vouchers?.length ?? 0} voucher</p>
+          <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-brand-mid hover:text-brand-black transition-colors">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+              className="w-4 h-4 accent-brand-gold"
+            />
+            Hiển thị voucher đã xóa
+          </label>
+        </div>
         <Button onClick={() => setCreateOpen(true)}>+ Tạo voucher</Button>
       </div>
 
@@ -889,8 +974,13 @@ function AdminVouchers() {
             </thead>
             <tbody className="divide-y divide-brand-light/50">
               {vouchers.map((v) => (
-                <tr key={v.id} className="hover:bg-brand-cream/50 transition-colors">
-                  <td className="py-3 pr-4 font-mono font-medium">{v.code}</td>
+                <tr key={v.id} className={cn('transition-colors', v.deleted ? 'opacity-50 bg-red-50/30' : 'hover:bg-brand-cream/50')}>
+                  <td className="py-3 pr-4 font-mono font-medium">
+                    <p className={cn(v.deleted && 'line-through text-brand-mid')}>{v.code}</p>
+                    {v.deleted && v.deletedAt && (
+                      <p className="text-[10px] text-red-400 mt-0.5">Đã xóa: {new Date(v.deletedAt).toLocaleDateString('vi-VN')}</p>
+                    )}
+                  </td>
                   <td className="py-3 pr-4 text-brand-mid">{VOUCHER_TYPE_LABEL[v.type]}</td>
                   <td className="py-3 pr-4">
                     {v.type === 'PERCENTAGE' ? `${v.value}%` : v.type === 'FIXED_AMOUNT' ? formatPrice(v.value) : 'Miễn phí ship'}
@@ -902,12 +992,34 @@ function AdminVouchers() {
                     {v.endDate ? new Date(v.endDate).toLocaleDateString('vi-VN') : '—'}
                   </td>
                   <td className="py-3 pr-4">
-                    <Badge variant={v.active ? 'success' : 'error'}>{v.active ? 'Đang hoạt động' : 'Đã tắt'}</Badge>
+                    {v.deleted
+                      ? <Badge variant="error">Đã xóa</Badge>
+                      : <Badge variant={v.active ? 'success' : 'error'}>{v.active ? 'Đang hoạt động' : 'Đã tắt'}</Badge>
+                    }
                   </td>
                   <td className="py-3">
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => setEditVoucher(v)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
-                      <button onClick={() => { if (confirm(`Xóa voucher "${v.code}"?`)) deleteMutation.mutate(v.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {v.deleted ? (
+                        <>
+                          <button
+                            onClick={() => { if (confirm(`Khôi phục voucher "${v.code}"?`)) restoreMutation.mutate(v.id) }}
+                            className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors"
+                          >
+                            Khôi phục
+                          </button>
+                          <button
+                            onClick={() => { if (confirm(`Xóa VĨNH VIỄN voucher "${v.code}"? Không thể hoàn tác!`)) hardDeleteMutation.mutate(v.id) }}
+                            className="text-[10px] text-red-700 hover:text-red-900 uppercase tracking-wider transition-colors font-medium"
+                          >
+                            Xóa vĩnh viễn
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => setEditVoucher(v)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
+                          <button onClick={() => { if (confirm(`Xóa voucher "${v.code}"?`)) deleteMutation.mutate(v.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1112,91 +1224,273 @@ function AdminReviews() {
 // ── Categories / Colors / Sizes / Users ──────────────────────────
 // ══════════════════════════════════════════════════════════════════
 
+// FIX #11: AdminCategories thêm includeDeleted toggle + Restore/HardDelete buttons
 function AdminCategories() {
   const queryClient = useQueryClient()
-  const [newName, setNewName]       = useState('')
-  const [newParent, setNewParent]   = useState('')
-  const [editingId, setEditingId]   = useState<number | null>(null)
+
+  const [newName, setNewName] = useState('')
+  const [newParent, setNewParent] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [editingParentId, setEditingParentId] = useState<string>('')
+  const [includeDeleted, setIncludeDeleted] = useState(false)
 
-  const { data: categories, isLoading } = useQuery({ queryKey: ['categories'], queryFn: fetchCategories })
+  // ─── QUERY ─────────────────────────────
+  const { data: categories, isLoading } = useQuery({
+    queryKey: ['admin', 'categories', includeDeleted],
+    queryFn: () =>
+      fetchCategories(includeDeleted ? { includeDeleted: true } : undefined),
+  })
 
+  const safeCategories = categories ?? []
+
+  // ─── CREATE ─────────────────────────────
   const createMutation = useMutation({
-    mutationFn: () => adminCreateCategory({ categoryName: newName, parentCategory: newParent ? { categoryId: Number(newParent) } : null }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast('Đã tạo danh mục'); setNewName(''); setNewParent('') },
+    mutationFn: () =>
+      adminCreateCategory({
+        categoryName: newName,
+        parentCategory: newParent
+          ? { categoryId: Number(newParent) }
+          : null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      toast('Đã tạo danh mục')
+      setNewName('')
+      setNewParent('')
+    },
     onError: () => toast('Tạo thất bại', 'error'),
   })
+
+  // ─── UPDATE ─────────────────────────────
   const updateMutation = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => adminUpdateCategory(id, { categoryName: name }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast('Đã cập nhật'); setEditingId(null); setEditingName('') },
+    mutationFn: (params: {
+      id: number
+      name: string
+      parentId?: number | null
+    }) =>
+      adminUpdateCategory(params.id, {
+        categoryName: params.name,
+        parentCategoryId: params.parentId ?? null,
+      }),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      toast('Đã cập nhật')
+      setEditingId(null)
+      setEditingName('')
+      setEditingParentId('')
+    },
+
     onError: () => toast('Cập nhật thất bại', 'error'),
   })
+
+  // ─── DELETE ─────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: adminDeleteCategory,
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['categories'] }); toast('Đã xóa') },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      toast('Đã xóa')
+    },
     onError: () => toast('Xóa thất bại', 'error'),
   })
 
+  // ─── RESTORE (FIX: dùng đúng signature) ─────────────────
+  const restoreMutation = useMutation({
+    mutationFn: (id: number) => adminRestoreCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      toast('Đã khôi phục danh mục')
+    },
+    onError: () => toast('Khôi phục thất bại', 'error'),
+  })
+
+  // ─── HARD DELETE ─────────────────────────
+  const hardDeleteMutation = useMutation({
+    mutationFn: (id: number) => adminHardDeleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })
+      toast('Đã xóa vĩnh viễn')
+    },
+    onError: () => toast('Xóa vĩnh viễn thất bại', 'error'),
+  })
+
+  // ─── OPTIONS ─────────────────────────────
   const rootCatOptions = [
     { value: '', label: 'Không có (danh mục gốc)' },
-    ...(categories ?? []).map((c) => ({ value: String(c.categoryId), label: c.categoryName })),
+    ...safeCategories
+      .filter((c) => !c.deleted)
+      .map((c) => ({
+        value: String(c.categoryId),
+        label: c.categoryName,
+      })),
   ]
 
+  // ─── ACTIONS ─────────────────────────────
+  const renderCategoryActions = (cat: {
+    categoryId: number
+    categoryName: string
+    deleted: boolean
+    parentCategoryId?: number | null
+  }) => {
+    if (cat.deleted) {
+      return (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (confirm(`Khôi phục "${cat.categoryName}"?`)) {
+                restoreMutation.mutate(cat.categoryId)
+              }
+            }}
+            className="text-[10px] text-green-600 uppercase"
+          >
+            Khôi phục
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm(`Xóa vĩnh viễn "${cat.categoryName}"?`)) {
+                hardDeleteMutation.mutate(cat.categoryId)
+              }
+            }}
+            className="text-[10px] text-red-700 uppercase"
+          >
+            Xóa vĩnh viễn
+          </button>
+        </div>
+      )
+    } else {
+          return (
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => {
+            setEditingId(cat.categoryId)
+            setEditingName(cat.categoryName)
+            setEditingParentId(
+              cat.parentCategoryId ? String(cat.parentCategoryId) : ''
+            )
+          }}
+          className="text-xs text-brand-mid uppercase"
+        >
+          Sửa
+        </button>
+
+        <button
+          onClick={() => {
+            if (confirm(`Xóa "${cat.categoryName}"?`)) {
+              deleteMutation.mutate(cat.categoryId)
+            }
+          }}
+          className="text-xs text-red-500 uppercase"
+        >
+          Xóa
+        </button>
+      </div>
+    )
+    }
+
+  }
+
+  // ─── UI ─────────────────────────────
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+      {/* CREATE */}
       <div className="flex flex-col gap-5 p-6 bg-brand-cream">
         <h2 className="font-display text-2xl">Thêm danh mục mới</h2>
-        <Input label="Tên danh mục" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Áo thun, Quần jeans..." />
-        <Select label="Danh mục cha (tuỳ chọn)" options={rootCatOptions} value={newParent} onChange={(e) => setNewParent(e.target.value)} />
-        <Button loading={createMutation.isPending} disabled={!newName.trim()} onClick={() => createMutation.mutate()} className="self-start">Tạo danh mục</Button>
+
+        <Input
+          label="Tên danh mục"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+
+        <Select
+          label="Danh mục cha"
+          value={newParent}
+          options={rootCatOptions}
+          onChange={(e) => setNewParent(e.target.value)}
+        />
+
+        <Button
+          loading={createMutation.isPending}
+          disabled={!newName.trim()}
+          onClick={() => createMutation.mutate()}
+        >
+          Tạo danh mục
+        </Button>
       </div>
+
+      {/* LIST */}
       <div className="flex flex-col gap-4">
-        <h2 className="font-display text-2xl">Danh sách danh mục</h2>
-        {isLoading ? <Spinner /> : (
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl">Danh sách danh mục</h2>
+
+          <label className="flex items-center gap-2 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+            />
+            Hiển thị đã xóa
+          </label>
+        </div>
+
+        {isLoading ? (
+          <Spinner />
+        ) : (
           <ul className="flex flex-col gap-2">
-            {(categories ?? []).map((cat) => (
+            {safeCategories.map((cat) => (
               <li key={cat.categoryId}>
-                <div className="flex items-center justify-between py-3 px-4 border border-brand-light hover:border-brand-mid transition-colors">
-                  <div className="flex-1 mr-3">
-                    {editingId === cat.categoryId ? (
-                      <div className="flex items-center gap-2">
-                        <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="py-1 text-sm" />
-                        <Button size="sm" loading={updateMutation.isPending} disabled={!editingName.trim()} onClick={() => updateMutation.mutate({ id: cat.categoryId, name: editingName })}>Lưu</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
+                <div className="flex justify-between border p-3">
+                  <div className="flex-1">
+                    {editingId === cat.categoryId && !cat.deleted ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                        />
+
+                        <Select
+                          value={editingParentId}
+                          options={rootCatOptions}
+                          onChange={(e) =>
+                            setEditingParentId(e.target.value)
+                          }
+                        />
+
+                        <Button
+                          loading={updateMutation.isPending}
+                          onClick={() =>
+                            updateMutation.mutate({
+                              id: cat.categoryId,
+                              name: editingName,
+                              parentId: editingParentId
+                                ? Number(editingParentId)
+                                : null,
+                            })
+                          }
+                        >
+                          Lưu
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Hủy
+                        </Button>
                       </div>
                     ) : (
-                      <>
-                        <p className="font-medium">{cat.categoryName}</p>
-                        {cat.childCategories?.length > 0 && <p className="text-xs text-brand-mid">{cat.childCategories.length} danh mục con</p>}
-                      </>
+                      <p className={cat.deleted ? 'line-through' : ''}>
+                        {cat.categoryName}
+                      </p>
                     )}
                   </div>
-                  {editingId !== cat.categoryId && (
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => { setEditingId(cat.categoryId); setEditingName(cat.categoryName) }} className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors">Sửa</button>
-                      <button onClick={() => { if (confirm(`Xóa danh mục "${cat.categoryName}"?`)) deleteMutation.mutate(cat.categoryId) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
-                    </div>
-                  )}
+
+                  {editingId !== cat.categoryId &&
+                    renderCategoryActions(cat)}
                 </div>
-                {cat.childCategories?.map((child) => (
-                  <div key={child.categoryId} className="flex items-center justify-between py-2 px-4 ml-6 border-l border-brand-light hover:bg-brand-cream/50 transition-colors">
-                    {editingId === child.categoryId ? (
-                      <div className="flex items-center gap-2 flex-1 mr-3">
-                        <Input value={editingName} onChange={(e) => setEditingName(e.target.value)} className="py-1 text-sm" />
-                        <Button size="sm" loading={updateMutation.isPending} disabled={!editingName.trim()} onClick={() => updateMutation.mutate({ id: child.categoryId, name: editingName })}>Lưu</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Hủy</Button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-brand-charcoal">└ {child.categoryName}</p>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => { setEditingId(child.categoryId); setEditingName(child.categoryName) }} className="text-xs text-brand-mid hover:text-brand-black uppercase tracking-wider transition-colors">Sửa</button>
-                          <button onClick={() => { if (confirm(`Xóa danh mục "${child.categoryName}"?`)) deleteMutation.mutate(child.categoryId) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
               </li>
             ))}
           </ul>
@@ -1208,7 +1502,7 @@ function AdminCategories() {
 
 function AdminColors() {
   const queryClient = useQueryClient()
-  const [form, setForm]         = useState({ code: '', name: '', nameEn: '' })
+  const [form, setForm]           = useState({ code: '', name: '', nameEn: '' })
   const [editColor, setEditColor] = useState<ColorDto | null>(null)
 
   const { data: colors, isLoading } = useQuery({ queryKey: ['admin', 'colors'], queryFn: fetchAllColors })
@@ -1227,6 +1521,11 @@ function AdminColors() {
     mutationFn: adminDeleteColor,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'colors'] }); toast('Đã vô hiệu hoá màu') },
     onError: () => toast('Thất bại', 'error'),
+  })
+  const restoreMutation = useMutation({
+    mutationFn: (color: ColorDto) => adminRestoreColor(color.id, { code: color.code, name: color.name, nameEn: color.nameEn ?? '', active: true }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'colors'] }); toast('Đã khôi phục màu') },
+    onError: () => toast('Khôi phục thất bại', 'error'),
   })
 
   return (
@@ -1248,7 +1547,7 @@ function AdminColors() {
         {isLoading ? <Spinner /> : (
           <ul className="flex flex-col gap-2">
             {(colors ?? []).map((color) => (
-              <li key={color.id} className="flex items-center justify-between py-3 px-4 border border-brand-light">
+              <li key={color.id} className={cn('flex items-center justify-between py-3 px-4 border border-brand-light', !color.active && 'opacity-50 bg-red-50/30')}>
                 {editColor?.id === color.id ? (
                   <div className="flex items-center gap-2 flex-1 mr-3">
                     <input type="color" value={editColor.code} onChange={(e) => setEditColor((c) => c && { ...c, code: e.target.value })} className="w-8 h-8 rounded border cursor-pointer" />
@@ -1260,7 +1559,7 @@ function AdminColors() {
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full border border-brand-light" style={{ backgroundColor: color.code }} />
                     <div>
-                      <p className="font-medium text-sm">{color.name}{color.nameEn && <span className="text-brand-mid"> ({color.nameEn})</span>}</p>
+                      <p className={cn('font-medium text-sm', !color.active && 'line-through text-brand-mid')}>{color.name}{color.nameEn && <span className="text-brand-mid"> ({color.nameEn})</span>}</p>
                       <p className="text-xs font-mono text-brand-mid">{color.code}</p>
                     </div>
                     {!color.active && <Badge variant="error">Inactive</Badge>}
@@ -1268,8 +1567,14 @@ function AdminColors() {
                 )}
                 {editColor?.id !== color.id && (
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setEditColor(color)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
-                    {color.active && <button onClick={() => { if (confirm(`Vô hiệu hoá màu "${color.name}"?`)) deleteMutation.mutate(color.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>}
+                    {color.active ? (
+                      <>
+                        <button onClick={() => setEditColor(color)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
+                        <button onClick={() => { if (confirm(`Vô hiệu hoá màu "${color.name}"?`)) deleteMutation.mutate(color.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                      </>
+                    ) : (
+                      <button onClick={() => { if (confirm(`Khôi phục màu "${color.name}"?`)) restoreMutation.mutate(color) }} className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors">Khôi phục</button>
+                    )}
                   </div>
                 )}
               </li>
@@ -1283,7 +1588,7 @@ function AdminColors() {
 
 function AdminSizes() {
   const queryClient = useQueryClient()
-  const [form, setForm]       = useState({ code: '', name: '', sortOrder: '0' })
+  const [form, setForm]         = useState({ code: '', name: '', sortOrder: '0' })
   const [editSize, setEditSize] = useState<SizeDto | null>(null)
 
   const { data: sizes, isLoading } = useQuery({ queryKey: ['admin', 'sizes'], queryFn: fetchAllSizes })
@@ -1303,6 +1608,11 @@ function AdminSizes() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] }); toast('Đã vô hiệu hoá size') },
     onError: () => toast('Thất bại', 'error'),
   })
+  const restoreMutation = useMutation({
+    mutationFn: (size: SizeDto) => adminRestoreSize(size.id, { code: size.code, name: size.name, sortOrder: size.sortOrder, active: true }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] }); toast('Đã khôi phục size') },
+    onError: () => toast('Khôi phục thất bại', 'error'),
+  })
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -1318,7 +1628,7 @@ function AdminSizes() {
         {isLoading ? <Spinner /> : (
           <ul className="flex flex-col gap-2">
             {(sizes ?? []).sort((a, b) => a.sortOrder - b.sortOrder).map((size) => (
-              <li key={size.id} className="flex items-center justify-between py-3 px-4 border border-brand-light">
+              <li key={size.id} className={cn('flex items-center justify-between py-3 px-4 border border-brand-light', !size.active && 'opacity-50 bg-red-50/30')}>
                 {editSize?.id === size.id ? (
                   <div className="flex items-center gap-2 flex-1 mr-3">
                     <span className="w-10 h-10 border border-brand-mid flex items-center justify-center text-xs font-bold flex-shrink-0">{editSize.code}</span>
@@ -1329,9 +1639,9 @@ function AdminSizes() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 border border-brand-mid flex items-center justify-center text-sm font-medium">{size.code}</span>
+                    <span className={cn('w-10 h-10 border flex items-center justify-center text-sm font-medium', !size.active ? 'border-brand-light text-brand-mid' : 'border-brand-mid')}>{size.code}</span>
                     <div>
-                      <p className="font-medium text-sm">{size.name}</p>
+                      <p className={cn('font-medium text-sm', !size.active && 'line-through text-brand-mid')}>{size.name}</p>
                       <p className="text-xs text-brand-mid">Thứ tự: {size.sortOrder}</p>
                     </div>
                     {!size.active && <Badge variant="error">Inactive</Badge>}
@@ -1339,8 +1649,14 @@ function AdminSizes() {
                 )}
                 {editSize?.id !== size.id && (
                   <div className="flex items-center gap-3">
-                    <button onClick={() => setEditSize(size)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
-                    {size.active && <button onClick={() => { if (confirm(`Vô hiệu hoá size "${size.code}"?`)) deleteMutation.mutate(size.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>}
+                    {size.active ? (
+                      <>
+                        <button onClick={() => setEditSize(size)} className="text-xs uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
+                        <button onClick={() => { if (confirm(`Vô hiệu hoá size "${size.code}"?`)) deleteMutation.mutate(size.id) }} className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                      </>
+                    ) : (
+                      <button onClick={() => { if (confirm(`Khôi phục size "${size.code}"?`)) restoreMutation.mutate(size) }} className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors">Khôi phục</button>
+                    )}
                   </div>
                 )}
               </li>
@@ -1353,12 +1669,12 @@ function AdminSizes() {
 }
 
 function AdminUsers() {
-  const [page, setPage]                   = useState(0)
-  const [search, setSearch]               = useState('')
-  const [role, setRole]                   = useState('')
-  const [enabled, setEnabled]             = useState('')
+  const [page, setPage]                     = useState(0)
+  const [search, setSearch]                 = useState('')
+  const [role, setRole]                     = useState('')
+  const [enabled, setEnabled]               = useState('')
   const [includeDeleted, setIncludeDeleted] = useState(false)
-  const [editUser, setEditUser]           = useState<UserDto | null>(null)
+  const [editUser, setEditUser]             = useState<UserDto | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({

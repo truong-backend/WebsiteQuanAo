@@ -22,6 +22,8 @@ import type {
   TopProductDto,
   OrderStatusCountDto,
   ReviewDto,
+  ProductListDto,
+  ProductFilterDto,
 } from '@shared/types'
 
 // ─── Products ──────────────────────────────────────────────────────────────────
@@ -79,7 +81,14 @@ export async function adminUpdateCategory(id: number, data: { categoryName: stri
 export async function adminDeleteCategory(id: number): Promise<void> {
   await apiClient.delete(`/categories/${id}`)
 }
+export async function adminRestoreCategory(id: number): Promise<Category> {
+  const res = await apiClient.post<ApiResponse<Category>>(`/categories/${id}/restore`)
+  return res.data.data
+}
 
+export async function adminHardDeleteCategory(id: number): Promise<void> {
+  await apiClient.delete(`/categories/${id}/hard`)
+}
 // ─── Colors ────────────────────────────────────────────────────────────────────
 
 export async function fetchActiveColors(): Promise<ColorDto[]> {
@@ -104,6 +113,11 @@ export async function adminUpdateColor(id: number, data: ColorRequest): Promise<
 
 export async function adminDeleteColor(id: number): Promise<void> {
   await apiClient.delete(`/colors/${id}`)
+}
+
+export async function adminRestoreColor(id: number, data: ColorRequest): Promise<ColorDto> {
+  const res = await apiClient.put<ApiResponse<ColorDto>>(`/colors/${id}`, { ...data, active: true })
+  return res.data.data
 }
 
 // ─── Sizes ─────────────────────────────────────────────────────────────────────
@@ -132,10 +146,22 @@ export async function adminDeleteSize(id: number): Promise<void> {
   await apiClient.delete(`/sizes/${id}`)
 }
 
+export async function adminRestoreSize(id: number, data: SizeRequest): Promise<SizeDto> {
+  const res = await apiClient.put<ApiResponse<SizeDto>>(`/sizes/${id}`, { ...data, active: true })
+  return res.data.data
+}
+
 // ─── Vouchers ──────────────────────────────────────────────────────────────────
 
-export async function adminFetchVouchers(): Promise<VoucherDto[]> {
-  const res = await apiClient.get<ApiResponse<VoucherDto[]>>('/vouchers')
+export async function adminFetchVouchers(includeDeleted = false): Promise<VoucherDto[]> {
+  const res = await apiClient.get<ApiResponse<VoucherDto[]>>('/vouchers', {
+    params: { includeDeleted },
+  })
+  return res.data.data
+}
+
+export async function adminFetchProducts(params: ProductFilterDto): Promise<PageResponse<ProductListDto>> {
+  const res = await apiClient.get<ApiResponse<PageResponse<ProductListDto>>>('/products/admin', { params })
   return res.data.data
 }
 
@@ -206,6 +232,23 @@ export async function adminApproveReview(reviewId: number): Promise<ReviewDto> {
 
 export async function adminDeleteReviewApi(reviewId: number): Promise<void> {
   await apiClient.delete(`/admin/reviews/${reviewId}`)
+}
+export async function adminRestoreProduct(id: string): Promise<ProductDetailDto> {
+  const res = await apiClient.post<ApiResponse<ProductDetailDto>>(`/products/${id}/restore`)
+  return res.data.data
+}
+
+export async function adminHardDeleteProduct(id: string): Promise<void> {
+  await apiClient.delete(`/products/${id}/hard`)
+}
+
+export async function adminRestoreVoucher(id: number): Promise<VoucherDto> {
+  const res = await apiClient.post<ApiResponse<VoucherDto>>(`/vouchers/${id}/restore`)
+  return res.data.data
+}
+
+export async function adminHardDeleteVoucher(id: number): Promise<void> {
+  await apiClient.delete(`/vouchers/${id}/hard`)
 }
 
 // ─── Re-exports ────────────────────────────────────────────────────────────────

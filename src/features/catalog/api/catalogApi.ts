@@ -26,8 +26,11 @@ export async function fetchProductById(id: string): Promise<ProductDetailDto> {
   return res.data.data
 }
 
-export async function fetchCategories(): Promise<Category[]> {
-  const res = await apiClient.get<ApiResponse<Category[]>>('/categories')
+export async function fetchCategories(params?: { includeDeleted?: boolean }): Promise<Category[]> {
+  const res = await apiClient.get<ApiResponse<Category[]>>('/categories', {
+    params,
+  })
+
   return res.data.data ?? []
 }
 

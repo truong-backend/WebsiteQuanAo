@@ -72,8 +72,10 @@ export interface ResetPasswordRequest {
 export interface Category {
   categoryId:       number
   categoryName:     string
-  parentCategory:   Pick<Category, 'categoryId' | 'categoryName'> | null
+  parentCategoryId: number | null   // ← đổi từ parentCategory (object)
   childCategories:  Category[]
+  deleted:          boolean
+  deletedAt:        string | null
 }
 
 // ─── Product ─────────────────────────────────────────────────────────────────
@@ -91,6 +93,8 @@ export interface ProductListDto {
   availableColors: string[]
   availableSizes:  string[]
   inStock:         boolean
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 export interface VariantDto {
@@ -126,6 +130,8 @@ export interface ProductDetailDto {
   category:       CategoryInfo
   variants:       VariantDto[]
   createdAt:      string
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 export interface ProductFilterDto {
@@ -139,6 +145,7 @@ export interface ProductFilterDto {
   sizeCode?:   string
   sortBy?:     'createdAt' | 'basePrice' | 'name' | 'id'
   sortDir?:    'asc' | 'desc'
+  includeDeleted?: boolean  // ✅
 }
 
 export interface ProductCreateRequest {
@@ -204,6 +211,8 @@ export interface ColorDto {
   nameEn:    string | null
   active:    boolean
   createdAt: string
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 export interface ColorRequest {
@@ -221,6 +230,8 @@ export interface SizeDto {
   sortOrder: number
   active:    boolean
   createdAt: string
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 export interface SizeRequest {
@@ -354,6 +365,8 @@ export interface ReviewDto {
   comment:        string | null
   approved:       boolean
   createdAt:      string
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 /** orderId bắt buộc — user phải chọn đơn hàng đã mua */
@@ -387,6 +400,8 @@ export interface VoucherDto {
   endDate:         string | null
   active:          boolean
   createdAt:       string
+  deleted:    boolean
+  deletedAt:  string | null
 }
 
 export interface ApplyVoucherRequest {
