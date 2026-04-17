@@ -413,6 +413,8 @@ export interface UserDto {
   emailVerified: boolean
   createdAt:     string
   updatedAt:     string
+  deleted:       boolean
+  deletedAt:     string | null
 }
 
 export interface UpdateProfileRequest {
@@ -433,13 +435,14 @@ export interface AdminUpdateUserRequest {
 }
 
 export interface UserFilterDto {
-  page?:    number
-  size?:    number
-  search?:  string
-  role?:    string
-  enabled?: boolean
-  sortBy?:  string
-  sortDir?: string
+  page?:           number
+  size?:           number
+  search?:         string
+  role?:           string
+  enabled?:        boolean
+  sortBy?:         string
+  sortDir?:        string
+  includeDeleted?: boolean
 }
 
 // ─── Dashboard / Report ──────────────────────────────────────────────────────

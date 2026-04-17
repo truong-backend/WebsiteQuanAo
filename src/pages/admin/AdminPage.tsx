@@ -38,7 +38,7 @@ import type {
   VoucherRequest,
 } from '@shared/types'
 import {
-  fetchAllUsersAdmin, adminDeleteUser, adminToggleUserStatus, adminChangeUserRole,
+  fetchAllUsersAdmin, adminDeleteUser, adminRestoreUser, adminToggleUserStatus, adminChangeUserRole,
 } from '@features/user/api/userApi'
 import type { UserDto } from '@shared/types'
 import { AdminInventoryTab } from './AdminInventoryTab'
@@ -1353,20 +1353,22 @@ function AdminSizes() {
 }
 
 function AdminUsers() {
-  const [page, setPage]         = useState(0)
-  const [search, setSearch]     = useState('')
-  const [role, setRole]         = useState('')
-  const [enabled, setEnabled]   = useState('')
-  const [editUser, setEditUser] = useState<UserDto | null>(null)
+  const [page, setPage]                   = useState(0)
+  const [search, setSearch]               = useState('')
+  const [role, setRole]                   = useState('')
+  const [enabled, setEnabled]             = useState('')
+  const [includeDeleted, setIncludeDeleted] = useState(false)
+  const [editUser, setEditUser]           = useState<UserDto | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'users', page, search, role, enabled],
+    queryKey: ['admin', 'users', page, search, role, enabled, includeDeleted],
     queryFn:  () => fetchAllUsersAdmin({
       page, size: 20,
-      search:  search  || undefined,
-      role:    role    || undefined,
-      enabled: enabled === '' ? undefined : enabled === 'true',
+      search:         search  || undefined,
+      role:           role    || undefined,
+      enabled:        enabled === '' ? undefined : enabled === 'true',
+      includeDeleted: includeDeleted || undefined,
     }),
   })
 
@@ -1374,6 +1376,11 @@ function AdminUsers() {
     mutationFn: adminDeleteUser,
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }); toast('Đã xóa tài khoản') },
     onError:   () => toast('Xóa thất bại', 'error'),
+  })
+  const restoreMutation = useMutation({
+    mutationFn: adminRestoreUser,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['admin', 'users'] }); toast('Đã khôi phục tài khoản') },
+    onError:   () => toast('Khôi phục thất bại', 'error'),
   })
   const toggleStatusMutation = useMutation({
     mutationFn: ({ id, enabled: en }: { id: number; enabled: boolean }) => adminToggleUserStatus(id, en),
@@ -1392,6 +1399,15 @@ function AdminUsers() {
         <Input placeholder="Tìm theo tên, email, SĐT..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(0) }} className="max-w-xs" />
         <Select options={[{ value: '', label: 'Tất cả vai trò' }, { value: 'ROLE_USER', label: 'Người dùng' }, { value: 'ROLE_ADMIN', label: 'Admin' }]} value={role} onChange={(e) => { setRole(e.target.value); setPage(0) }} className="max-w-[160px]" />
         <Select options={[{ value: '', label: 'Tất cả trạng thái' }, { value: 'true', label: 'Đang hoạt động' }, { value: 'false', label: 'Đã bị khóa' }]} value={enabled} onChange={(e) => { setEnabled(e.target.value); setPage(0) }} className="max-w-[180px]" />
+        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-brand-mid hover:text-brand-black transition-colors">
+          <input
+            type="checkbox"
+            checked={includeDeleted}
+            onChange={(e) => { setIncludeDeleted(e.target.checked); setPage(0) }}
+            className="w-4 h-4 accent-brand-gold"
+          />
+          Hiển thị tài khoản đã xóa
+        </label>
       </div>
       {data && <p className="text-xs text-brand-mid">Tổng cộng: <strong>{data.totalElements}</strong> tài khoản</p>}
 
@@ -1412,37 +1428,56 @@ function AdminUsers() {
               </thead>
               <tbody className="divide-y divide-brand-light/50">
                 {data.content.map((u) => (
-                  <tr key={u.id} className="hover:bg-brand-cream/50 transition-colors">
+                  <tr key={u.id} className={cn('transition-colors', u.deleted ? 'opacity-50 bg-red-50/30' : 'hover:bg-brand-cream/50')}>
                     <td className="py-3 pr-4 font-mono text-xs text-brand-mid">{u.id}</td>
                     <td className="py-3 pr-4">
-                      <p className="font-medium line-clamp-1">{u.name}</p>
+                      <p className={cn('font-medium line-clamp-1', u.deleted && 'line-through text-brand-mid')}>{u.name}</p>
                       <p className="text-xs text-brand-mid">{u.email}</p>
+                      {u.deleted && u.deletedAt && (
+                        <p className="text-[10px] text-red-400 mt-0.5">Đã xóa: {new Date(u.deletedAt).toLocaleDateString('vi-VN')}</p>
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-brand-mid text-xs">{u.phone ?? '—'}</td>
                     <td className="py-3 pr-4"><Badge variant={u.role === 'ROLE_ADMIN' ? 'gold' : 'default'}>{u.role === 'ROLE_ADMIN' ? 'Admin' : 'User'}</Badge></td>
-                    <td className="py-3 pr-4"><Badge variant={u.enabled ? 'success' : 'error'}>{u.enabled ? 'Hoạt động' : 'Bị khóa'}</Badge></td>
+                    <td className="py-3 pr-4">
+                      {u.deleted
+                        ? <Badge variant="error">Đã xóa</Badge>
+                        : <Badge variant={u.enabled ? 'success' : 'error'}>{u.enabled ? 'Hoạt động' : 'Bị khóa'}</Badge>
+                      }
+                    </td>
                     <td className="py-3 pr-4 text-xs text-brand-mid">{new Date(u.createdAt).toLocaleDateString('vi-VN')}</td>
                     <td className="py-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <button
-                          onClick={() => toggleStatusMutation.mutate({ id: u.id, enabled: !u.enabled })}
-                          className={cn('text-[10px] uppercase tracking-wider transition-colors', u.enabled ? 'text-orange-500 hover:text-orange-700' : 'text-green-600 hover:text-green-800')}
-                        >
-                          {u.enabled ? 'Khóa' : 'Mở khóa'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            const newRole = u.role === 'ROLE_ADMIN' ? 'ROLE_USER' : 'ROLE_ADMIN'
-                            if (confirm(`Đổi quyền ${u.name} thành ${newRole === 'ROLE_ADMIN' ? 'Admin' : 'User'}?`)) {
-                              changeRoleMutation.mutate({ id: u.id, role: newRole })
-                            }
-                          }}
-                          className="text-[10px] uppercase tracking-wider text-brand-gold hover:text-brand-black transition-colors"
-                        >
-                          {u.role === 'ROLE_ADMIN' ? '↓ User' : '↑ Admin'}
-                        </button>
-                        <button onClick={() => setEditUser(u)} className="text-[10px] uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
-                        <button onClick={() => { if (confirm(`Xóa tài khoản ${u.email}?`)) deleteMutation.mutate(u.id) }} className="text-[10px] text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                        {u.deleted ? (
+                          <button
+                            onClick={() => { if (confirm(`Khôi phục tài khoản ${u.email}?`)) restoreMutation.mutate(u.id) }}
+                            className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors"
+                          >
+                            Khôi phục
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => toggleStatusMutation.mutate({ id: u.id, enabled: !u.enabled })}
+                              className={cn('text-[10px] uppercase tracking-wider transition-colors', u.enabled ? 'text-orange-500 hover:text-orange-700' : 'text-green-600 hover:text-green-800')}
+                            >
+                              {u.enabled ? 'Khóa' : 'Mở khóa'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                const newRole = u.role === 'ROLE_ADMIN' ? 'ROLE_USER' : 'ROLE_ADMIN'
+                                if (confirm(`Đổi quyền ${u.name} thành ${newRole === 'ROLE_ADMIN' ? 'Admin' : 'User'}?`)) {
+                                  changeRoleMutation.mutate({ id: u.id, role: newRole })
+                                }
+                              }}
+                              className="text-[10px] uppercase tracking-wider text-brand-gold hover:text-brand-black transition-colors"
+                            >
+                              {u.role === 'ROLE_ADMIN' ? '↓ User' : '↑ Admin'}
+                            </button>
+                            <button onClick={() => setEditUser(u)} className="text-[10px] uppercase tracking-wider text-brand-mid hover:text-brand-black transition-colors">Sửa</button>
+                            <button onClick={() => { if (confirm(`Xóa tài khoản ${u.email}?`)) deleteMutation.mutate(u.id) }} className="text-[10px] text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors">Xóa</button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
