@@ -56,6 +56,12 @@ export async function adminDeleteUser(id: number): Promise<void> {
   await apiClient.delete(`/admin/users/${id}`)
 }
 
+/** POST /api/v1/admin/users/{id}/restore */
+export async function adminRestoreUser(id: number): Promise<UserDto> {
+  const res = await apiClient.post<ApiResponse<UserDto>>(`/admin/users/${id}/restore`)
+  return res.data.data
+}
+
 /** PATCH /api/v1/admin/users/{id}/status?enabled=true|false */
 export async function adminToggleUserStatus(id: number, enabled: boolean): Promise<UserDto> {
   const res = await apiClient.patch<ApiResponse<UserDto>>(`/admin/users/${id}/status`, null, {
