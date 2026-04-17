@@ -16,6 +16,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
 import java.util.UUID;
 
 @Service
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final CategoryRepository    categoryRepository;
+    private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
 
     // ── Read ────────────────────────────────────────────────────────
@@ -32,6 +33,15 @@ public class ProductService {
     @Transactional(Transactional.TxType.SUPPORTS)
     public Page<ProductListDto> findAll(Pageable pageable, ProductFilterDto filter) {
         Specification<Product> spec = ProductSpec.build(filter);
+        return productRepository.findAll(spec, pageable).map(productMapper::toListDto);
+    }
+
+    // ADMIN: có includeDeleted
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<ProductListDto> findAllAdmin(Pageable pageable, ProductFilterDto filter) {
+        Specification<Product> spec = filter.isIncludeDeleted()
+                ? ProductSpec.buildAdmin(filter)
+                : ProductSpec.build(filter);
         return productRepository.findAll(spec, pageable).map(productMapper::toListDto);
     }
 
@@ -77,8 +87,8 @@ public class ProductService {
     }
 
     @Caching(evict = {
-        @CacheEvict(value = "product-detail", key = "#id"),
-        @CacheEvict(value = "products", allEntries = true)
+            @CacheEvict(value = "product-detail", key = "#id"),
+            @CacheEvict(value = "products", allEntries = true)
     })
     public ProductDetailDto update(String id, ProductUpdateRequest req) {
         Product product = productRepository.findById(id)
@@ -102,15 +112,53 @@ public class ProductService {
         return productMapper.toDetailDto(productRepository.save(product));
     }
 
+    // ── SOFT DELETE ────────────────────────────────────────────────
+
     @Caching(evict = {
-        @CacheEvict(value = "product-detail", key = "#id"),
-        @CacheEvict(value = "products", allEntries = true)
+            @CacheEvict(value = "product-detail", key = "#id"),
+            @CacheEvict(value = "products", allEntries = true)
     })
     public void delete(String id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
-        if (!product.getVariants().isEmpty())
-            throw new BusinessException("Không thể xóa sản phẩm đang có variants. Hãy xóa variants trước.");
+
+        if (product.isDeleted())
+            throw new BusinessException("Sản phẩm này đã bị xóa trước đó");
+
+        product.softDelete();
+        productRepository.save(product);
+    }
+
+    // ── RESTORE ────────────────────────────────────────────────────
+
+    @Caching(evict = {
+            @CacheEvict(value = "product-detail", key = "#id"),
+            @CacheEvict(value = "products", allEntries = true)
+    })
+    public ProductDetailDto restore(String id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+
+        if (!product.isDeleted())
+            throw new BusinessException("Sản phẩm này chưa bị xóa");
+
+        product.restore();
+        return productMapper.toDetailDto(productRepository.save(product));
+    }
+
+    // ── HARD DELETE ────────────────────────────────────────────────
+
+    @Caching(evict = {
+            @CacheEvict(value = "product-detail", key = "#id"),
+            @CacheEvict(value = "products", allEntries = true)
+    })
+    public void hardDelete(String id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+
+        if (!product.isDeleted())
+            throw new BusinessException("Chỉ có thể xóa vĩnh viễn sản phẩm đã bị xóa mềm");
+
         productRepository.delete(product);
     }
 }

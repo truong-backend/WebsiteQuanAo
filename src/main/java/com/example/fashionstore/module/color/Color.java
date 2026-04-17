@@ -40,4 +40,27 @@ public class Color {
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    // ================= SOFT DELETE =================
+
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    // ================= METHODS =================
+
+    public void softDelete() {
+        this.deleted   = true;
+        this.deletedAt = LocalDateTime.now();
+        this.active    = false;
+    }
+
+    public void restore() {
+        this.deleted   = false;
+        this.deletedAt = null;
+        this.active    = true;
+    }
 }

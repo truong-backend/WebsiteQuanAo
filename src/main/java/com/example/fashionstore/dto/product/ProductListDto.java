@@ -2,6 +2,7 @@ package com.example.fashionstore.dto.product;
 
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,7 +18,10 @@ public class ProductListDto {
     private Double     ratingAvg;
     private Integer    ratingCount;
     private String     categoryName;
-    private List<String> availableColors;  // ["Đỏ", "Xanh Navy"]
-    private List<String> availableSizes;   // ["S", "M", "L"]
-    private boolean    inStock;
+    private List<String> availableColors;
+    private List<String> availableSizes;
+    private boolean inStock;
+
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
 }

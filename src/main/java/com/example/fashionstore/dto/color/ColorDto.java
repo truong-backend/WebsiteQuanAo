@@ -13,4 +13,7 @@ public class ColorDto {
     private String        nameEn;
     private boolean       active;
     private LocalDateTime createdAt;
+
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
 }

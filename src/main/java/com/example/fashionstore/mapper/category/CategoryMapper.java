@@ -30,6 +30,8 @@ public class CategoryMapper {
                                 ? category.getParentCategory().getCategoryId()
                                 : null
                 )
+                .deleted(category.isDeleted())
+                .deletedAt(category.getDeletedAt())
                 .childCategories(children)
                 .build();
     }
@@ -40,6 +42,8 @@ public class CategoryMapper {
         return CategoryDto.builder()
                 .categoryId(category.getCategoryId())
                 .categoryName(category.getCategoryName())
+                .deleted(category.isDeleted())
+                .deletedAt(category.getDeletedAt())
                 .parentCategoryId(
                         category.getParentCategory() != null
                                 ? category.getParentCategory().getCategoryId()

@@ -20,13 +20,12 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    /**
-     * Cache List<CategoryDto> thay vì ResponseEntity để tránh lỗi
-     * "Cannot construct instance of ResponseEntity" khi Redis deserialize.
-     */
+    // ── Read ─────────────────────────────────────────────
+
     @Cacheable(value = "categories", key = "'all'")
     public List<CategoryDto> getAllCategories() {
         List<Category> cats = categoryRepository.findAllWithChildren();
+        // 👉 nhớ đảm bảo query này đã filter deleted=false
         return categoryMapper.toDtoList(cats);
     }
 
@@ -36,8 +35,58 @@ public class CategoryService {
         return categoryMapper.toDtoList(roots);
     }
 
+    // ── Soft delete ──────────────────────────────────────
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public void delete(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (category.isDeleted())
+            throw new RuntimeException("Danh mục này đã bị xóa");
+
+        category.softDelete();
+        categoryRepository.save(category);
+    }
+
+    // ── Restore ──────────────────────────────────────────
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public CategoryDto restore(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (!category.isDeleted())
+            throw new RuntimeException("Danh mục này chưa bị xóa");
+
+        category.restore();
+        return categoryMapper.toDto(categoryRepository.save(category));
+    }
+
+    // ── Hard delete ──────────────────────────────────────
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public void hardDelete(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        if (!category.isDeleted())
+            throw new RuntimeException("Chỉ xóa vĩnh viễn danh mục đã xóa mềm");
+
+        categoryRepository.delete(category);
+    }
+
+    public List<CategoryDto> getAllCategoriesAdmin() {
+        List<Category> cats = categoryRepository.findAllWithChildrenAdmin();
+        return categoryMapper.toDtoList(cats);
+    }
+    // ── Cache helper ─────────────────────────────────────
+
     @CacheEvict(value = "categories", allEntries = true)
     public void evictAll() {
-        // chỉ dùng để evict cache khi có thay đổi
+        // dùng khi cần clear cache
     }
 }

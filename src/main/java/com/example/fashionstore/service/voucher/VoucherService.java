@@ -23,7 +23,15 @@ public class VoucherService {
 
     @Transactional(readOnly = true)
     public List<VoucherDto> findAll() {
-        return voucherRepository.findAll().stream().map(this::toDto).toList();
+        return voucherRepository.findAllByDeletedFalseOrderByCreatedAtDesc()
+                .stream().map(this::toDto).toList();
+    }
+
+    // ✅ Thêm cho admin
+    @Transactional(readOnly = true)
+    public List<VoucherDto> findAllAdmin(boolean includeDeleted) {
+        return voucherRepository.findAllAdmin(includeDeleted)
+                .stream().map(this::toDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -37,12 +45,8 @@ public class VoucherService {
         return toDto(findOrThrow(id));
     }
 
-    // ── Apply voucher (user dùng khi checkout) ───────────────────────
+    // ── Apply voucher ───────────────────────────────────────────────
 
-    /**
-     * Kiểm tra và tính toán số tiền giảm của voucher.
-     * Không trừ usedCount ở đây — chỉ trừ khi order được tạo thành công.
-     */
     @Transactional(readOnly = true)
     public ApplyVoucherResponse applyVoucher(ApplyVoucherRequest req) {
         Voucher voucher = voucherRepository.findByCodeIgnoreCase(req.getCode().trim())
@@ -56,9 +60,9 @@ public class VoucherService {
                     "Đơn hàng phải từ " + voucher.getMinOrderAmount() + "₫ để sử dụng mã này"
             );
 
-        // Tính discount (ship fee = 30k mặc định, sẽ được tính lại khi tạo order)
         BigDecimal shippingFee = req.getSubtotal().compareTo(new BigDecimal("500000")) >= 0
                 ? BigDecimal.ZERO : new BigDecimal("30000");
+
         BigDecimal discount = voucher.calculateDiscount(req.getSubtotal(), shippingFee);
 
         return ApplyVoucherResponse.builder()
@@ -69,10 +73,6 @@ public class VoucherService {
                 .build();
     }
 
-    /**
-     * Gọi khi tạo order thành công — tăng usedCount.
-     * Phải gọi trong cùng transaction với createOrder.
-     */
     public void incrementUsage(Long voucherId) {
         Voucher voucher = findOrThrow(voucherId);
         voucher.setUsedCount(voucher.getUsedCount() + 1);
@@ -106,7 +106,6 @@ public class VoucherService {
     public VoucherDto update(Long id, VoucherRequest req) {
         Voucher voucher = findOrThrow(id);
 
-        // Kiểm tra conflict code (trừ chính nó)
         if (!voucher.getCode().equalsIgnoreCase(req.getCode().trim())
                 && voucherRepository.existsByCodeIgnoreCase(req.getCode().trim()))
             throw new BusinessException("Mã voucher '" + req.getCode() + "' đã tồn tại");
@@ -127,8 +126,36 @@ public class VoucherService {
         return toDto(voucherRepository.save(voucher));
     }
 
+    // ✅ Soft delete
     public void delete(Long id) {
         Voucher voucher = findOrThrow(id);
+        if (voucher.isDeleted())
+            throw new BusinessException("Voucher này đã bị xóa");
+
+        voucher.softDelete();
+        voucherRepository.save(voucher);
+    }
+
+    // ✅ Restore
+    public VoucherDto restore(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher", "id", id));
+
+        if (!voucher.isDeleted())
+            throw new BusinessException("Voucher này chưa bị xóa");
+
+        voucher.restore();
+        return toDto(voucherRepository.save(voucher));
+    }
+
+    // ✅ Hard delete
+    public void hardDelete(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher", "id", id));
+
+        if (!voucher.isDeleted())
+            throw new BusinessException("Chỉ xóa vĩnh viễn voucher đã xóa mềm");
+
         voucherRepository.delete(voucher);
     }
 
@@ -146,6 +173,7 @@ public class VoucherService {
                 .orElseThrow(() -> new ResourceNotFoundException("Voucher", "id", id));
     }
 
+    // ✅ Thêm deleted fields vào DTO
     public VoucherDto toDto(Voucher v) {
         return VoucherDto.builder()
                 .id(v.getId())
@@ -160,6 +188,8 @@ public class VoucherService {
                 .startDate(v.getStartDate())
                 .endDate(v.getEndDate())
                 .active(v.isActive())
+                .deleted(v.isDeleted())                // ✅ thêm
+                .deletedAt(v.getDeletedAt())           // ✅ thêm
                 .createdAt(v.getCreatedAt())
                 .build();
     }

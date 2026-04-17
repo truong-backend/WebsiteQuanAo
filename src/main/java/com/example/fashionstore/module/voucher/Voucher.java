@@ -85,6 +85,29 @@ public class Voucher {
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
+    // ================= SOFT DELETE =================
+
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    // ================= METHODS =================
+
+    public void softDelete() {
+        this.deleted   = true;
+        this.deletedAt = LocalDateTime.now();
+        this.active    = false;
+    }
+
+    public void restore() {
+        this.deleted   = false;
+        this.deletedAt = null;
+        this.active    = true;
+    }
+
     // ── Business logic ───────────────────────────────────────────────
 
     /** Kiểm tra voucher có hợp lệ không (active, còn hạn, còn lượt dùng) */

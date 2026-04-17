@@ -33,6 +33,8 @@ public class ProductMapper {
                 .availableColors(colors)
                 .availableSizes(sizes)
                 .inStock(inStock)
+                .deleted(p.isDeleted())          // ← THÊM DÒNG NÀY
+                .deletedAt(p.getDeletedAt())
                 .build();
     }
 
@@ -47,6 +49,7 @@ public class ProductMapper {
                         .quantity(v.getQuantity())
                         .imageUrl(v.getImageUrl())
                         .inStock(v.getQuantity() > 0)
+
                         .build())
                 .collect(Collectors.toList());
 

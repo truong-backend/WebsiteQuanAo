@@ -24,6 +24,9 @@ public class ProductDetailDto {
     private List<VariantDto> variants;
     private LocalDateTime createdAt;
 
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
+
     @Data
     @Builder
     public static class CategoryInfo {

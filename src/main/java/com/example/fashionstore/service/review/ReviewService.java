@@ -17,6 +17,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -24,31 +25,28 @@ import java.util.List;
 @Transactional
 public class ReviewService {
 
-    private final ReviewRepository  reviewRepository;
+    private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
-    private final OrderRepository   orderRepository;
+    private final OrderRepository orderRepository;
 
+    // ── USER: Xem review sản phẩm ───────────────────────────────────
     @Transactional(Transactional.TxType.SUPPORTS)
     public Page<ReviewDto> getProductReviews(String productId, Pageable pageable) {
-        return reviewRepository.findByProductIdAndApprovedTrue(productId, pageable)
+        return reviewRepository
+                .findByProductIdAndApprovedTrueAndDeletedFalse(productId, pageable)
                 .map(ReviewMapper::toDto);
     }
 
-    /**
-     * Tạo review.
-     * Rule quan trọng: User PHẢI đã mua sản phẩm này (có order COMPLETED hoặc DELIVERED).
-     * Mỗi orderId chỉ review 1 lần / sản phẩm.
-     */
+    // ── USER: Tạo review ────────────────────────────────────────────
     public ReviewDto createReview(CreateReviewRequest req) {
         User user = SecurityUtils.getCurrentUser();
+
         Product product = productRepository.findById(req.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", req.getProductId()));
 
-        // ── Bắt buộc phải có orderId ───────────────────────────────────
         if (req.getOrderId() == null || req.getOrderId().isBlank())
             throw new BusinessException("Bạn cần chọn đơn hàng đã mua để đánh giá sản phẩm này");
 
-        // ── Verify order tồn tại, thuộc về user này, và đã hoàn thành ──
         Order order = orderRepository.findById(req.getOrderId())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy đơn hàng"));
 
@@ -59,14 +57,13 @@ public class ReviewService {
                 && order.getStatus() != Order.OrderStatus.COMPLETED)
             throw new BusinessException("Chỉ có thể đánh giá sau khi đơn hàng đã được giao");
 
-        // ── Verify sản phẩm có trong đơn hàng ─────────────────────────
         boolean hasPurchased = orderRepository.existsByIdAndUserIdAndItemsProductVariantProductId(
                 req.getOrderId(), user.getId(), req.getProductId()
         );
+
         if (!hasPurchased)
             throw new BusinessException("Sản phẩm này không có trong đơn hàng đã chỉ định");
 
-        // ── Mỗi order chỉ review 1 lần / sản phẩm ─────────────────────
         if (reviewRepository.existsByUserIdAndProductIdAndOrderId(
                 user.getId(), req.getProductId(), req.getOrderId()))
             throw new BusinessException("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi");
@@ -77,57 +74,86 @@ public class ReviewService {
                 .orderId(req.getOrderId())
                 .rating(req.getRating())
                 .comment(req.getComment())
-                .approved(false) // Chờ admin duyệt
+                .approved(false)
                 .build();
 
         Review saved = reviewRepository.save(review);
 
-        // Cập nhật rating trung bình
         updateProductRating(product);
 
         return ReviewMapper.toDto(saved);
     }
 
+    // ── USER / ADMIN: Xóa review (soft delete) ──────────────────────
     public void deleteReview(Integer reviewId) {
         User user = SecurityUtils.getCurrentUser();
+
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
 
         boolean isAdmin = user.getRole() == User.Role.ROLE_ADMIN;
+
         if (!isAdmin && !review.getUser().getId().equals(user.getId()))
             throw new BusinessException("Bạn không có quyền xóa review này");
 
+        if (review.isDeleted())
+            throw new BusinessException("Review này đã bị xóa");
+
         Product product = review.getProduct();
-        reviewRepository.delete(review);
+
+        review.softDelete();
+        reviewRepository.save(review);
+
         updateProductRating(product);
     }
 
-    /** Admin duyệt review */
-    public ReviewDto approveReview(Integer reviewId) {
+    // ── ADMIN: Restore review ───────────────────────────────────────
+    public ReviewDto restoreReview(Integer reviewId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
-        review.setApproved(true);
+
+        if (!review.isDeleted())
+            throw new BusinessException("Review này chưa bị xóa");
+
+        review.restore();
+
         Review saved = reviewRepository.save(review);
+
         updateProductRating(saved.getProduct());
+
         return ReviewMapper.toDto(saved);
     }
 
-    /** Admin lấy tất cả review (kể cả chưa duyệt) để quản lý */
-    @Transactional(Transactional.TxType.SUPPORTS)
-    public Page<ReviewDto> getAllReviewsAdmin(Pageable pageable, Boolean approved) {
-        if (approved != null) {
-            return reviewRepository.findByApproved(approved, pageable).map(ReviewMapper::toDto);
-        }
-        return reviewRepository.findAll(pageable).map(ReviewMapper::toDto);
+    // ── ADMIN: Duyệt review ─────────────────────────────────────────
+    public ReviewDto approveReview(Integer reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review", "id", reviewId));
+
+        review.setApproved(true);
+
+        Review saved = reviewRepository.save(review);
+
+        updateProductRating(saved.getProduct());
+
+        return ReviewMapper.toDto(saved);
     }
 
-    /** User lấy danh sách đơn hàng có thể review sản phẩm (DELIVERED/COMPLETED) */
+    // ── ADMIN: Lấy tất cả review (có filter deleted) ────────────────
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Page<ReviewDto> getAllReviewsAdmin(Pageable pageable, Boolean approved, boolean includeDeleted) {
+        return reviewRepository.findAllAdmin(approved, includeDeleted, pageable)
+                .map(ReviewMapper::toDto);
+    }
+
+    // ── USER: Lấy danh sách order có thể review ─────────────────────
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<ReviewableOrderDto> getReviewableOrders(String productId) {
         User user = SecurityUtils.getCurrentUser();
+
         List<Order> orders = orderRepository.findReviewableOrdersByUserAndProduct(
                 user.getId(), productId
         );
+
         return orders.stream()
                 .map(o -> new ReviewableOrderDto(
                         o.getId(),
@@ -138,11 +164,13 @@ public class ReviewService {
                 .toList();
     }
 
+    // ── INTERNAL: Update rating ─────────────────────────────────────
     private void updateProductRating(Product product) {
         List<Integer> ratings = reviewRepository.findRatingsByProductId(product.getId());
         product.recalculateRating(ratings);
         productRepository.save(product);
     }
 
+    // ── DTO ─────────────────────────────────────────────────────────
     public record ReviewableOrderDto(String orderId, String orderTime, boolean alreadyReviewed) {}
 }

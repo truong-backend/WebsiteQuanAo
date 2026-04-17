@@ -21,8 +21,10 @@ public class ProductController {
             "id", "name", "basePrice", "createdAt"
     );
 
-    /** GET /api/v1/products
-     *  Hỗ trợ: search, categoryId, minPrice, maxPrice, colorCode, sizeCode, sortBy, sortDir */
+    /** ─────────────────────────────────────────────
+     *  USER: GET /api/v1/products
+     *  (Không include deleted)
+     *  ───────────────────────────────────────────── */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductListDto>>> getProducts(
             @RequestParam(defaultValue = "0")  int    page,
@@ -37,14 +39,64 @@ public class ProductController {
             @RequestParam(defaultValue = "desc")      String sortDir
     ) {
         if (!SORTABLE.contains(sortBy)) sortBy = "createdAt";
-        Sort sort = "desc".equalsIgnoreCase(sortDir) ? Sort.by(sortBy).descending()
+
+        Sort sort = "desc".equalsIgnoreCase(sortDir)
+                ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
+
         ProductFilterDto filter = ProductFilterDto.builder()
-                .search(search).categoryId(categoryId)
-                .minPrice(minPrice).maxPrice(maxPrice)
-                .colorCode(colorCode).sizeCode(sizeCode)
+                .search(search)
+                .categoryId(categoryId)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .colorCode(colorCode)
+                .sizeCode(sizeCode)
                 .build();
-        Page<ProductListDto> result = productService.findAll(PageRequest.of(page, size, sort), filter);
+
+        Page<ProductListDto> result =
+                productService.findAll(PageRequest.of(page, size, sort), filter);
+
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    /** ─────────────────────────────────────────────
+     *  ADMIN: GET /api/v1/products/admin
+     *  (Có includeDeleted)
+     *  ───────────────────────────────────────────── */
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Page<ProductListDto>>> getProductsAdmin(
+            @RequestParam(defaultValue = "0")     int page,
+            @RequestParam(defaultValue = "15")    int size,
+            @RequestParam(required = false)       String search,
+            @RequestParam(required = false)       Long categoryId,
+            @RequestParam(required = false)       java.math.BigDecimal minPrice,
+            @RequestParam(required = false)       java.math.BigDecimal maxPrice,
+            @RequestParam(required = false)       String colorCode,
+            @RequestParam(required = false)       String sizeCode,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc")      String sortDir,
+            @RequestParam(defaultValue = "false") boolean includeDeleted
+    ) {
+        if (!SORTABLE.contains(sortBy)) sortBy = "createdAt";
+
+        Sort sort = "desc".equalsIgnoreCase(sortDir)
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        ProductFilterDto filter = ProductFilterDto.builder()
+                .search(search)
+                .categoryId(categoryId)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .colorCode(colorCode)
+                .sizeCode(sizeCode)
+                .includeDeleted(includeDeleted) // ✅ quan trọng
+                .build();
+
+        Page<ProductListDto> result =
+                productService.findAllAdmin(PageRequest.of(page, size, sort), filter);
+
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -65,8 +117,11 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductDetailDto>> create(
             @Valid @RequestBody ProductCreateRequest req) {
+
         ProductDetailDto created = productService.create(req);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(created));
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(created));
     }
 
     /** PUT /api/v1/products/{id} — Admin only */
@@ -75,14 +130,42 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductDetailDto>> update(
             @PathVariable String id,
             @Valid @RequestBody ProductUpdateRequest req) {
-        return ResponseEntity.ok(ApiResponse.ok("Updated", productService.update(id, req)));
+
+        return ResponseEntity.ok(
+                ApiResponse.ok("Updated", productService.update(id, req))
+        );
     }
 
-    /** DELETE /api/v1/products/{id} — Admin only */
+    /** DELETE /api/v1/products/{id} — Admin only (soft delete) */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         productService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok("Deleted", null));
+    }
+
+    /** ─────────────────────────────────────────────
+     *  ADMIN: Restore product
+     *  POST /api/v1/products/{id}/restore
+     *  ───────────────────────────────────────────── */
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductDetailDto>> restore(@PathVariable String id) {
+        return ResponseEntity.ok(
+                ApiResponse.ok("Đã khôi phục sản phẩm", productService.restore(id))
+        );
+    }
+
+    /** ─────────────────────────────────────────────
+     *  ADMIN: Hard delete
+     *  DELETE /api/v1/products/{id}/hard
+     *  ───────────────────────────────────────────── */
+    @DeleteMapping("/{id}/hard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> hardDelete(@PathVariable String id) {
+        productService.hardDelete(id);
+        return ResponseEntity.ok(
+                ApiResponse.ok("Đã xóa vĩnh viễn", null)
+        );
     }
 }

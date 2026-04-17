@@ -13,4 +13,7 @@ public class SizeDto {
     private Integer       sortOrder;
     private boolean       active;
     private LocalDateTime createdAt;
+
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
 }

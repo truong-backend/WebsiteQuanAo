@@ -23,4 +23,7 @@ public class VoucherDto {
     private LocalDateTime endDate;
     private boolean       active;
     private LocalDateTime createdAt;
+
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
 }

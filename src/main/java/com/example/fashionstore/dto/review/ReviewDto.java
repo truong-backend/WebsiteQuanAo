@@ -18,4 +18,7 @@ public class ReviewDto {
     private String        comment;
     private boolean       approved;
     private LocalDateTime createdAt;
+
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
 }

@@ -101,4 +101,27 @@ public class Product {
         this.ratingAvg = ratings.isEmpty() ? 0.0
                 : ratings.stream().mapToInt(Integer::intValue).average().orElse(0.0);
     }
+
+    // ================= SOFT DELETE =================
+
+    @Column(name = "deleted", nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    // ================= METHODS =================
+
+    public void softDelete() {
+        this.deleted   = true;
+        this.deletedAt = LocalDateTime.now();
+        this.active    = false;
+    }
+
+    public void restore() {
+        this.deleted   = false;
+        this.deletedAt = null;
+        this.active    = true;
+    }
 }
