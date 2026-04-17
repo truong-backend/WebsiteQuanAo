@@ -55,6 +55,10 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean emailVerified = false;
 
+    /** Soft delete: null = active, non-null = thời điểm bị xóa */
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -66,6 +70,11 @@ public class User implements UserDetails {
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    public boolean isDeleted()    { return deletedAt != null; }
+    public boolean isEnabledRaw() { return enabled; }
+
     // ── UserDetails ─────────────────────────────────────────────────
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -73,11 +82,11 @@ public class User implements UserDetails {
     }
 
     @Override public String  getUsername()             { return email; }
-    @Override public boolean isEnabled()               { return enabled && emailVerified; }
+    /** Tài khoản bị xóa mềm sẽ không thể đăng nhập */
+    @Override public boolean isEnabled()               { return enabled && emailVerified && deletedAt == null; }
     @Override public boolean isAccountNonExpired()     { return true; }
     @Override public boolean isAccountNonLocked()      { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
-    public boolean isEnabledRaw() { return enabled; }
 
     public enum Role { ROLE_USER, ROLE_ADMIN }
 }

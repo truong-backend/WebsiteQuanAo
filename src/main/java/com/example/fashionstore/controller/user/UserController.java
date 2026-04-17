@@ -52,7 +52,7 @@ public class UserController {
 
     /**
      * GET /api/v1/admin/users
-     * Params: page, size, search, role, enabled, sortBy, sortDir
+     * Params: page, size, search, role, enabled, sortBy, sortDir, includeDeleted
      */
     @GetMapping("/api/v1/admin/users")
     @PreAuthorize("hasRole('ADMIN')")
@@ -63,14 +63,15 @@ public class UserController {
             @RequestParam(required = false)             String  role,
             @RequestParam(required = false)             Boolean enabled,
             @RequestParam(defaultValue = "createdAt")   String  sortBy,
-            @RequestParam(defaultValue = "desc")        String  sortDir) {
+            @RequestParam(defaultValue = "desc")        String  sortDir,
+            @RequestParam(defaultValue = "false")       boolean includeDeleted) {
 
         Sort sort = "desc".equalsIgnoreCase(sortDir)
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
 
         Page<UserDto> result = userService.findAll(
-                PageRequest.of(page, size, sort), search, role, enabled);
+                PageRequest.of(page, size, sort), search, role, enabled, includeDeleted);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -90,12 +91,25 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật thành công", userService.adminUpdate(id, req)));
     }
 
-    /** DELETE /api/v1/admin/users/{id} */
+    /**
+     * DELETE /api/v1/admin/users/{id}
+     * Soft delete — đánh dấu deletedAt, không xóa DB
+     */
     @DeleteMapping("/api/v1/admin/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Integer id) {
         userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.ok("Đã xóa người dùng", null));
+        return ResponseEntity.ok(ApiResponse.ok("Đã xóa tài khoản", null));
+    }
+
+    /**
+     * POST /api/v1/admin/users/{id}/restore
+     * Khôi phục tài khoản đã bị xóa mềm
+     */
+    @PostMapping("/api/v1/admin/users/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserDto>> restoreUser(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok("Đã khôi phục tài khoản", userService.restoreUser(id)));
     }
 
     /**

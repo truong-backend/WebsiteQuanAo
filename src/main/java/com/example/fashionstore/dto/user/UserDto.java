@@ -17,6 +17,8 @@ public class UserDto {
     private String        role;
     private boolean       enabled;
     private boolean       emailVerified;
+    private boolean       deleted;
+    private LocalDateTime deletedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -30,6 +32,8 @@ public class UserDto {
                 .role(u.getRole().name())
                 .enabled(u.isEnabledRaw())
                 .emailVerified(u.isEmailVerified())
+                .deleted(u.isDeleted())
+                .deletedAt(u.getDeletedAt())
                 .createdAt(u.getCreatedAt())
                 .updatedAt(u.getUpdatedAt())
                 .build();
