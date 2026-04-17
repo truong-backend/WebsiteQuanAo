@@ -8,6 +8,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderStatusCountDto {
-    private OrderStatus status;
+    private String status;
     private long        count;
 }

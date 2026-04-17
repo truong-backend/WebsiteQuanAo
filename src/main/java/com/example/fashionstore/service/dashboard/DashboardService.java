@@ -127,7 +127,7 @@ public class DashboardService {
     public List<OrderStatusCountDto> getOrderStatusDistribution() {
         return Arrays.stream(OrderStatus.values())
                 .map(status -> OrderStatusCountDto.builder()
-                        .status(status)
+                        .status(status.name())
                         .count(orderRepository.countByStatus(status))
                         .build())
                 .toList();

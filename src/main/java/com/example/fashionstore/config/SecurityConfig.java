@@ -43,6 +43,7 @@ public class SecurityConfig {
 
                         // Static files
                         .requestMatchers("/images/**", "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/upload/**").permitAll()
 
                         // Products — browse
                         .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
