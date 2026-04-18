@@ -1,80 +1,62 @@
+# docker-compose.yml — nhánh backend của WebsiteQuanAo
 version: '3.8'
-name: website-quan-ao
+name: quan-ao
 
 services:
   mysql:
     image: mysql:8.0
-    container_name: quanao-mysql
-    ports:
-      - "3307:3306"
+    container_name: quan-ao-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: databasequanao
     volumes:
-      - quanao_mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "--password=${DB_PASSWORD}"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
+      - mysql_data:/var/lib/mysql
+    networks:
+      - quan-ao-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7.2-alpine
-    container_name: quanao-redis
-    ports:
-      - "6380:6379"
-    volumes:
-      - quanao_redis_data:/data
+    container_name: quan-ao-redis
+    networks:
+      - quan-ao-net
     restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
-    container_name: quanao-rabbitmq
-    ports:
-      - "5673:5672"
-      - "15673:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
-    volumes:
-      - quanao_rabbitmq_data:/var/lib/rabbitmq
+    container_name: quan-ao-rabbitmq
+    networks:
+      - quan-ao-net
     restart: unless-stopped
 
   minio:
     image: minio/minio:latest
-    container_name: quanao-minio
+    container_name: quan-ao-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
-    volumes:
-      - quanao_minio_data:/data
-    command: server /data --console-address ":9001"
+    networks:
+      - quan-ao-net
     restart: unless-stopped
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: quanao-api
+  backend:
+    image: ghcr.io/truong-backend/websitequanao-backend:latest
+    container_name: quan-ao-backend
+    env_file:
+      - /opt/quan-ao/.env
     ports:
       - "8081:8081"
-    env_file:
-      - .env
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/databasequanao?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      MINIO_ENDPOINT: http://minio:9000
-    volumes:
-      - quanao_upload:/app/upload
-      - quanao_data:/app/data
     depends_on:
       mysql:
         condition: service_healthy
@@ -84,26 +66,25 @@ services:
         condition: service_started
       minio:
         condition: service_started
+    networks:
+      - quan-ao-net
     restart: unless-stopped
 
   frontend:
-    build:
-      context: ../quan-ao-fe
-      dockerfile: Dockerfile
-      args:
-        # VITE_* phải truyền lúc BUILD — được nhúng thẳng vào JS bundle
-        - VITE_API_BASE=http://YOUR_VPS_IP:8081
-    container_name: quanao-frontend
+    image: ghcr.io/truong-backend/websitequanao-frontend:latest
+    container_name: quan-ao-frontend
     ports:
       - "80:80"
     depends_on:
-      - api
+      - backend
+    networks:
+      - quan-ao-net
     restart: unless-stopped
 
+networks:
+  quan-ao-net:
+    driver: bridge
+
 volumes:
-  quanao_mysql_data:
-  quanao_redis_data:
-  quanao_rabbitmq_data:
-  quanao_minio_data:
-  quanao_upload:
-  quanao_data:
+  mysql_data:
+  minio_data:
