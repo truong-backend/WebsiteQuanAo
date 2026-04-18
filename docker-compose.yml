@@ -72,7 +72,6 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_URL: http://localhost:9000
     volumes:
       - quanao_upload:/app/upload
       - quanao_data:/app/data
@@ -85,6 +84,20 @@ services:
         condition: service_started
       minio:
         condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../quan-ao-fe
+      dockerfile: Dockerfile
+      args:
+        # VITE_* phải truyền lúc BUILD — được nhúng thẳng vào JS bundle
+        - VITE_API_BASE=http://YOUR_VPS_IP:8081
+    container_name: quanao-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:

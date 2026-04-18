@@ -40,14 +40,14 @@ public class AuthController {
     /** POST /api/v1/auth/refresh — Cấp access token mới từ refresh token */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(
-            @Valid @RequestBody com.example.fashionstore.dto.auth.RefreshRequest req) {
+            @Valid @RequestBody RefreshRequest req) {
         return ResponseEntity.ok(ApiResponse.ok("Token đã được làm mới", authService.refresh(req.getRefreshToken())));
     }
 
     /** POST /api/v1/auth/logout — Revoke refresh token */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @Valid @RequestBody com.example.fashionstore.dto.auth.RefreshRequest req) {
+            @Valid @RequestBody RefreshRequest req) {
         authService.logout(req.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.ok("Đăng xuất thành công", null));
     }
