@@ -73,8 +73,8 @@ services:
   frontend:
     image: ghcr.io/truong-backend/websitequanao-frontend:latest
     container_name: quan-ao-frontend
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - backend
     networks:
