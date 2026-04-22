@@ -18,11 +18,11 @@
       "@shared/*": ["src/shared/*"],
       "@shared/types": ["src/shared/types/index.ts"],
       "@shared/config": ["src/shared/config/index.ts"],
-      "@shared/lib": ["src/shared/lib/toast.ts"],
-      "@shared/api": ["src/shared/api/client.ts"],
+      "@shared/lib": ["src/shared/lib/index.ts"],
+      "@shared/api": ["src/shared/api/index.ts"],
       "@entities/*": ["src/entities/*"],
-      "@entities/product/model": ["src/entities/product/model/product.ts"],
-      "@entities/product/ui": ["src/entities/product/ui/product.tsx"],
+      "@entities/product/model": ["src/entities/product/model/index.ts"],
+      "@entities/product/ui": ["src/entities/product/ui/index.tsx"],
       "@features/*": ["src/features/*"],
       "@features/cart/model/cartStore": [
         "src/features/cart/model/cartStore.ts"
