@@ -1,90 +1,82 @@
-# docker-compose.yml — nhánh backend của WebsiteQuanAo
-version: '3.8'
+version: "3.8"
 name: quan-ao
 
 services:
   mysql:
     image: mysql:8.0
-    container_name: quan-ao-mysql
+    container_name: qa-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: databasequanao
+      MYSQL_ROOT_PASSWORD: StrongPass@2024
+      MYSQL_DATABASE: fashiondb
     volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - quan-ao-net
+      - mysql_qa_data:/var/lib/mysql
+    networks: [qa-net]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 60s
 
-  redis:
+  redis-qa:
     image: redis:7.2-alpine
-    container_name: quan-ao-redis
-    networks:
-      - quan-ao-net
+    container_name: qa-redis
+    volumes: [redis_qa_data:/data]
+    networks: [qa-net]
     restart: unless-stopped
 
-  rabbitmq:
+  rabbitmq-qa:
     image: rabbitmq:3.13-management-alpine
-    container_name: quan-ao-rabbitmq
-    networks:
-      - quan-ao-net
+    container_name: qa-rabbitmq
+    volumes: [rabbitmq_qa_data:/var/lib/rabbitmq]
+    networks: [qa-net]
     restart: unless-stopped
 
-  minio:
+  minio-qa:
     image: minio/minio:latest
-    container_name: quan-ao-minio
+    container_name: qa-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes: [minio_qa_data:/data]
     ports:
       - "9000:9000"
-      - "9001:9001"
-    networks:
-      - quan-ao-net
+    networks: [qa-net]
     restart: unless-stopped
 
   backend:
     image: ghcr.io/truong-backend/websitequanao-backend:latest
-    container_name: quan-ao-backend
-    env_file:
-      - /opt/quan-ao/.env
+    container_name: qa-backend
+    env_file: [/opt/quan-ao/.env]
     ports:
       - "8081:8081"
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
+      redis-qa:
         condition: service_started
-      rabbitmq:
+      rabbitmq-qa:
         condition: service_started
-      minio:
-        condition: service_started
-    networks:
-      - quan-ao-net
+    networks: [qa-net]
     restart: unless-stopped
 
   frontend:
     image: ghcr.io/truong-backend/websitequanao-frontend:latest
-    container_name: quan-ao-frontend
-    expose:
-      - "80"
-    depends_on:
-      - backend
-    networks:
-      - quan-ao-net
+    container_name: qa-frontend
+    ports:
+      - "8090:80"
+    depends_on: [backend]
+    networks: [qa-net]
     restart: unless-stopped
 
 networks:
-  quan-ao-net:
+  qa-net:
     driver: bridge
 
 volumes:
-  mysql_data:
-  minio_data:
+  mysql_qa_data:
+  redis_qa_data:
+  rabbitmq_qa_data:
+  minio_qa_data:
