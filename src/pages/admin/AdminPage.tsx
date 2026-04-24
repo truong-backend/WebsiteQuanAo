@@ -1249,9 +1249,7 @@ function AdminCategories() {
     mutationFn: () =>
       adminCreateCategory({
         categoryName: newName,
-        parentCategory: newParent
-          ? { categoryId: Number(newParent) }
-          : null,
+        parentCategoryId: newParent ? Number(newParent) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] })

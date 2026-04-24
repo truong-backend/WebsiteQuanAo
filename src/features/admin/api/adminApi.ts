@@ -67,7 +67,7 @@ export async function adminDeleteVariant(productId: string, variantId: string): 
 
 export async function adminCreateCategory(data: {
   categoryName:    string
-  parentCategory?: { categoryId: number } | null
+  parentCategoryId?: number | null
 }): Promise<Category> {
   const res = await apiClient.post<ApiResponse<Category>>('/categories', data)
   return res.data.data
