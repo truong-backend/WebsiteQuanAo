@@ -3,6 +3,7 @@ package com.example.fashionstore.controller.category;
 import com.example.fashionstore.common.exception.BusinessException;
 import com.example.fashionstore.common.response.ApiResponse;
 import com.example.fashionstore.dto.category.CategoryDto;
+import com.example.fashionstore.dto.category.CreateCategoryRequest;
 import com.example.fashionstore.dto.category.UpdateCategoryRequest;
 import com.example.fashionstore.mapper.category.CategoryMapper;
 import com.example.fashionstore.module.category.Category;
@@ -50,11 +51,19 @@ public class CategoryController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CategoryDto>> create(@RequestBody Category req) {
+    public ResponseEntity<ApiResponse<CategoryDto>> create(@RequestBody CreateCategoryRequest req) {
 
-        req.setCategoryId(null);
+        Category category = new Category();
+        category.setCategoryName(req.getCategoryName());
 
-        Category saved = categoryRepository.save(req);
+        if (req.getParentCategoryId() != null) {
+            Category parent = categoryRepository.findById(req.getParentCategoryId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Không tìm thấy danh mục cha id=" + req.getParentCategoryId()));
+            category.setParentCategory(parent);
+        }
+
+        Category saved = categoryRepository.save(category);
 
         categoryService.evictAll();
 
