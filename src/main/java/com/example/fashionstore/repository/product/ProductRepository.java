@@ -14,7 +14,9 @@ public interface ProductRepository extends JpaRepository<Product, String>,
 
     @Query("""
         SELECT DISTINCT p FROM Product p
-        LEFT JOIN FETCH p.variants
+        LEFT JOIN FETCH p.variants v
+        LEFT JOIN FETCH v.color
+        LEFT JOIN FETCH v.size
         LEFT JOIN FETCH p.category
         WHERE p.id = :id AND p.active = true
     """)
@@ -22,7 +24,9 @@ public interface ProductRepository extends JpaRepository<Product, String>,
 
     @Query("""
         SELECT DISTINCT p FROM Product p
-        LEFT JOIN FETCH p.variants
+        LEFT JOIN FETCH p.variants v
+        LEFT JOIN FETCH v.color
+        LEFT JOIN FETCH v.size
         LEFT JOIN FETCH p.category
         WHERE p.slug = :slug AND p.active = true
     """)
