@@ -1489,6 +1489,58 @@ function AdminCategories() {
                   {editingId !== cat.categoryId &&
                     renderCategoryActions(cat)}
                 </div>
+
+                {/* ── Danh mục con ── */}
+                {Array.isArray(cat.childCategories) && cat.childCategories.length > 0 && (
+                  <ul className="flex flex-col gap-1 ml-6 mt-1">
+                    {cat.childCategories
+                      .filter((child) => includeDeleted || !child.deleted)
+                      .map((child) => (
+                        <li key={child.categoryId}>
+                          <div className="flex justify-between border border-dashed p-3 bg-brand-cream/50">
+                            <div className="flex-1">
+                              {editingId === child.categoryId && !child.deleted ? (
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                  />
+                                  <Select
+                                    value={editingParentId}
+                                    options={rootCatOptions}
+                                    onChange={(e) => setEditingParentId(e.target.value)}
+                                  />
+                                  <Button
+                                    loading={updateMutation.isPending}
+                                    onClick={() =>
+                                      updateMutation.mutate({
+                                        id: child.categoryId,
+                                        name: editingName,
+                                        parentId: editingParentId
+                                          ? Number(editingParentId)
+                                          : null,
+                                      })
+                                    }
+                                  >
+                                    Lưu
+                                  </Button>
+                                  <Button variant="ghost" onClick={() => setEditingId(null)}>
+                                    Hủy
+                                  </Button>
+                                </div>
+                              ) : (
+                                <p className={`text-sm ${child.deleted ? 'line-through text-gray-400' : ''}`}>
+                                  └ {child.categoryName}
+                                </p>
+                              )}
+                            </div>
+                            {editingId !== child.categoryId &&
+                              renderCategoryActions(child)}
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
