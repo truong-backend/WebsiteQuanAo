@@ -22,6 +22,7 @@ import { ReviewList } from '@widgets/review-list'
 
 export default function ProductPage() {
   const { slug }     = useParams<{ slug: string }>()
+  const navigate     = useNavigate()                    // ✅ FIX: chuyển lên đầu, trước mọi early return
   const addItem      = useCartStore((s) => s.addItem)
   const isAuth       = useAuthStore((s) => s.isAuth)
 
@@ -67,8 +68,6 @@ export default function ProductPage() {
     ...(product.hoverImage ? [product.hoverImage] : []),
     ...product.variants.filter((v) => v.imageUrl).map((v) => v.imageUrl!),
   ].filter(Boolean)
-
-  const navigate = useNavigate()
 
   async function handleAddToCart() {
     if (!isAuth) { toast('Vui lòng đăng nhập để thêm vào giỏ', 'error'); return }
