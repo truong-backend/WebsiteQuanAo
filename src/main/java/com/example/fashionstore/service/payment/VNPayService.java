@@ -41,6 +41,9 @@ public class VNPayService {
     private static final String LOCALE       = "vn";
     private static final String ORDER_TYPE   = "other";
 
+    // FIX: Dùng Asia/Ho_Chi_Minh (UTC+7) thay vì Etc/GMT+7 (UTC-7 theo POSIX — sai múi giờ)
+    private static final TimeZone VN_TIMEZONE = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+
     /**
      * Tạo URL thanh toán VNPay.
      *
@@ -51,8 +54,12 @@ public class VNPayService {
      */
     public String createPaymentUrl(String orderId, BigDecimal amount, String orderInfo, String clientIp) {
         String vnpTxnRef   = orderId.replace("-", "").substring(0, Math.min(orderId.replace("-","").length(), 20));
-        String vnpCreateDate = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        String vnpExpireDate = getExpireDate();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        sdf.setTimeZone(VN_TIMEZONE); // FIX: format theo giờ VN
+
+        String vnpCreateDate = sdf.format(new Date());
+        String vnpExpireDate = getExpireDate(sdf);
 
         // VNPay yêu cầu amount * 100 (đơn vị: đồng → xu)
         long vnpAmount = amount.longValue() * 100;
@@ -143,10 +150,11 @@ public class VNPayService {
 
     // ── Private helpers ──────────────────────────────────────────────
 
-    private String getExpireDate() {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+    // FIX: nhận sdf đã set timezone để tái sử dụng
+    private String getExpireDate(SimpleDateFormat sdf) {
+        Calendar cal = Calendar.getInstance(VN_TIMEZONE); // FIX: Asia/Ho_Chi_Minh = UTC+7
         cal.add(Calendar.MINUTE, 15);
-        return new SimpleDateFormat("yyyyMMddHHmmss").format(cal.getTime());
+        return sdf.format(cal.getTime());
     }
 
     private String hmacSHA512(String key, String data) {

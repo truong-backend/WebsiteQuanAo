@@ -8,8 +8,11 @@ import com.example.fashionstore.dto.payment.VNPayCreateResponse;
 import com.example.fashionstore.module.order.Order;
 import com.example.fashionstore.module.order.Payment;
 import com.example.fashionstore.module.user.User;
+import com.example.fashionstore.module.variant.ProductVariant;
 import com.example.fashionstore.repository.order.OrderRepository;
 import com.example.fashionstore.repository.order.PaymentRepository;
+import com.example.fashionstore.repository.variant.ProductVariantRepository;
+import com.example.fashionstore.service.inventory.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,9 +29,11 @@ import java.util.UUID;
 @Slf4j
 public class PaymentService {
 
-    private final PaymentRepository paymentRepository;
-    private final OrderRepository   orderRepository;
-    private final VNPayService      vnPayService;
+    private final PaymentRepository        paymentRepository;
+    private final OrderRepository          orderRepository;
+    private final VNPayService             vnPayService;
+    private final ProductVariantRepository variantRepository;  // FIX: inject để hoàn kho
+    private final InventoryService         inventoryService;   // FIX: inject để ghi log hoàn kho
 
     @Value("${vnpay.frontendReturnUrl}")
     private String frontendReturnUrl;
@@ -52,10 +57,6 @@ public class PaymentService {
 
     // ── Create VNPay payment URL ─────────────────────────────────────
 
-    /**
-     * Tạo URL thanh toán VNPay cho đơn hàng.
-     * Đơn phải ở trạng thái PENDING và payment method = VNPAY.
-     */
     public VNPayCreateResponse createVNPayUrl(String orderId, String clientIp) {
         Order order = findOrderOrThrow(orderId);
         authorizeOrderAccess(order);
@@ -83,14 +84,10 @@ public class PaymentService {
 
     // ── VNPay Return URL (user redirect back) ───────────────────────
 
-    /**
-     * Xử lý khi VNPay redirect user về ReturnUrl.
-     * Trả về URL redirect về frontend kèm query params result.
-     */
     public String handleVNPayReturn(Map<String, String> params) {
         boolean validChecksum = vnPayService.verifyChecksum(params);
         String responseCode   = vnPayService.getResponseCode(params);
-        String txnRef         = vnPayService.getTxnRef(params);   // payment.id (truncated)
+        String txnRef         = vnPayService.getTxnRef(params);
         String transactionId  = vnPayService.getTransactionId(params);
 
         log.info("VNPay return: txnRef={}, responseCode={}, checksum={}", txnRef, responseCode, validChecksum);
@@ -99,7 +96,6 @@ public class PaymentService {
             return frontendReturnUrl + "?status=INVALID_CHECKSUM&orderId=";
         }
 
-        // Tìm payment gần nhất khớp với txnRef prefix
         paymentRepository.findAll().stream()
                 .filter(p -> p.getId().replace("-", "").toUpperCase()
                         .startsWith(txnRef.toUpperCase()))
@@ -109,9 +105,8 @@ public class PaymentService {
                         if ("00".equals(responseCode)) {
                             markPaid(payment, transactionId, params.toString());
                         } else {
-                            payment.setStatus(Payment.PaymentStatus.FAILED);
-                            payment.setRawResponse(params.toString());
-                            paymentRepository.save(payment);
+                            // FIX: hoàn kho khi VNPay thất bại (timeout, huỷ, lỗi...)
+                            markFailedAndRestoreStock(payment, params.toString(), responseCode);
                         }
                     }
                 });
@@ -122,10 +117,6 @@ public class PaymentService {
 
     // ── VNPay IPN (server-to-server callback) ───────────────────────
 
-    /**
-     * Xử lý IPN từ VNPay server.
-     * Phải trả về { "RspCode": "00", "Message": "Confirm Success" } cho VNPay.
-     */
     public Map<String, String> handleVNPayIpn(Map<String, String> params) {
         boolean validChecksum = vnPayService.verifyChecksum(params);
         if (!validChecksum) {
@@ -149,9 +140,8 @@ public class PaymentService {
                         markPaid(payment, transactionId, params.toString());
                         return Map.of("RspCode", "00", "Message", "Confirm Success");
                     } else {
-                        payment.setStatus(Payment.PaymentStatus.FAILED);
-                        payment.setRawResponse(params.toString());
-                        paymentRepository.save(payment);
+                        // FIX: hoàn kho khi VNPay IPN báo thất bại
+                        markFailedAndRestoreStock(payment, params.toString(), responseCode);
                         return Map.of("RspCode", "00", "Message", "Confirm Success");
                     }
                 })
@@ -160,9 +150,6 @@ public class PaymentService {
 
     // ── COD – confirm payment manually (Admin) ───────────────────────
 
-    /**
-     * Admin xác nhận thanh toán COD khi giao hàng thành công.
-     */
     public PaymentDto confirmCodPayment(String orderId) {
         Order order = findOrderOrThrow(orderId);
         Payment payment = paymentRepository.findByOrderId(orderId)
@@ -176,7 +163,6 @@ public class PaymentService {
 
         markPaid(payment, "COD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), null);
 
-        // Tự động chuyển order sang DELIVERED
         if (order.getStatus() == Order.OrderStatus.SHIPPING) {
             order.setStatus(Order.OrderStatus.DELIVERED);
             orderRepository.save(order);
@@ -187,10 +173,6 @@ public class PaymentService {
 
     // ── Refund (Admin) ───────────────────────────────────────────────
 
-    /**
-     * Admin đánh dấu refund — hệ thống này không tự động refund VNPay.
-     * Refund thực tế cần xử lý qua VNPay Merchant Portal.
-     */
     public PaymentDto markRefunded(String orderId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "orderId", orderId));
@@ -230,11 +212,52 @@ public class PaymentService {
         if (rawResponse != null) payment.setRawResponse(rawResponse);
         paymentRepository.save(payment);
 
-        // Tự động chuyển order sang CONFIRMED
         Order order = payment.getOrder();
         if (order.getStatus() == Order.OrderStatus.PENDING) {
             order.setStatus(Order.OrderStatus.CONFIRMED);
             orderRepository.save(order);
+        }
+    }
+
+    /**
+     * FIX: Đánh dấu payment FAILED + huỷ order + hoàn lại số lượng kho.
+     * Chỉ thực hiện nếu order vẫn đang PENDING (tránh hoàn kho 2 lần).
+     */
+    private void markFailedAndRestoreStock(Payment payment, String rawResponse, String responseCode) {
+        // Chỉ xử lý nếu chưa từng FAILED trước đó (idempotent — IPN và Return đều có thể gọi)
+        if (payment.getStatus() == Payment.PaymentStatus.FAILED) {
+            log.info("Payment {} đã FAILED trước đó, bỏ qua hoàn kho", payment.getId());
+            return;
+        }
+
+        payment.setStatus(Payment.PaymentStatus.FAILED);
+        payment.setRawResponse(rawResponse);
+        paymentRepository.save(payment);
+
+        Order order = payment.getOrder();
+
+        // Chỉ hoàn kho nếu order vẫn PENDING (chưa bị cancel trước đó)
+        if (order.getStatus() == Order.OrderStatus.PENDING) {
+            order.setStatus(Order.OrderStatus.CANCELLED);
+            orderRepository.save(order);
+
+            // Hoàn trả số lượng từng variant + ghi inventory log RETURN
+            order.getItems().forEach(item -> {
+                ProductVariant variant = item.getProductVariant();
+                if (variant != null) {
+                    int restored = variant.getQuantity() + item.getQuantity();
+                    variant.setQuantity(restored);
+                    variantRepository.save(variant);
+                    inventoryService.logReturn(
+                            variant,
+                            item.getQuantity(),
+                            restored,
+                            order.getId()
+                    );
+                    log.info("Hoàn kho variant={} qty={} (VNPay responseCode={})",
+                            variant.getId(), item.getQuantity(), responseCode);
+                }
+            });
         }
     }
 
@@ -248,7 +271,6 @@ public class PaymentService {
         } catch (BusinessException be) {
             throw be;
         } catch (Exception ignored) {
-            // Guest checkout hoặc unauthenticated — allow read for return URL flow
         }
     }
 
@@ -260,7 +282,7 @@ public class PaymentService {
     }
 
     private Order findOrderOrThrow(String orderId) {
-        return orderRepository.findById(orderId)
+        return orderRepository.findByIdWithDetails(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
     }
 
