@@ -8,7 +8,8 @@ import com.example.fashionstore.module.category.Category;
 import com.example.fashionstore.module.product.Product;
 import com.example.fashionstore.repository.category.CategoryRepository;
 import com.example.fashionstore.repository.product.ProductRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,14 +31,14 @@ public class ProductService {
 
     // ── Read ────────────────────────────────────────────────────────
 
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS)
     public Page<ProductListDto> findAll(Pageable pageable, ProductFilterDto filter) {
         Specification<Product> spec = ProductSpec.build(filter);
         return productRepository.findAll(spec, pageable).map(productMapper::toListDto);
     }
 
     // ADMIN: có includeDeleted
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(propagation = Propagation.SUPPORTS)
     public Page<ProductListDto> findAllAdmin(Pageable pageable, ProductFilterDto filter) {
         Specification<Product> spec = filter.isIncludeDeleted()
                 ? ProductSpec.buildAdmin(filter)
@@ -46,7 +47,7 @@ public class ProductService {
     }
 
     @Cacheable(value = "product-detail", key = "#id")
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(readOnly = true)
     public ProductDetailDto getDetailById(String id) {
         Product p = productRepository.findByIdWithVariants(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
@@ -54,7 +55,7 @@ public class ProductService {
     }
 
     @Cacheable(value = "product-detail", key = "'slug:' + #slug")
-    @Transactional(Transactional.TxType.SUPPORTS)
+    @Transactional(readOnly = true)
     public ProductDetailDto getDetailBySlug(String slug) {
         Product p = productRepository.findBySlugWithVariants(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
