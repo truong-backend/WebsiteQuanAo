@@ -14,15 +14,22 @@ export default function ShopPage() {
   const [sidebarOpen, setSidebar] = useState(false)
   const filter            = useFilterStore()
 
-  // Sync URL params → filter store on mount
+  // Sync URL params → filter store mỗi khi searchParams thay đổi
+  // (bao gồm cả khi user click category trên navbar từ trong /shop)
   useEffect(() => {
+    const catId  = searchParams.get('categoryId')
+    const search = searchParams.get('search')
+    const sortBy = searchParams.get('sortBy')
+
+    filter.resetFilter()                          // reset trước để tránh stale filter
+
     const patch: Parameters<typeof filter.setFilter>[0] = {}
-    if (searchParams.get('categoryId')) patch.categoryId = Number(searchParams.get('categoryId'))
-    if (searchParams.get('search'))     patch.search     = searchParams.get('search') ?? undefined
-    if (searchParams.get('sortBy'))     patch.sortBy     = searchParams.get('sortBy') as typeof filter.sortBy
-    if (Object.keys(patch).length)      filter.setFilter(patch)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    if (catId)  patch.categoryId = Number(catId)
+    if (search) patch.search     = search
+    if (sortBy) patch.sortBy     = sortBy as typeof filter.sortBy
+    if (Object.keys(patch).length) filter.setFilter(patch)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['products', 'shop', filter],

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { formatPrice, toast } from '@shared/lib'
 import { Button, Spinner, Badge } from '@shared/ui'
@@ -68,10 +68,19 @@ export default function ProductPage() {
     ...product.variants.filter((v) => v.imageUrl).map((v) => v.imageUrl!),
   ].filter(Boolean)
 
+  const navigate = useNavigate()
+
   async function handleAddToCart() {
     if (!isAuth) { toast('Vui lòng đăng nhập để thêm vào giỏ', 'error'); return }
     if (!selectedVariant) { toast('Vui lòng chọn màu và size', 'error'); return }
     await addItem(selectedVariant.id, qty)
+  }
+
+  async function handleBuyNow() {
+    if (!isAuth) { toast('Vui lòng đăng nhập để mua hàng', 'error'); return }
+    if (!selectedVariant) { toast('Vui lòng chọn màu và size', 'error'); return }
+    await addItem(selectedVariant.id, qty)
+    navigate(ROUTES.checkout)
   }
 
   return (
@@ -275,7 +284,7 @@ export default function ProductPage() {
                 ? 'Chọn màu & size'
                 : 'Thêm vào giỏ hàng'}
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1">
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleBuyNow}>
               Mua ngay
             </Button>
           </div>

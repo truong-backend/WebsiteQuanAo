@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery }     from '@tanstack/react-query'
 import { cn }           from '@shared/lib'
 import { ROUTES }       from '@shared/config'
@@ -51,13 +51,21 @@ export function Navbar() {
 
   // Build navLinks từ API (root categories)
   const navLinks = [
-    { to: ROUTES.shop, label: 'Cửa hàng', categoryId: undefined },
+    { to: ROUTES.shop, label: 'Cửa hàng', categoryId: undefined as number | undefined },
     ...(rootCats ?? []).slice(0, 4).map((cat) => ({
       to:         `${ROUTES.shop}?categoryId=${cat.categoryId}`,
       label:      cat.categoryName,
-      categoryId: cat.categoryId,
+      categoryId: cat.categoryId as number | undefined,
     })),
   ]
+
+  // Click category: cập nhật filterStore + navigate (đảm bảo ShopPage luôn nhận đúng filter)
+  const handleNavClick = (link: typeof navLinks[number]) => {
+    filterStore.resetFilter()
+    if (link.categoryId) filterStore.setFilter({ categoryId: link.categoryId })
+    navigate(link.to)
+    setMenuOpen(false)
+  }
 
   // Debounce search → navigate to shop with search param
   const handleSearchChange = (value: string) => {
@@ -105,13 +113,15 @@ export function Navbar() {
             <ul className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) => (
                 <li key={link.to}>
-                  <NavLink to={link.to}
-                    className={({ isActive }) => cn(
+                  <button
+                    onClick={() => handleNavClick(link)}
+                    className={cn(
                       'text-xs uppercase tracking-widest transition-colors duration-200',
-                      isActive ? 'text-brand-black' : 'text-brand-mid hover:text-brand-black',
-                    )}>
+                      'text-brand-mid hover:text-brand-black',
+                    )}
+                  >
                     {link.label}
-                  </NavLink>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -238,10 +248,12 @@ export function Navbar() {
           <ul className="flex flex-col divide-y divide-brand-light/50">
             {navLinks.map((link) => (
               <li key={link.to}>
-                <Link to={link.to} onClick={() => setMenuOpen(false)}
-                  className="block px-6 py-4 text-xs uppercase tracking-widest text-brand-charcoal hover:bg-brand-cream transition-colors">
+                <button
+                  onClick={() => handleNavClick(link)}
+                  className="block w-full text-left px-6 py-4 text-xs uppercase tracking-widest text-brand-charcoal hover:bg-brand-cream transition-colors"
+                >
                   {link.label}
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
