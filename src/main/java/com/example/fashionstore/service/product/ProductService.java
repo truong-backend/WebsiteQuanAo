@@ -54,7 +54,7 @@ public class ProductService {
         return productMapper.toDetailDto(p);
     }
 
-    @Cacheable(value = "product-detail", key = "'slug:' + #slug")
+    // FIX: Bỏ @Cacheable — tránh SerializationException từ Redis gây 500 không handle được
     @Transactional(readOnly = true)
     public ProductDetailDto getDetailBySlug(String slug) {
         Product p = productRepository.findBySlugWithVariants(slug)

@@ -5,7 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.SimpleCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -22,7 +27,8 @@ import java.util.Map;
 
 @Configuration
 @EnableCaching
-public class RedisConfig {
+@Slf4j
+public class RedisConfig extends CachingConfigurerSupport {
 
     /**
      * ObjectMapper CHỈ dùng nội bộ cho Redis serialization.
@@ -34,7 +40,6 @@ public class RedisConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // Thêm type info vào JSON để Redis có thể deserialize đúng kiểu
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
@@ -75,7 +80,6 @@ public class RedisConfig {
                         RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
-        // TTL tuỳ chỉnh theo từng cache
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
         configs.put("products",        defaultConfig.entryTtl(Duration.ofMinutes(30)));
         configs.put("product-detail",  defaultConfig.entryTtl(Duration.ofMinutes(30)));
@@ -87,5 +91,36 @@ public class RedisConfig {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(configs)
                 .build();
+    }
+
+    /**
+     * FIX: CacheErrorHandler — khi Redis lỗi (down, timeout, serialization fail)
+     * chỉ log warning thay vì ném exception gây HTTP 500.
+     * API vẫn hoạt động bình thường, fallback xuống DB.
+     */
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new SimpleCacheErrorHandler() {
+            @Override
+            public void handleCacheGetError(RuntimeException e, Cache cache, Object key) {
+                log.warn("Redis GET error [cache={}] [key={}]: {}", cache.getName(), key, e.getMessage());
+                // Không throw — fallback xuống DB
+            }
+
+            @Override
+            public void handleCachePutError(RuntimeException e, Cache cache, Object key, Object value) {
+                log.warn("Redis PUT error [cache={}] [key={}]: {}", cache.getName(), key, e.getMessage());
+            }
+
+            @Override
+            public void handleCacheEvictError(RuntimeException e, Cache cache, Object key) {
+                log.warn("Redis EVICT error [cache={}] [key={}]: {}", cache.getName(), key, e.getMessage());
+            }
+
+            @Override
+            public void handleCacheClearError(RuntimeException e, Cache cache) {
+                log.warn("Redis CLEAR error [cache={}]: {}", cache.getName(), e.getMessage());
+            }
+        };
     }
 }

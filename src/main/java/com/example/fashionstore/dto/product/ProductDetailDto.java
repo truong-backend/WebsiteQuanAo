@@ -32,7 +32,7 @@ public class ProductDetailDto {
     public static class CategoryInfo {
         private Long   id;
         private String name;
-        private String slug;
+        // FIX: Bỏ field slug vì Category entity không có slug
     }
 
     @Data
@@ -45,6 +45,6 @@ public class ProductDetailDto {
         private String  sizeCode;
         private Integer quantity;
         private String  imageUrl;
-        private boolean inStock;  // quantity > 0
+        private boolean inStock;
     }
 }

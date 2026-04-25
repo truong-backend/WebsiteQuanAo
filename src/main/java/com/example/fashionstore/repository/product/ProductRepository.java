@@ -18,7 +18,7 @@ public interface ProductRepository extends JpaRepository<Product, String>,
         LEFT JOIN FETCH v.color
         LEFT JOIN FETCH v.size
         LEFT JOIN FETCH p.category
-        WHERE p.id = :id AND p.active = true
+        WHERE p.id = :id AND p.active = true AND p.deleted = false
     """)
     Optional<Product> findByIdWithVariants(@Param("id") String id);
 
@@ -28,7 +28,7 @@ public interface ProductRepository extends JpaRepository<Product, String>,
         LEFT JOIN FETCH v.color
         LEFT JOIN FETCH v.size
         LEFT JOIN FETCH p.category
-        WHERE p.slug = :slug AND p.active = true
+        WHERE p.slug = :slug AND p.active = true AND p.deleted = false
     """)
     Optional<Product> findBySlugWithVariants(@Param("slug") String slug);
 }
