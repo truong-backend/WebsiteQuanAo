@@ -2,7 +2,7 @@ import axios from "axios";
 import { API_BASE } from "@shared/config";
 
 export const apiClient = axios.create({
-  baseURL: `${API_BASE}/v1`,
+  baseURL: `${API_BASE}/api/v1`,
   headers: { "Content-Type": "application/json" },
   timeout: 15_000,
 });

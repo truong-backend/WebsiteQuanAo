@@ -31,7 +31,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.IMAGE_NAME }}:latest
           build-args: |
-            VITE_API_BASE=https://shopthoitrang.deploy-my-project.site/api
+            VITE_API_BASE=https://shopthoitrang.deploy-my-project.site
  
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
