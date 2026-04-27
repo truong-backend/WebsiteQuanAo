@@ -76,3 +76,8 @@ export async function logoutApi(refreshToken: string): Promise<void> {
     { headers: { 'Content-Type': 'application/json' } },
   ).catch(() => { /* ignore — logout locally regardless */ })
 }
+/** Redirect đến Google OAuth2 — backend Spring Boot xử lý */
+export function loginWithGoogle(): void {
+  const base = import.meta.env.VITE_API_BASE ?? 'http://localhost:8081'
+  window.location.href = `${base}/oauth2/authorization/google`
+}

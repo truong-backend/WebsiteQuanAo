@@ -22,10 +22,10 @@ const OrdersPage         = lazy(() => import('@pages/orders/OrdersPage').then(m 
 const OrderDetailPage    = lazy(() => import('@pages/orders/OrdersPage').then(m => ({ default: m.OrderDetailPage })))
 const LoginPage          = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.LoginPage })))
 const RegisterPage       = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.RegisterPage })))
-// New pages for email verification & password reset flows
 const VerifyEmailPage    = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.VerifyEmailPage })))
 const ForgotPasswordPage = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.ForgotPasswordPage })))
 const VNPayReturnPage    = lazy(() => import('@pages/payment/VNPayReturnPage'))
+const OAuth2CallbackPage = lazy(() => import('@pages/auth/OAuth2CallbackPage'))
 
 function PageLoader() {
   return (
@@ -63,10 +63,11 @@ const router = createBrowserRouter([
       { path: ROUTES.product,           element: <ProductPage /> },
       { path: ROUTES.login,             element: <LoginPage /> },
       { path: ROUTES.register,          element: <RegisterPage /> },
-      // New auth routes
       { path: '/verify-email',          element: <VerifyEmailPage /> },
       { path: '/forgot-password',       element: <ForgotPasswordPage /> },
       { path: '/payment/vnpay-return',  element: <VNPayReturnPage /> },
+      // OAuth2 Google callback
+      { path: ROUTES.oauth2Callback,    element: <OAuth2CallbackPage /> },
       { path: ROUTES.checkout,          element: <RequireAuth><CheckoutPage /></RequireAuth> },
       { path: ROUTES.orders,            element: <RequireAuth><OrdersPage /></RequireAuth> },
       { path: ROUTES.orderDetail,       element: <RequireAuth><OrderDetailPage /></RequireAuth> },
