@@ -251,6 +251,6 @@ export async function adminHardDeleteVoucher(id: number): Promise<void> {
   await apiClient.delete(`/vouchers/${id}/hard`)
 }
 
-// ─── Re-exports ────────────────────────────────────────────────────────────────
+// ─── Re-exports ────────────────────────────────────────────────────────────────-
 export { fetchAllOrdersAdmin, updateOrderStatusApi } from '@features/orders/api/ordersApi'
 export { fetchProducts, fetchCategories }            from '@features/catalog/api/catalogApi'
