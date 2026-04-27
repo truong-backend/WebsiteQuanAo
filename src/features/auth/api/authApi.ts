@@ -56,7 +56,7 @@ export async function refreshTokenApi(refreshToken: string): Promise<AuthRespons
   const { default: axios } = await import('axios')
   const { API_BASE } = await import('@shared/config')
   const res = await axios.post<ApiResponse<AuthResponse>>(
-    `${API_BASE}/api/v1/auth/refresh`,
+    `${API_BASE}/v1/auth/refresh`,
     { refreshToken },
     { headers: { 'Content-Type': 'application/json' } },
   )
@@ -71,7 +71,7 @@ export async function logoutApi(refreshToken: string): Promise<void> {
   const { default: axios } = await import('axios')
   const { API_BASE } = await import('@shared/config')
   await axios.post(
-    `${API_BASE}/api/v1/auth/logout`,
+    `${API_BASE}/v1/auth/logout`,
     { refreshToken },
     { headers: { 'Content-Type': 'application/json' } },
   ).catch(() => { /* ignore — logout locally regardless */ })
