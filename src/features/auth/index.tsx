@@ -84,7 +84,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         Đăng nhập
       </Button>
       <Divider label="hoặc" />
-      <Divider label="hoặc" />
       {/* Nút đăng nhập Google */}
       <button
         type="button"
