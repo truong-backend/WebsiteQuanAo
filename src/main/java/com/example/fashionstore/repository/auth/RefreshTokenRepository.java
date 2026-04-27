@@ -15,7 +15,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     Optional<RefreshToken> findByToken(String token);
 
-    /** Revoke tất cả refresh token còn hiệu lực của một user (dùng khi logout, đổi mật khẩu) */
+    /** =Revoke tất cả refresh token còn hiệu lực của một user (dùng khi logout, đổi mật khẩu) =*/
     @Modifying
     @Transactional
     @Query("UPDATE RefreshToken rt SET rt.revoked = true WHERE rt.user.id = :userId AND rt.revoked = false")
