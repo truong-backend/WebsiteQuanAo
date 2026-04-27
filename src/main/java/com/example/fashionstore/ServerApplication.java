@@ -15,7 +15,7 @@ public class ServerApplication {
 				.ignoreIfMissing()
 				.load();
 
-		// ================= DATABASE =================
+		// ================= DATABASE ==================
 		map(dotenv, "DB_URL", "spring.datasource.url");
 		map(dotenv, "DB_USERNAME", "spring.datasource.username");
 		map(dotenv, "DB_PASSWORD", "spring.datasource.password");
