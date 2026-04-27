@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "users",
@@ -20,7 +21,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class User implements UserDetails, org.springframework.security.oauth2.core.user.OAuth2User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,6 +68,14 @@ public class User implements UserDetails {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    @Column(name = "google_id", length = 100, unique = true)
+    private String googleId;
+
+    /** true nếu tài khoản đăng ký qua Google (không có password) */
+    @Column(name = "oauth2_user", nullable = false)
+    @Builder.Default
+    private boolean oauth2User = false;
+
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
@@ -83,10 +92,28 @@ public class User implements UserDetails {
 
     @Override public String  getUsername()             { return email; }
     /** Tài khoản bị xóa mềm sẽ không thể đăng nhập */
-    @Override public boolean isEnabled()               { return enabled && emailVerified && deletedAt == null; }
+    @Override public boolean isEnabled() {
+        // OAuth2 users không cần verify email
+        return enabled && (emailVerified || oauth2User) && deletedAt == null;
+    }
     @Override public boolean isAccountNonExpired()     { return true; }
     @Override public boolean isAccountNonLocked()      { return true; }
     @Override public boolean isCredentialsNonExpired() { return true; }
 
     public enum Role { ROLE_USER, ROLE_ADMIN }
+
+    // ── OAuth2User ────────────────────────────────────────────────────
+    @Override
+    public Map<String, Object> getAttributes() {
+        return Map.of(
+                "sub",     googleId != null ? googleId : "",
+                "email",   email,
+                "name",    name,
+                "picture", avatarUrl != null ? avatarUrl : ""
+        );
+    }
+
+    // OAuth2User requires a "name" attribute key — we use email as principal name
+    @Override
+    public String getName() { return email; }
 }

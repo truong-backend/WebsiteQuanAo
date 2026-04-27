@@ -19,8 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter       jwtAuthFilter;
-    private final AuthenticationProvider authProvider;
+    private final JwtAuthFilter             jwtAuthFilter;
+    private final AuthenticationProvider    authProvider;
+    private final CustomOAuth2UserService   oauth2UserService;
+    private final OAuth2SuccessHandler      oauth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -37,6 +39,9 @@ public class SecurityConfig {
                         // Auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/health").permitAll()
+
+                        // OAuth2
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 
                         // Swagger UI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -113,7 +118,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/refund/**").hasRole("ADMIN")
 
                         // Vouchers — GET all list và CUD chỉ admin
-                        //  POST /vouchers/apply (user dùng) được xử lý bên dưới (authenticated)
                         .requestMatchers(HttpMethod.GET,    "/api/v1/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,    "/api/v1/vouchers/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/api/v1/vouchers").hasRole("ADMIN")
@@ -124,6 +128,10 @@ public class SecurityConfig {
                         //  AUTHENTICATED — đã đăng nhập
                         // ════════════════════════════════════════════════════════
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(ep -> ep.userService(oauth2UserService))
+                        .successHandler(oauth2SuccessHandler)
                 )
                 .authenticationProvider(authProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
