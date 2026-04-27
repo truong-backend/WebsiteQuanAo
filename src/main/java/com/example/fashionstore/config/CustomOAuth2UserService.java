@@ -3,12 +3,12 @@ package com.example.fashionstore.config;
 import com.example.fashionstore.module.user.User;
 import com.example.fashionstore.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.oauth2.client.userinfo.*;
 import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.user.*;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +17,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
         OAuth2User oauth2User = delegate.loadUser(userRequest);
@@ -30,35 +31,46 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             throw new OAuth2AuthenticationException("Email not found from Google");
         }
 
-        Optional<User> existing = userRepository.findByEmail(email);
-        User user;
+        User user = findOrCreateUser(email, googleId, userInfo);
+        return user;
+    }
 
-        if (existing.isPresent()) {
-            user = existing.get();
-            // Nếu account chưa liên kết Google thì liên kết
-            if (user.getGoogleId() == null) {
-                user.setGoogleId(googleId);
-                user.setOauth2User(true);
-                if (userInfo.getAvatarUrl() != null && user.getAvatarUrl() == null) {
-                    user.setAvatarUrl(userInfo.getAvatarUrl());
-                }
-                userRepository.save(user);
-            }
-        } else {
-            // Tạo tài khoản mới từ Google
-            user = User.builder()
+    private User findOrCreateUser(String email, String googleId, OAuth2UserInfo userInfo) {
+        // Tìm user đã tồn tại (kể cả soft-deleted để tránh race condition)
+        return userRepository.findByEmail(email)
+                .map(existing -> {
+                    // Liên kết Google nếu chưa có
+                    if (existing.getGoogleId() == null) {
+                        existing.setGoogleId(googleId);
+                        existing.setOauth2User(true);
+                        if (userInfo.getAvatarUrl() != null && existing.getAvatarUrl() == null) {
+                            existing.setAvatarUrl(userInfo.getAvatarUrl());
+                        }
+                        userRepository.save(existing);
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> createNewUser(email, googleId, userInfo));
+    }
+
+    private User createNewUser(String email, String googleId, OAuth2UserInfo userInfo) {
+        try {
+            User newUser = User.builder()
                     .name(userInfo.getName())
                     .email(email)
-                    .password("")          // không có password
+                    .password("")
                     .googleId(googleId)
                     .avatarUrl(userInfo.getAvatarUrl())
                     .role(User.Role.ROLE_USER)
-                    .emailVerified(true)   // Google đã xác thực
+                    .emailVerified(true)
                     .oauth2User(true)
                     .build();
-            userRepository.save(user);
+            return userRepository.save(newUser);
+        } catch (DataIntegrityViolationException e) {
+            // Race condition: user vừa được tạo bởi request khác — tìm lại
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> new OAuth2AuthenticationException(
+                            "Không thể tạo hoặc tìm user với email: " + email));
         }
-
-        return user; // User implements OAuth2User (cần thêm bên dưới)
     }
 }
