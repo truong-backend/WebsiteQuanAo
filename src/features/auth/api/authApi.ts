@@ -50,7 +50,7 @@ export async function resetPasswordApi(data: ResetPasswordRequest): Promise<void
 
 /**
  * POST /api/v1/auth/refresh
- * Dùng axios thuần (không qua apiClient) để tránh interceptor loop
+ * Dùng axios thuần (không qua apiClient) để tránh interceptor loopc
  */
 export async function refreshTokenApi(refreshToken: string): Promise<AuthResponse> {
   const { default: axios } = await import('axios')
