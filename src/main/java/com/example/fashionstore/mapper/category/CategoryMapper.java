@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 @Component
 public class CategoryMapper {
 
-    /** Convert entity → DTO (shallow child, không đệ quy thêm) */
+    /** Convert Entity → DTO (shallow child, không đệ quy thêm) */
     public CategoryDto toDto(Category category) {
         if (category == null) return null;
 
