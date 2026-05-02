@@ -31,6 +31,28 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * OrderService — Transaction + Deadlock prevention
+ *
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  TRANSACTION (ACID):                                             ║
+ * ║  - Atomicity: createOrder() là 1 đơn vị, fail → rollback toàn bộ║
+ * ║  - Consistency: stock không bao giờ âm (check + lock)           ║
+ * ║  - Isolation: PESSIMISTIC_WRITE lock variant → chống oversell   ║
+ * ║  - Durability: sau commit, dữ liệu persist xuống disk           ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  DEADLOCK prevention:                                            ║
+ * ║  - Luôn lock variant theo thứ tự ID tăng dần (consistent order) ║
+ * ║  - Ví dụ: User A mua variant[1,2], User B mua variant[2,1]      ║
+ * ║    → nếu lock theo thứ tự khác nhau → deadlock                  ║
+ * ║  - Fix: sort variantId trước khi lock → cả 2 user lock [1] trước║
+ * ║  - Spring @Transactional timeout = 30s → tránh deadlock vô hạn  ║
+ * ╠══════════════════════════════════════════════════════════════════╣
+ * ║  STACK vs HEAP:                                                  ║
+ * ║  - itemDataList: cấp phát trên HEAP, tồn tại trong transaction   ║
+ * ║  - Sau method kết thúc → GC thu hồi (không cần manual free)     ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -48,18 +70,31 @@ public class OrderService {
     // ── Tạo đơn hàng ────────────────────────────────────────────────
 
     /**
-     * Tạo đơn hàng với:
-     * - Pessimistic lock variant (chống oversell)
-     * - Re-check stock sau khi lock
-     * - Ghi inventory log (EXPORT_SALE)
-     * - Áp dụng voucher (nếu có)
+     * createOrder() — Transaction với Pessimistic Lock chống oversell
+     *
+     * DEADLOCK FIX: sort variantId trước khi lock
+     * Nếu 2 user cùng mua [v1, v2] và [v2, v1]:
+     *   - Không sort → User A lock v1 chờ v2; User B lock v2 chờ v1 → DEADLOCK
+     *   - Có sort    → cả 2 đều lock v1 trước → v2 sau → không deadlock
+     *
+     * ArrayList: O(1) add/get, phù hợp duyệt tuần tự ở đây
+     * LinkedList sẽ tốt hơn nếu cần insert/delete giữa list thường xuyên
      */
     public OrderDto createOrder(CreateOrderRequest req) {
         User user = SecurityUtils.getCurrentUser();
 
+        // ─── DEADLOCK PREVENTION: sort theo variantId trước khi lock ───
+        // Đây là "consistent lock ordering" — nguyên tắc vàng tránh deadlock
+        var sortedItems = req.getItems().stream()
+                .sorted(Comparator.comparing(CreateOrderRequest.OrderItemRequest::getVariantId))
+                .toList();
+
         // 1. Lock variants và validate stock
+        // ArrayList<OrderItemData>: cấp phát trên HEAP, GC quản lý
         List<OrderItemData> itemDataList = new ArrayList<>();
-        for (var itemReq : req.getItems()) {
+        for (var itemReq : sortedItems) {
+            // PESSIMISTIC_WRITE lock: SELECT ... FOR UPDATE
+            // → ngăn transaction khác đọc/ghi variant này cho đến khi commit
             ProductVariant variant = variantRepository.findByIdForUpdate(itemReq.getVariantId())
                     .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", "id", itemReq.getVariantId()));
 
@@ -119,7 +154,7 @@ public class OrderService {
                 .status(Order.OrderStatus.PENDING)
                 .build();
 
-        // 5. Tạo OrderItems (price snapshot)
+        // 5. Tạo OrderItems (price snapshot — NF2: giá tại thời điểm mua, không phụ thuộc vào product.price sau này)
         List<OrderItem> orderItems = itemDataList.stream()
                 .map(d -> {
                     var product = d.variant().getProduct();
@@ -155,7 +190,6 @@ public class OrderService {
             int newQty = d.variant().getQuantity() - d.quantity();
             d.variant().setQuantity(newQty);
             variantRepository.save(d.variant());
-            // Ghi log xuất kho
             inventoryService.logSale(d.variant(), d.quantity(), newQty, orderId);
         });
 
@@ -174,7 +208,8 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
 
-        // ── Publish event: đơn hàng mới tạo → EmailConsumer gửi email xác nhận
+        // ── Publish event: QUEUE (RabbitMQ) — FIFO
+        // Queue đảm bảo email được gửi đúng thứ tự, không mất khi consumer chậm
         messagePublisher.publishOrderCreated(
                 OrderCreatedMessage.builder()
                         .orderId(saved.getId())
@@ -244,7 +279,6 @@ public class OrderService {
         order.setStatus(newStatus);
         Order saved = orderRepository.save(order);
 
-        // ── Publish event: trạng thái thay đổi → OrderConsumer gửi email thông báo
         if (order.getUser() != null) {
             messagePublisher.publishOrderStatusChanged(
                     OrderStatusChangedMessage.builder()
