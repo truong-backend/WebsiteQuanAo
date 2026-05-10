@@ -277,7 +277,7 @@ public class OrderService {
         String oldStatus = order.getStatus().name();
         validateStatusTransition(order.getStatus(), newStatus);
         order.setStatus(newStatus);
-        Order saved = orderRepository.save(order);
+            Order saved = orderRepository.save(order);
 
         if (order.getUser() != null) {
             messagePublisher.publishOrderStatusChanged(
