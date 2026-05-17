@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast, cn } from '@shared/lib'
+import { toast } from '@shared/lib'
 import { Button, Badge, Input, Spinner } from '@shared/ui'
 import {
   fetchAllSizes,
@@ -10,9 +10,8 @@ import {
   adminRestoreSize,
   adminHardDeleteSize,
 } from '@features/admin/api/adminApi'
-import type { SizeDto } from '@shared/types'
+import type { SizeDto, ApiResponse } from '@shared/types'
 import type { AxiosError } from 'axios'
-import type { ApiResponse } from '@shared/api/client'
 
 export function AdminSizes() {
   const queryClient = useQueryClient()
@@ -31,13 +30,11 @@ export function AdminSizes() {
         name: form.name,
         sortOrder: Number(form.sortOrder),
       }),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] })
       toast('Đã tạo size')
       setForm({ code: '', name: '', sortOrder: '0' })
     },
-
     onError: (err: AxiosError<ApiResponse<null>>) =>
       toast(err.response?.data?.message ?? 'Tạo thất bại', 'error'),
   })
@@ -50,47 +47,33 @@ export function AdminSizes() {
         sortOrder: s.sortOrder,
         active: s.active,
       }),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] })
       toast('Đã cập nhật size')
       setEditSize(null)
     },
-
     onError: (err: AxiosError<ApiResponse<null>>) =>
       toast(err.response?.data?.message ?? 'Cập nhật thất bại', 'error'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: adminDeleteSize,
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] })
       toast('Đã vô hiệu hoá size')
     },
-
     onError: (err: AxiosError<ApiResponse<null>>) =>
-      toast(
-        err.response?.data?.message ??
-          'Không thể xóa: kích cỡ đang có sản phẩm sử dụng',
-        'error'
-      ),
+      toast(err.response?.data?.message ?? 'Không thể xóa: kích cỡ đang có sản phẩm sử dụng', 'error'),
   })
 
   const hardDeleteMutation = useMutation({
     mutationFn: (id: number) => adminHardDeleteSize(id),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] })
       toast('Đã xóa vĩnh viễn size')
     },
-
     onError: (err: AxiosError<ApiResponse<null>>) =>
-      toast(
-        err.response?.data?.message ??
-          'Không thể xóa vĩnh viễn: kích cỡ đang có sản phẩm sử dụng',
-        'error'
-      ),
+      toast(err.response?.data?.message ?? 'Không thể xóa vĩnh viễn: kích cỡ đang có sản phẩm sử dụng', 'error'),
   })
 
   const restoreMutation = useMutation({
@@ -101,12 +84,10 @@ export function AdminSizes() {
         sortOrder: size.sortOrder,
         active: true,
       }),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'sizes'] })
       toast('Đã khôi phục size')
     },
-
     onError: (err: AxiosError<ApiResponse<null>>) =>
       toast(err.response?.data?.message ?? 'Khôi phục thất bại', 'error'),
   })
@@ -119,35 +100,20 @@ export function AdminSizes() {
         <Input
           label="Mã size (VD: S, M, L, XL)"
           value={form.code}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              code: e.target.value.toUpperCase(),
-            }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
         />
 
         <Input
           label="Tên size"
           value={form.name}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              name: e.target.value,
-            }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
         />
 
         <Input
           label="Thứ tự hiển thị"
           type="number"
           value={form.sortOrder}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              sortOrder: e.target.value,
-            }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
         />
 
         <Button
@@ -161,9 +127,7 @@ export function AdminSizes() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="font-display text-2xl">
-          Danh sách kích cỡ
-        </h2>
+        <h2 className="font-display text-2xl">Danh sách kích cỡ</h2>
 
         {isLoading ? (
           <Spinner />
@@ -174,10 +138,7 @@ export function AdminSizes() {
               .map((size) => (
                 <li
                   key={size.id}
-                  className={cn(
-                    'flex items-center justify-between py-3 px-4 border border-brand-light',
-                    !size.active && 'opacity-50 bg-red-50/30'
-                  )}
+                  className={`flex items-center justify-between py-3 px-4 border border-brand-light${!size.active ? ' opacity-50 bg-red-50/30' : ''}`}
                 >
                   {editSize?.id === size.id ? (
                     <div className="flex items-center gap-2 flex-1 mr-3">
@@ -187,14 +148,7 @@ export function AdminSizes() {
 
                       <input
                         value={editSize.name}
-                        onChange={(e) =>
-                          setEditSize((s) =>
-                            s && {
-                              ...s,
-                              name: e.target.value,
-                            }
-                          )
-                        }
+                        onChange={(e) => setEditSize((s) => s && { ...s, name: e.target.value })}
                         className="flex-1 border border-brand-light px-2 py-1 text-sm focus:outline-none focus:border-brand-black"
                         placeholder="Tên size"
                       />
@@ -202,14 +156,7 @@ export function AdminSizes() {
                       <input
                         type="number"
                         value={editSize.sortOrder}
-                        onChange={(e) =>
-                          setEditSize((s) =>
-                            s && {
-                              ...s,
-                              sortOrder: Number(e.target.value),
-                            }
-                          )
-                        }
+                        onChange={(e) => setEditSize((s) => s && { ...s, sortOrder: Number(e.target.value) })}
                         className="w-16 border border-brand-light px-2 py-1 text-sm focus:outline-none focus:border-brand-black"
                       />
 
@@ -229,38 +176,18 @@ export function AdminSizes() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span
-                        className={cn(
-                          'w-10 h-10 border flex items-center justify-center text-sm font-medium',
-                          !size.active
-                            ? 'border-brand-light text-brand-mid'
-                            : 'border-brand-mid'
-                        )}
-                      >
+                      <span className={`w-10 h-10 border flex items-center justify-center text-sm font-medium${!size.active ? ' border-brand-light text-brand-mid' : ' border-brand-mid'}`}>
                         {size.code}
                       </span>
 
                       <div>
-                        <p
-                          className={cn(
-                            'font-medium text-sm',
-                            !size.active &&
-                              'line-through text-brand-mid'
-                          )}
-                        >
+                        <p className={`font-medium text-sm${!size.active ? ' line-through text-brand-mid' : ''}`}>
                           {size.name}
                         </p>
-
-                        <p className="text-xs text-brand-mid">
-                          Thứ tự: {size.sortOrder}
-                        </p>
+                        <p className="text-xs text-brand-mid">Thứ tự: {size.sortOrder}</p>
                       </div>
 
-                      {!size.active && (
-                        <Badge variant="error">
-                          Inactive
-                        </Badge>
-                      )}
+                      {!size.active && <Badge variant="error">Inactive</Badge>}
                     </div>
                   )}
 
@@ -274,17 +201,8 @@ export function AdminSizes() {
                           >
                             Sửa
                           </button>
-
                           <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Vô hiệu hoá size "${size.code}"?`
-                                )
-                              ) {
-                                deleteMutation.mutate(size.id)
-                              }
-                            }}
+                            onClick={() => { if (confirm(`Vô hiệu hoá size "${size.code}"?`)) deleteMutation.mutate(size.id) }}
                             className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
                           >
                             Xóa
@@ -293,30 +211,13 @@ export function AdminSizes() {
                       ) : (
                         <>
                           <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Khôi phục size "${size.code}"?`
-                                )
-                              ) {
-                                restoreMutation.mutate(size)
-                              }
-                            }}
+                            onClick={() => { if (confirm(`Khôi phục size "${size.code}"?`)) restoreMutation.mutate(size) }}
                             className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors"
                           >
                             Khôi phục
                           </button>
-
                           <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `Xóa vĩnh viễn size "${size.code}"? Hành động này không thể hoàn tác.`
-                                )
-                              ) {
-                                hardDeleteMutation.mutate(size.id)
-                              }
-                            }}
+                            onClick={() => { if (confirm(`Xóa vĩnh viễn size "${size.code}"? Hành động này không thể hoàn tác.`)) hardDeleteMutation.mutate(size.id) }}
                             className="text-[10px] text-red-700 hover:text-red-900 uppercase tracking-wider transition-colors"
                           >
                             Xóa vĩnh viễn

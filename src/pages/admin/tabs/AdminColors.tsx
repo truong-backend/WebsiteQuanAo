@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast, cn } from '@shared/lib'
+import { toast } from '@shared/lib'
 import { Button, Badge, Input, Spinner } from '@shared/ui'
 import {
   fetchAllColors,
@@ -10,9 +10,8 @@ import {
   adminRestoreColor,
   adminHardDeleteColor,
 } from '@features/admin/api/adminApi'
-import type { ColorDto } from '@shared/types'
+import type { ColorDto, ApiResponse } from '@shared/types'
 import type { AxiosError } from 'axios'
-import type { ApiResponse } from '@shared/api/client'
 
 export function AdminColors() {
   const queryClient = useQueryClient()
@@ -104,20 +103,13 @@ export function AdminColors() {
             {(colors ?? []).map((color) => (
               <li
                 key={color.id}
-                className={cn(
-                  'flex items-center justify-between py-3 px-4 border border-brand-light',
-                  !color.active && 'opacity-50 bg-red-50/30'
-                )}
+                className={`flex items-center justify-between py-3 px-4 border border-brand-light${!color.active ? ' opacity-50 bg-red-50/30' : ''}`}
               >
                 {editColor?.id === color.id ? (
                   <div className="flex items-center gap-2 flex-1 mr-3">
-                    <input
-                      type="color"
-                      value={editColor.code}
-                      onChange={(e) =>
-                        setEditColor((c) => c && { ...c, code: e.target.value })
-                      }
-                      className="w-8 h-8 rounded border cursor-pointer"
+                    <div
+                      className="w-8 h-8 rounded border border-brand-light flex-shrink-0"
+                      style={{ backgroundColor: editColor.code }}
                     />
 
                     <input
@@ -151,30 +143,16 @@ export function AdminColors() {
                     />
 
                     <div>
-                      <p
-                        className={cn(
-                          'font-medium text-sm',
-                          !color.active && 'line-through text-brand-mid'
-                        )}
-                      >
+                      <p className={`font-medium text-sm${!color.active ? ' line-through text-brand-mid' : ''}`}>
                         {color.name}
-
                         {color.nameEn && (
-                          <span className="text-brand-mid">
-                            {' '}
-                            ({color.nameEn})
-                          </span>
+                          <span className="text-brand-mid"> ({color.nameEn})</span>
                         )}
                       </p>
-
-                      <p className="text-xs font-mono text-brand-mid">
-                        {color.code}
-                      </p>
+                      <p className="text-xs font-mono text-brand-mid">{color.code}</p>
                     </div>
 
-                    {!color.active && (
-                      <Badge variant="error">Inactive</Badge>
-                    )}
+                    {!color.active && <Badge variant="error">Inactive</Badge>}
                   </div>
                 )}
 
@@ -188,15 +166,8 @@ export function AdminColors() {
                         >
                           Sửa
                         </button>
-
                         <button
-                          onClick={() => {
-                            if (
-                              confirm(`Vô hiệu hoá màu "${color.name}"?`)
-                            ) {
-                              deleteMutation.mutate(color.id)
-                            }
-                          }}
+                          onClick={() => { if (confirm(`Vô hiệu hoá màu "${color.name}"?`)) deleteMutation.mutate(color.id) }}
                           className="text-xs text-red-500 hover:text-red-700 uppercase tracking-wider transition-colors"
                         >
                           Xóa
@@ -205,28 +176,13 @@ export function AdminColors() {
                     ) : (
                       <>
                         <button
-                          onClick={() => {
-                            if (
-                              confirm(`Khôi phục màu "${color.name}"?`)
-                            ) {
-                              restoreMutation.mutate(color)
-                            }
-                          }}
+                          onClick={() => { if (confirm(`Khôi phục màu "${color.name}"?`)) restoreMutation.mutate(color) }}
                           className="text-[10px] text-green-600 hover:text-green-800 uppercase tracking-wider transition-colors"
                         >
                           Khôi phục
                         </button>
-
                         <button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Xóa vĩnh viễn màu "${color.name}"? Hành động này không thể hoàn tác.`
-                              )
-                            ) {
-                              hardDeleteMutation.mutate(color.id)
-                            }
-                          }}
+                          onClick={() => { if (confirm(`Xóa vĩnh viễn màu "${color.name}"? Hành động này không thể hoàn tác.`)) hardDeleteMutation.mutate(color.id) }}
                           className="text-[10px] text-red-700 hover:text-red-900 uppercase tracking-wider transition-colors"
                         >
                           Xóa vĩnh viễn
