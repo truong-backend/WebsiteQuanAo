@@ -19,36 +19,22 @@ public class SizeController {
 
     private final SizeService sizeService;
 
-    /**
-     * GET /api/v1/sizes
-     * Public — chỉ trả size đang active, sắp xếp theo sortOrder
-     */
     @GetMapping
     public ResponseEntity<ApiResponse<List<SizeDto>>> getActiveSizes() {
         return ResponseEntity.ok(ApiResponse.ok(sizeService.findAllActive()));
     }
 
-    /**
-     * GET /api/v1/sizes/all
-     * Admin — toàn bộ kể cả inactive
-     */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<SizeDto>>> getAllSizes() {
         return ResponseEntity.ok(ApiResponse.ok(sizeService.findAll()));
     }
 
-    /**
-     * GET /api/v1/sizes/{id}
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<SizeDto>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(sizeService.getById(id)));
     }
 
-    /**
-     * POST /api/v1/sizes — Admin tạo size mới
-     */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<SizeDto>> create(@Valid @RequestBody SizeRequest req) {
@@ -56,9 +42,6 @@ public class SizeController {
                 .body(ApiResponse.created(sizeService.create(req)));
     }
 
-    /**
-     * PUT /api/v1/sizes/{id} — Admin cập nhật size
-     */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<SizeDto>> update(
@@ -67,13 +50,28 @@ public class SizeController {
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật size thành công", sizeService.update(id, req)));
     }
 
-    /**
-     * DELETE /api/v1/sizes/{id} — Admin xoá mềm size
-     */
+    /** Soft delete — ẩn size */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-        sizeService.delete(id);
+        sizeService.softDelete(id);
         return ResponseEntity.ok(ApiResponse.ok("Đã vô hiệu hoá size", null));
+    }
+
+    /** Hard delete — xóa vĩnh viễn */
+    @DeleteMapping("/{id}/hard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> hardDelete(@PathVariable Long id) {
+        sizeService.hardDelete(id);
+        return ResponseEntity.ok(ApiResponse.ok("Đã xóa vĩnh viễn size", null));
+    }
+
+    /** Restore — khôi phục size đã bị ẩn */
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SizeDto>> restore(
+            @PathVariable Long id,
+            @Valid @RequestBody SizeRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok("Đã khôi phục size", sizeService.restore(id, req)));
     }
 }

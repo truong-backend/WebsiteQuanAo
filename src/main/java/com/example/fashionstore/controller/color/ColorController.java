@@ -19,36 +19,22 @@ public class ColorController {
 
     private final ColorService colorService;
 
-    /**
-     * GET /api/v1/colors
-     * Public — chỉ trả màu đang active (dùng cho filter sản phẩm, tạo variant)
-     */
     @GetMapping
     public ResponseEntity<ApiResponse<List<ColorDto>>> getActiveColors() {
         return ResponseEntity.ok(ApiResponse.ok(colorService.findAllActive()));
     }
 
-    /**
-     * GET /api/v1/colors/all
-     * Admin — trả toàn bộ kể cả inactive
-     */
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ColorDto>>> getAllColors() {
         return ResponseEntity.ok(ApiResponse.ok(colorService.findAll()));
     }
 
-    /**
-     * GET /api/v1/colors/{id}
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ColorDto>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(colorService.getById(id)));
     }
 
-    /**
-     * POST /api/v1/colors — Admin tạo màu mới
-     */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ColorDto>> create(@Valid @RequestBody ColorRequest req) {
@@ -56,9 +42,6 @@ public class ColorController {
                 .body(ApiResponse.created(colorService.create(req)));
     }
 
-    /**
-     * PUT /api/v1/colors/{id} — Admin cập nhật màu
-     */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ColorDto>> update(
@@ -67,13 +50,28 @@ public class ColorController {
         return ResponseEntity.ok(ApiResponse.ok("Cập nhật màu thành công", colorService.update(id, req)));
     }
 
-    /**
-     * DELETE /api/v1/colors/{id} — Admin xoá mềm màu
-     */
+    /** Soft delete — ẩn màu (active = false) */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-        colorService.delete(id);
+        colorService.softDelete(id);
         return ResponseEntity.ok(ApiResponse.ok("Đã vô hiệu hoá màu", null));
+    }
+
+    /** Hard delete — xóa vĩnh viễn */
+    @DeleteMapping("/{id}/hard")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> hardDelete(@PathVariable Long id) {
+        colorService.hardDelete(id);
+        return ResponseEntity.ok(ApiResponse.ok("Đã xóa vĩnh viễn màu", null));
+    }
+
+    /** Restore — khôi phục màu đã bị ẩn */
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ColorDto>> restore(
+            @PathVariable Long id,
+            @Valid @RequestBody ColorRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok("Đã khôi phục màu", colorService.restore(id, req)));
     }
 }

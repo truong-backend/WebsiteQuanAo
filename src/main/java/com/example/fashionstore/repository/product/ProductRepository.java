@@ -31,4 +31,6 @@ public interface ProductRepository extends JpaRepository<Product, String>,
         WHERE p.slug = :slug AND p.active = true AND p.deleted = false
     """)
     Optional<Product> findBySlugWithVariants(@Param("slug") String slug);
+
+    boolean existsByCategoryCategoryId(Long categoryId);
 }

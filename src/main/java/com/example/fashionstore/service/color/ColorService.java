@@ -6,6 +6,7 @@ import com.example.fashionstore.dto.color.ColorDto;
 import com.example.fashionstore.dto.color.ColorRequest;
 import com.example.fashionstore.module.color.Color;
 import com.example.fashionstore.repository.color.ColorRepository;
+import com.example.fashionstore.repository.variant.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.List;
 public class ColorService {
 
     private final ColorRepository colorRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     // ── Read ────────────────────────────────────────────────────────
 
@@ -62,11 +64,9 @@ public class ColorService {
         Color color = findOrThrow(id);
         String normalizedCode = req.getCode().toUpperCase();
 
-        // Check code conflict (trừ chính nó)
         if (!color.getCode().equals(normalizedCode) && colorRepository.existsByCode(normalizedCode))
             throw new BusinessException("Mã màu '" + normalizedCode + "' đã tồn tại");
 
-        // Check name conflict
         if (!color.getName().equals(req.getName().trim()) && colorRepository.existsByName(req.getName().trim()))
             throw new BusinessException("Tên màu '" + req.getName() + "' đã tồn tại");
 
@@ -78,11 +78,39 @@ public class ColorService {
         return toDto(colorRepository.save(color));
     }
 
-    public void delete(Long id) {
+    /**
+     * Soft delete — chỉ ẩn màu, không xóa vật lý vì variant có thể đang dùng
+     */
+    public void softDelete(Long id) {
         Color color = findOrThrow(id);
-        // Soft delete — không hard delete vì variant có thể đang dùng colorCode
-        color.setActive(false);
+        boolean hasVariants = productVariantRepository.existsByColorId(id);
+        if (hasVariants)
+            throw new BusinessException("Không thể xóa: màu sắc đang có sản phẩm sử dụng");
+
+        color.softDelete();
         colorRepository.save(color);
+    }
+
+    /**
+     * Hard delete — xóa vĩnh viễn, chỉ cho phép nếu không còn variant nào dùng
+     */
+    public void hardDelete(Long id) {
+        Color color = findOrThrow(id);
+        boolean hasVariants = productVariantRepository.existsByColorId(id);
+        if (hasVariants)
+            throw new BusinessException("Không thể xóa vĩnh viễn: màu sắc đang có sản phẩm sử dụng");
+
+        colorRepository.delete(color);
+    }
+
+    public ColorDto restore(Long id, ColorRequest req) {
+        Color color = findOrThrow(id);
+        color.restore();
+        color.setCode(req.getCode().toUpperCase());
+        color.setName(req.getName().trim());
+        color.setNameEn(req.getNameEn() != null ? req.getNameEn().trim() : null);
+        color.setActive(true);
+        return toDto(colorRepository.save(color));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────

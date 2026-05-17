@@ -31,4 +31,9 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
     @Query("SELECT v FROM ProductVariant v WHERE v.id = :id")
     Optional<ProductVariant> findByIdForUpdate(@Param("id") String id);
+
+
+    boolean existsByColorId(Long colorId);
+
+    boolean existsBySizeId(Long sizeId);
 }

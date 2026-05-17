@@ -4,6 +4,7 @@ import com.example.fashionstore.dto.category.CategoryDto;
 import com.example.fashionstore.mapper.category.CategoryMapper;
 import com.example.fashionstore.module.category.Category;
 import com.example.fashionstore.repository.category.CategoryRepository;
+import com.example.fashionstore.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,13 +20,13 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
+    private final ProductRepository productRepository;
 
     // ── Read ─────────────────────────────────────────────
 
     @Cacheable(value = "categories", key = "'all'")
     public List<CategoryDto> getAllCategories() {
         List<Category> cats = categoryRepository.findAllWithChildren();
-        // 👉 nhớ đảm bảo query này đã filter deleted=false
         return categoryMapper.toDtoList(cats);
     }
 
@@ -45,6 +46,11 @@ public class CategoryService {
 
         if (category.isDeleted())
             throw new RuntimeException("Danh mục này đã bị xóa");
+
+        // Kiểm tra danh mục có sản phẩm đang dùng không
+        boolean hasProducts = productRepository.existsByCategoryCategoryId(id);
+        if (hasProducts)
+            throw new RuntimeException("Không thể xóa: danh mục đang có sản phẩm sử dụng");
 
         category.softDelete();
         categoryRepository.save(category);
@@ -76,6 +82,11 @@ public class CategoryService {
         if (!category.isDeleted())
             throw new RuntimeException("Chỉ xóa vĩnh viễn danh mục đã xóa mềm");
 
+        // Kiểm tra còn sản phẩm đang dùng danh mục này không
+        boolean hasProducts = productRepository.existsByCategoryCategoryId(id);
+        if (hasProducts)
+            throw new RuntimeException("Không thể xóa vĩnh viễn: danh mục vẫn còn sản phẩm đang sử dụng");
+
         categoryRepository.delete(category);
     }
 
@@ -83,6 +94,7 @@ public class CategoryService {
         List<Category> cats = categoryRepository.findAllWithChildrenAdmin();
         return categoryMapper.toDtoList(cats);
     }
+
     // ── Cache helper ─────────────────────────────────────
 
     @CacheEvict(value = "categories", allEntries = true)

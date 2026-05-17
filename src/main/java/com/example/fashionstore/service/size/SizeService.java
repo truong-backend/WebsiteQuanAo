@@ -6,6 +6,7 @@ import com.example.fashionstore.dto.size.SizeDto;
 import com.example.fashionstore.dto.size.SizeRequest;
 import com.example.fashionstore.module.size.Size;
 import com.example.fashionstore.repository.size.SizeRepository;
+import com.example.fashionstore.repository.variant.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.List;
 public class SizeService {
 
     private final SizeRepository sizeRepository;
+    private final ProductVariantRepository productVariantRepository;
 
     // ── Read ────────────────────────────────────────────────────────
 
@@ -76,11 +78,39 @@ public class SizeService {
         return toDto(sizeRepository.save(size));
     }
 
-    public void delete(Long id) {
+    /**
+     * Soft delete — chỉ ẩn size, không xóa vật lý
+     */
+    public void softDelete(Long id) {
         Size size = findOrThrow(id);
-        // Soft delete
-        size.setActive(false);
+        boolean hasVariants = productVariantRepository.existsBySizeId(id);
+        if (hasVariants)
+            throw new BusinessException("Không thể xóa: kích cỡ đang có sản phẩm sử dụng");
+
+        size.softDelete();
         sizeRepository.save(size);
+    }
+
+    /**
+     * Hard delete — xóa vĩnh viễn, chỉ cho phép nếu không còn variant nào dùng
+     */
+    public void hardDelete(Long id) {
+        Size size = findOrThrow(id);
+        boolean hasVariants = productVariantRepository.existsBySizeId(id);
+        if (hasVariants)
+            throw new BusinessException("Không thể xóa vĩnh viễn: kích cỡ đang có sản phẩm sử dụng");
+
+        sizeRepository.delete(size);
+    }
+
+    public SizeDto restore(Long id, SizeRequest req) {
+        Size size = findOrThrow(id);
+        size.restore();
+        size.setCode(req.getCode().toUpperCase().trim());
+        size.setName(req.getName().trim());
+        size.setSortOrder(req.getSortOrder());
+        size.setActive(true);
+        return toDto(sizeRepository.save(size));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
