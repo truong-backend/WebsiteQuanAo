@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, type ReactNode } from 'react'
 import { scheduleTokenExpiry, trySilentRefresh } from '@shared/api'
+import { ChatBot } from '@widgets/chatbot'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime:          1000 * 60 * 5,
-      retry:              1,
+      staleTime:            1000 * 60 * 5,
+      retry:                1,
       refetchOnWindowFocus: false,
     },
   },
@@ -35,7 +36,9 @@ function TokenExpiryGuard() {
           scheduleTokenExpiry(accessToken)
           return
         }
-      } catch { /* token malformed */ }
+      } catch {
+        /* token malformed */
+      }
     }
 
     // Access token hết hạn hoặc không có → thử dùng refresh token
@@ -58,6 +61,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <TokenExpiryGuard />
       {children}
+      <ChatBot />
     </QueryClientProvider>
   )
 }

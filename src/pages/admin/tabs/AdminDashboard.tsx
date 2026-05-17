@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { formatPrice, formatDate } from '@shared/lib'
+import { formatPrice } from '@shared/lib'
 import { Select, Spinner, EmptyState } from '@shared/ui'
 import {
   fetchDashboardStats, fetchRevenueByDay,
@@ -9,7 +9,6 @@ import {
 import { ORDER_STATUS_LABEL, ORDER_STATUS_VARIANT } from '@entities/order/model'
 import type { OrderStatus } from '@shared/types'
 import { Badge } from '@shared/ui'
-import { cn } from '@shared/lib'
 
 export function AdminDashboard() {
   const [range, setRange] = useState('30')
