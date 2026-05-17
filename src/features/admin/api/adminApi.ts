@@ -254,3 +254,17 @@ export async function adminHardDeleteVoucher(id: number): Promise<void> {
 // ─── Re-exports ────────────────────────────────────────────────────────────────-
 export { fetchAllOrdersAdmin, updateOrderStatusApi } from '@features/orders/api/ordersApi'
 export { fetchProducts, fetchCategories }            from '@features/catalog/api/catalogApi'
+
+// ── Color hard delete & restore ──────────────────────────────────
+export const adminHardDeleteColor = (id: number) =>
+  apiClient.delete<void>(`/colors/${id}/hard`)
+
+export const adminRestoreColorFull = (id: number, req: { code: string; name: string; nameEn?: string; active: boolean }) =>
+  apiClient.put<ColorDto>(`/colors/${id}/restore`, req).then((r) => r.data)
+
+// ── Size hard delete & restore ───────────────────────────────────
+export const adminHardDeleteSize = (id: number) =>
+  apiClient.delete<void>(`/sizes/${id}/hard`)
+
+export const adminRestoreSizeFull = (id: number, req: { code: string; name: string; sortOrder: number; active: boolean }) =>
+  apiClient.put<SizeDto>(`/sizes/${id}/restore`, req).then((r) => r.data)
