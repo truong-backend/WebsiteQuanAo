@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@app/styles/global.css'
 import { Providers } from '@app/providers'
 import { AppRouter } from '@app/router/router'
+import { ChatBot } from '@widgets/chatbot'
 
 // Toast root container (imperative toasts append here)
 const toastRoot = document.createElement('div')
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Providers>
       <AppRouter />
+      <ChatBot />
     </Providers>
   </StrictMode>,
 )
