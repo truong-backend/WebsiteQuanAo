@@ -45,7 +45,7 @@ export function ChatBot() {
       )
       setMessages((m) => [...m, { role: 'bot', text: res.data.data }])
     } catch {
-      setMessages((m) => [...m, { role: 'bot', text: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.' }])
+      setMessages((m) => [...m, { role: 'bot', text: 'Xin lỗi, Đã hết quota, yêu cầu thêm thanh toán vì k còn free từ 2024.' }])
     } finally {
       setLoading(false)
     }
