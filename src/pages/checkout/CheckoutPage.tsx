@@ -13,7 +13,7 @@ import type { PaymentMethod, ApplyVoucherResponse } from '@shared/types'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
   { value: 'COD',   label: 'Thanh toán khi nhận hàng', icon: '💵', desc: 'Thanh toán bằng tiền mặt khi nhận hàng' },
-  { value: 'VNPAY', label: 'VNPay',                    icon: '💳', desc: 'Thanh toán qua cổng thanh toán VNPay' },
+  // { value: 'VNPAY', label: 'VNPay',                    icon: '💳', desc: 'Thanh toán qua cổng thanh toán VNPay' },
 ]
 
 export default function CheckoutPage() {
