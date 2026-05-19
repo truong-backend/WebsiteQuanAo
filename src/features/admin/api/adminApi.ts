@@ -147,7 +147,7 @@ export async function adminDeleteSize(id: number): Promise<void> {
 }
 
 export async function adminRestoreSize(id: number, data: SizeRequest): Promise<SizeDto> {
-  const res = await apiClient.put<ApiResponse<SizeDto>>(`/sizes/${id}`, { ...data, active: true })
+  const res = await apiClient.put<ApiResponse<SizeDto>>(`/sizes/${id}/restore`, { ...data, active: true })
   return res.data.data
 }
 
