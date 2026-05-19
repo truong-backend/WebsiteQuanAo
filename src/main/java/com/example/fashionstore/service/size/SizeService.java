@@ -29,9 +29,10 @@ public class SizeService {
                 .stream().map(this::toDto).toList();
     }
 
+    /** Admin: trả tất cả kể cả đã soft-delete */
     @Transactional(readOnly = true)
     public List<SizeDto> findAll() {
-        return sizeRepository.findAll()
+        return sizeRepository.findAllIncludingDeleted()
                 .stream().map(this::toDto).toList();
     }
 
@@ -116,7 +117,7 @@ public class SizeService {
     // ── Helpers ──────────────────────────────────────────────────────
 
     private Size findOrThrow(Long id) {
-        return sizeRepository.findById(id)
+        return sizeRepository.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Size", "id", id));
     }
 
@@ -128,6 +129,8 @@ public class SizeService {
                 .sortOrder(s.getSortOrder())
                 .active(s.isActive())
                 .createdAt(s.getCreatedAt())
+                .deleted(s.isDeleted())
+                .deletedAt(s.getDeletedAt())
                 .build();
     }
 }

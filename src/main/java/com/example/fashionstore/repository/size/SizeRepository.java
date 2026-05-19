@@ -2,6 +2,8 @@ package com.example.fashionstore.repository.size;
 
 import com.example.fashionstore.module.size.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,4 +34,12 @@ public interface SizeRepository extends JpaRepository<Size, Long> {
 
     // Tất cả chưa xóa (bao gồm inactive)
     List<Size> findAllByDeletedFalseOrderBySortOrderAsc();
+
+    // Tất cả kể cả đã xóa (dùng cho admin panel)
+    @Query("SELECT s FROM Size s ORDER BY s.sortOrder ASC")
+    List<Size> findAllIncludingDeleted();
+
+    // Tìm theo id kể cả đã xóa (dùng trong service khi restore/hardDelete)
+    @Query("SELECT s FROM Size s WHERE s.id = :id")
+    Optional<Size> findByIdIncludingDeleted(@Param("id") Long id);
 }

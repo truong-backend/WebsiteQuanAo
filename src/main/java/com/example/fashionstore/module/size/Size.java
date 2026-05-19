@@ -3,7 +3,6 @@ package com.example.fashionstore.module.size;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import org.hibernate.annotations.Where;
 
 @Entity
 @Table(name = "sizes",
@@ -11,7 +10,6 @@ import org.hibernate.annotations.Where;
                 @Index(name = "idx_sizes_code", columnList = "code")
         }
 )
-@Where(clause = "deleted = false") // Tự động lọc dữ liệu chưa bị xóa
 @Data
 @Builder
 @NoArgsConstructor
