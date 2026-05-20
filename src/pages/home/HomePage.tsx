@@ -19,6 +19,22 @@ export default function HomePage() {
     queryFn:  fetchRootCategories,
   })
 
+  // Lấy 1 sản phẩm đại diện cho mỗi category để lấy ảnh thực tế
+  const { data: catProducts } = useQuery({
+    queryKey: ['products', 'category-cover', categories?.map((c) => c.categoryId)],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        categories!.slice(0, 4).map(async (cat) => {
+          const page = await fetchProducts({ categoryId: cat.categoryId, page: 0, size: 1 })
+          const product = page.content[0]
+          return [cat.categoryId, product?.mainImage ?? null] as [number, string | null]
+        })
+      )
+      return Object.fromEntries(entries) as Record<number, string | null>
+    },
+    enabled: !!categories && categories.length > 0,
+  })
+
   // Parallax on hero
   useEffect(() => {
     const el = heroRef.current
@@ -29,6 +45,14 @@ export default function HomePage() {
     window.addEventListener('scroll', handler, { passive: true })
     return () => window.removeEventListener('scroll', handler)
   }, [])
+
+  // Fallback nếu category chưa có sản phẩm
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1594938298603-c8148c4b4f35?w=600&q=80',
+    'https://images.unsplash.com/photo-1503341338985-95447e4b4a2f?w=600&q=80',
+    'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&q=80',
+    'https://images.unsplash.com/photo-1617952739408-e60af0c0e2e4?w=600&q=80',
+  ]
 
   return (
     <main>
@@ -108,12 +132,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.slice(0, 4).map((cat, i) => {
-              const images = [
-                'https://images.unsplash.com/photo-1594938298603-c8148c4b4f35?w=600&q=80',
-                'https://images.unsplash.com/photo-1503341338985-95447e4b4a2f?w=600&q=80',
-                'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&q=80',
-                'https://images.unsplash.com/photo-1617952739408-e60af0c0e2e4?w=600&q=80',
-              ]
+              const imgSrc = catProducts?.[cat.categoryId] ?? fallbackImages[i % fallbackImages.length]
               return (
                 <Link
                   key={cat.categoryId}
@@ -121,7 +140,7 @@ export default function HomePage() {
                   className="group relative overflow-hidden aspect-[3/4] bg-brand-cream"
                 >
                   <img
-                    src={images[i % images.length]}
+                    src={imgSrc}
                     alt={cat.categoryName}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />

@@ -275,9 +275,13 @@ export default function CheckoutPage() {
                   <li key={item.cartItemId} className="flex gap-3">
                     <div className="relative flex-shrink-0">
                       <img
-                        src={item.imageUrl ?? '/placeholder.jpg'}
+                        src={item.imageUrl ?? `https://placehold.co/64x80/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`}
                         alt={item.productName}
                         className="w-16 h-20 object-cover bg-brand-white"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            `https://placehold.co/64x80/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`
+                        }}
                       />
                       <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-brand-black text-brand-white text-[10px] rounded-full flex items-center justify-center">
                         {item.quantity}

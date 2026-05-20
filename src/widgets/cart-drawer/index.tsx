@@ -85,9 +85,13 @@ export function CartDrawer() {
                     className="flex-shrink-0"
                   >
                     <img
-                      src={item.imageUrl ?? '/placeholder.jpg'}
+                      src={item.imageUrl ?? `https://placehold.co/80x96/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`}
                       alt={item.productName}
                       className="w-20 h-24 object-cover bg-brand-cream"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src =
+                          `https://placehold.co/80x96/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`
+                      }}
                     />
                   </Link>
 
