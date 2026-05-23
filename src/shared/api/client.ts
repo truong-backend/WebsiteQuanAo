@@ -35,11 +35,6 @@ export const apiClient = axios.create({
 
 // ── Token expiry helpers ──────────────────────────────────────────────────────
 
-/**
- * Decode JWT payload — không verify signature (không có secret key ở FE)
- * JWT: Header.Payload.Signature — mỗi phần Base64URL encoded
- * FE chỉ đọc exp để biết khi nào cần refresh, không trust nội dung
- */
 function getTokenExpiry(token: string): number | null {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
@@ -59,11 +54,6 @@ function forceLogout() {
 
 // ── Auto-logout timer ─────────────────────────────────────────────────────────
 
-/**
- * _logoutTimer: biến toàn cục trên HEAP (closure của module)
- * setTimeout chạy trên event loop — không block main thread
- * Tương tự Scheduled task trong BE (cron job) nhưng phía client
- */
 let _logoutTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function scheduleTokenExpiry(token: string) {
@@ -74,14 +64,31 @@ export function scheduleTokenExpiry(token: string) {
 
   const msUntilExpiry = expiry - Date.now();
   if (msUntilExpiry <= 0) {
-    trySilentRefresh().catch(() => forceLogout());
+    // accessToken đã hết hạn ngay lúc schedule → thử refresh ngay
+    trySilentRefresh().catch((err) => {
+      if (err?.isExpired) forceLogout();
+      // lỗi mạng → không logout, để request interceptor / 401 handler xử lý
+    });
     return;
   }
 
   // Refresh trước 60s khi token gần hết — tránh user bị gián đoạn
   const delay = Math.max(msUntilExpiry - 60_000, 0);
-  _logoutTimer = setTimeout(() => {
-    trySilentRefresh().catch(() => forceLogout());
+  _logoutTimer = setTimeout(async () => {
+    // Retry tối đa 3 lần để tránh logout nhầm do lỗi mạng tạm thời
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await trySilentRefresh();
+        return; // refresh thành công → dừng
+      } catch (err: any) {
+        if (err?.isExpired) break; // refreshToken thực sự hết hạn → không retry
+        if (attempt < 2) {
+          // back-off: 3s, 6s rồi mới bỏ cuộc
+          await new Promise((r) => setTimeout(r, 3_000 * (attempt + 1)));
+        }
+      }
+    }
+    forceLogout();
   }, delay);
 }
 
@@ -96,13 +103,7 @@ export function cancelTokenExpiry() {
 
 /**
  * _refreshPromise: Promise singleton — tránh double refresh
- *
- * Singleton Pattern trong async context:
- * - Nếu refresh đang chạy → return cùng 1 Promise, không tạo mới
- * - Khi done → _refreshPromise = null (reset để lần sau dùng lại)
- *
- * Đây là cách handle race condition không cần mutex/lock
- * (JS không có mutex vì single-threaded, dùng Promise thay thế)
+ * Nếu refresh đang chạy → return cùng 1 Promise, không tạo mới
  */
 let _refreshPromise: Promise<void> | null = null;
 
@@ -111,7 +112,11 @@ export async function trySilentRefresh(): Promise<void> {
 
   _refreshPromise = (async () => {
     const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) throw new Error("No refresh token");
+    if (!refreshToken) {
+      const e = new Error("No refresh token") as any;
+      e.isExpired = true;
+      throw e;
+    }
 
     try {
       const { refreshTokenApi } = await import("@features/auth/api/authApi");
@@ -119,8 +124,18 @@ export async function trySilentRefresh(): Promise<void> {
 
       const { useAuthStore } = await import("@features/auth/model/authStore");
       useAuthStore.getState().updateTokens(data.accessToken, data.refreshToken);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        // refreshToken thực sự hết hạn / bị revoke → đánh dấu để caller biết logout
+        const e = new Error("REFRESH_TOKEN_EXPIRED") as any;
+        e.isExpired = true;
+        throw e;
+      }
+      // Lỗi mạng / 5xx → throw thường, caller có thể retry
+      throw err;
     } finally {
-      _refreshPromise = null; // Reset singleton sau khi done
+      _refreshPromise = null;
     }
   })();
 
@@ -130,11 +145,8 @@ export async function trySilentRefresh(): Promise<void> {
 // ── Request interceptor ───────────────────────────────────────────────────────
 
 /**
- * Request interceptor: kiểm tra token hết hạn TRƯỚC khi gửi request
- * Đây là PROACTIVE refresh (khác với reactive 401 handler bên dưới)
- *
- * Luồng xử lý (FIFO — interceptors chạy theo thứ tự thêm vào):
- * Request → [request interceptor] → Server → [response interceptor] → Handler
+ * PROACTIVE refresh: kiểm tra token hết hạn TRƯỚC khi gửi request
+ * Nếu accessToken hết hạn → thử refresh trước, không gửi request cũ lên BE
  */
 apiClient.interceptors.request.use(async (config) => {
   const token = localStorage.getItem("access_token");
@@ -145,7 +157,12 @@ apiClient.interceptors.request.use(async (config) => {
   if (expiry && Date.now() >= expiry) {
     try {
       await trySilentRefresh();
-    } catch {
+    } catch (err: any) {
+      if (err?.isExpired) {
+        // refreshToken hết hạn thật → logout ngay
+        forceLogout();
+      }
+      // lỗi mạng → cancel request này, không logout (user vẫn còn session)
       return Promise.reject(new axios.Cancel("Session expired"));
     }
   }
@@ -158,26 +175,21 @@ apiClient.interceptors.request.use(async (config) => {
 // ── Response interceptor ─────────────────────────────────────────────────────
 
 /**
- * Queue cho requests 401 đang chờ refresh:
- * - FIFO Queue (Array as queue): push() = enqueue, forEach+splice = dequeue
- * - Khi refresh xong → processQueue() giải phóng tất cả request đang chờ
- *
- * Tương tự QUEUE trong CS: FIFO, vào trước ra trước
- * (khác STACK: LIFO — dùng cho call stack, undo history)
+ * REACTIVE refresh: server trả 401 → thử refresh rồi retry request
+ * Queue Pattern tránh race condition nhiều request 401 cùng lúc
  */
 type QueueItem = {
   resolve: (v: unknown) => void;
   reject: (e: unknown) => void;
 };
-let _queue: QueueItem[] = []; // HEAP allocation — Array of QueueItem objects
+let _queue: QueueItem[] = [];
 let _isRefreshing = false;
 
 function processQueue(error: unknown, token: string | null) {
-  // Duyệt queue và giải phóng tất cả promise đang chờ
   _queue.forEach(({ resolve, reject }) =>
     error ? reject(error) : resolve(token),
   );
-  _queue = []; // Clear queue sau khi xử lý
+  _queue = [];
 }
 
 apiClient.interceptors.response.use(
@@ -190,12 +202,11 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    originalRequest._retry = true; // Đánh dấu tránh vòng lặp vô hạn
+    originalRequest._retry = true;
 
     if (_isRefreshing) {
-      // Đang refresh → xếp vào queue, chờ token mới (FIFO)
       return new Promise((resolve, reject) => {
-        _queue.push({ resolve, reject }); // enqueue
+        _queue.push({ resolve, reject });
       }).then((token) => {
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return apiClient(originalRequest);
@@ -207,12 +218,16 @@ apiClient.interceptors.response.use(
     try {
       await trySilentRefresh();
       const newToken = localStorage.getItem("access_token");
-      processQueue(null, newToken); // Giải phóng queue với token mới
+      processQueue(null, newToken);
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return apiClient(originalRequest);
-    } catch (refreshError) {
-      processQueue(refreshError, null); // Giải phóng queue với lỗi
-      forceLogout();
+    } catch (refreshError: any) {
+      processQueue(refreshError, null);
+      // Chỉ logout khi refreshToken thực sự hết hạn (401/403 từ BE)
+      // Lỗi mạng tạm thời không logout
+      if (refreshError?.isExpired) {
+        forceLogout();
+      }
       return Promise.reject(refreshError);
     } finally {
       _isRefreshing = false;
