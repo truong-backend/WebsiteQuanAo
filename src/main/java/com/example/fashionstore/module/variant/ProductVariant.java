@@ -1,3 +1,4 @@
+// Chỗ cần paste: thay toàn bộ file ProductVariant.java
 package com.example.fashionstore.module.variant;
 
 import com.example.fashionstore.module.color.Color;
@@ -29,7 +30,10 @@ public class ProductVariant {
     @Column(length = 36)
     private String id;
 
-    /** Stock Keeping Unit — định danh duy nhất cho mỗi variant */
+    /** Optimistic Lock — tránh race condition khi import/adjust kho đồng thời */
+    @Version
+    private Long version;
+
     @Column(nullable = false, unique = true, length = 50)
     private String sku;
 
@@ -37,12 +41,10 @@ public class ProductVariant {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    /** FK sang bảng colors */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "color_id", nullable = false)
     private Color color;
 
-    /** FK sang bảng sizes */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "size_id", nullable = false)
     private Size size;
@@ -54,15 +56,12 @@ public class ProductVariant {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
-    /** Backward-compat helper — trả về mô tả gọn: "Đỏ / M" */
     @Transient
     public String getVariantInfo() {
         String colorName = color != null ? color.getName() : "?";
         String sizeCode  = size  != null ? size.getCode()  : "?";
         return colorName + " / " + sizeCode;
     }
-
-    // ── Convenience getters dùng trong snapshot (OrderItem) ──────────
 
     @Transient
     public String getColorCode() { return color != null ? color.getCode() : null; }

@@ -123,7 +123,7 @@ public class OrderService {
         Voucher appliedVoucher = null;
 
         if (req.getVoucherId() != null) {
-            appliedVoucher = voucherRepository.findById(req.getVoucherId())
+            appliedVoucher = voucherRepository.findByIdForUpdate(req.getVoucherId())
                     .orElseThrow(() -> new BusinessException("Voucher không tồn tại"));
 
             if (!appliedVoucher.isValid())

@@ -1,8 +1,10 @@
+// Chỗ cần paste: thay toàn bộ file GlobalExceptionHandler.java
 package com.example.fashionstore.common.exception;
 
 import com.example.fashionstore.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.*;
 import org.springframework.validation.FieldError;
@@ -60,6 +62,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error("Bạn không có quyền thực hiện hành động này"));
+    }
+
+    /**
+     * 409 — Optimistic Lock conflict
+     * Xảy ra khi 2 request cùng update Voucher hoặc ProductVariant đồng thời.
+     * Client nên retry request.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
+            ObjectOptimisticLockingFailureException ex) {
+        log.warn("Optimistic lock conflict: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("Dữ liệu vừa được cập nhật bởi người khác, vui lòng thử lại"));
     }
 
     /** 500 — Catch-all */

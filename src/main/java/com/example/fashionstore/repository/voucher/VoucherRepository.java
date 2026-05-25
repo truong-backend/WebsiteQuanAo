@@ -1,8 +1,10 @@
+// Chỗ cần paste: thay toàn bộ file VoucherRepository.java
 package com.example.fashionstore.repository.voucher;
 
 import com.example.fashionstore.module.voucher.Voucher;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -13,25 +15,16 @@ import java.util.Optional;
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, Long> {
 
-    // ================= FIND BY CODE =================
-
-    // Chỉ lấy voucher chưa bị xóa
     Optional<Voucher> findByCodeIgnoreCaseAndDeletedFalse(String code);
 
-    // Backward compatibility
     default Optional<Voucher> findByCodeIgnoreCase(String code) {
         return findByCodeIgnoreCaseAndDeletedFalse(code);
     }
 
-    // Kiểm tra tồn tại (không filter deleted để tránh trùng code)
     boolean existsByCodeIgnoreCase(String code);
 
-    // ================= ADMIN LIST =================
-
-    // Danh sách chưa xóa
     List<Voucher> findAllByDeletedFalseOrderByCreatedAtDesc();
 
-    // Danh sách có thể include deleted
     @Query("""
         SELECT v FROM Voucher v
         WHERE (:includeDeleted = true OR v.deleted = false)
@@ -39,9 +32,6 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     """)
     List<Voucher> findAllAdmin(@Param("includeDeleted") boolean includeDeleted);
 
-    // ================= VALID VOUCHER =================
-
-    /** Voucher hợp lệ (dùng cho user) */
     @Query("""
         SELECT v FROM Voucher v
         WHERE v.deleted = false
@@ -52,4 +42,13 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
         ORDER BY v.createdAt DESC
     """)
     List<Voucher> findAllValid(@Param("now") LocalDateTime now);
+
+    /**
+     * Pessimistic Lock — dùng khi tạo order để tránh race condition usedCount.
+     * SELECT ... FOR UPDATE: lock row voucher cho đến khi transaction commit.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000"))
+    @Query("SELECT v FROM Voucher v WHERE v.id = :id AND v.deleted = false")
+    Optional<Voucher> findByIdForUpdate(@Param("id") Long id);
 }

@@ -1,3 +1,4 @@
+// Chỗ cần paste: thay toàn bộ file Voucher.java
 package com.example.fashionstore.module.voucher;
 
 import jakarta.persistence.*;
@@ -24,7 +25,10 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Mã voucher — VD: SUMMER20, FREESHIP, NEWUSER100K */
+    /** Optimistic Lock — tránh race condition khi nhiều user dùng voucher cùng lúc */
+    @Version
+    private Long version;
+
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
@@ -35,38 +39,26 @@ public class Voucher {
     @Column(nullable = false, length = 20)
     private VoucherType type;
 
-    /**
-     * Giá trị giảm:
-     *  - PERCENTAGE:   0..100 (phần trăm)
-     *  - FIXED_AMOUNT: số tiền (VND)
-     *  - FREE_SHIPPING: không dùng (= 0)
-     */
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal value;
 
-    /** Giá trị đơn hàng tối thiểu để áp dụng */
     @Column(name = "min_order_amount", nullable = false, precision = 15, scale = 2)
     @Builder.Default
     private BigDecimal minOrderAmount = BigDecimal.ZERO;
 
-    /** Giảm tối đa (dùng cho PERCENTAGE để tránh giảm quá lớn) — null = không giới hạn */
     @Column(name = "max_discount", precision = 15, scale = 2)
     private BigDecimal maxDiscount;
 
-    /** Số lần sử dụng tối đa — null = không giới hạn */
     @Column(name = "usage_limit")
     private Integer usageLimit;
 
-    /** Số lần đã sử dụng */
     @Column(name = "used_count", nullable = false)
     @Builder.Default
     private int usedCount = 0;
 
-    /** Ngày bắt đầu hiệu lực — null = không giới hạn */
     @Column(name = "start_date")
     private LocalDateTime startDate;
 
-    /** Ngày hết hạn — null = không giới hạn */
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
@@ -85,16 +77,12 @@ public class Voucher {
     @PreUpdate
     public void preUpdate() { this.updatedAt = LocalDateTime.now(); }
 
-    // ================= SOFT DELETE =================
-
     @Column(name = "deleted", nullable = false)
     @Builder.Default
     private boolean deleted = false;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
-    // ================= METHODS =================
 
     public void softDelete() {
         this.deleted   = true;
@@ -108,9 +96,6 @@ public class Voucher {
         this.active    = true;
     }
 
-    // ── Business logic ───────────────────────────────────────────────
-
-    /** Kiểm tra voucher có hợp lệ không (active, còn hạn, còn lượt dùng) */
     public boolean isValid() {
         if (!active) return false;
         LocalDateTime now = LocalDateTime.now();
@@ -120,11 +105,6 @@ public class Voucher {
         return true;
     }
 
-    /**
-     * Tính số tiền được giảm dựa trên subtotal.
-     * @param subtotal tổng tiền hàng (chưa ship)
-     * @param shippingFee phí ship
-     */
     public BigDecimal calculateDiscount(BigDecimal subtotal, BigDecimal shippingFee) {
         return switch (type) {
             case PERCENTAGE -> {
@@ -133,14 +113,14 @@ public class Voucher {
                     discount = maxDiscount;
                 yield discount;
             }
-            case FIXED_AMOUNT -> value.min(subtotal); // không giảm quá subtotal
+            case FIXED_AMOUNT -> value.min(subtotal);
             case FREE_SHIPPING -> shippingFee;
         };
     }
 
     public enum VoucherType {
-        PERCENTAGE,   // Giảm theo %
-        FIXED_AMOUNT, // Giảm số tiền cố định
-        FREE_SHIPPING // Miễn phí ship
+        PERCENTAGE,
+        FIXED_AMOUNT,
+        FREE_SHIPPING
     }
 }
