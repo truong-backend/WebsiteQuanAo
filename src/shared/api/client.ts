@@ -1,15 +1,16 @@
+// Chỗ cần paste: thay toàn bộ file client.ts
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { API_BASE } from "@shared/config";
 
-// Extend axios type để thêm _retry
 declare module "axios" {
   interface InternalAxiosRequestConfig {
     _retry?: boolean;
+    _retryCount?: number; // thêm mới — đếm số lần retry 409
   }
 }
 
 /**
- * apiClient — JWT + Silent Refresh + Queue Pattern
+ * apiClient — JWT + Silent Refresh + Queue Pattern + Optimistic Lock Retry
  */
 export const apiClient = axios.create({
   baseURL: `${API_BASE}/api/v1`,
@@ -36,7 +37,7 @@ function forceLogout() {
   window.location.href = "/login";
 }
 
-// ── RefreshError — phân biệt token hết hạn vs lỗi mạng ──────────────────────
+// ── RefreshError ──────────────────────────────────────────────────────────────
 
 class RefreshError extends Error {
   isExpired: boolean;
@@ -166,6 +167,8 @@ function processQueue(error: unknown, token: string | null) {
   _queue = [];
 }
 
+const MAX_CONFLICT_RETRIES = 3; // số lần retry tối đa khi 409
+
 apiClient.interceptors.response.use(
   (res) => res,
   async (error: unknown) => {
@@ -173,10 +176,29 @@ apiClient.interceptors.response.use(
     if (!axios.isAxiosError(error)) return Promise.reject(error);
 
     const originalRequest = error.config;
-
-    // Guard: nếu không có config thì không thể retry
     if (!originalRequest) return Promise.reject(error);
 
+    // ── 409 Conflict — Optimistic Lock bị conflict, tự động retry ──
+    if (error.response?.status === 409) {
+      const retryCount = originalRequest._retryCount ?? 0;
+
+      if (retryCount < MAX_CONFLICT_RETRIES) {
+        originalRequest._retryCount = retryCount + 1;
+
+        // Delay tăng dần: 300ms, 600ms, 900ms — tránh thundering herd
+        const delay = 300 * (retryCount + 1);
+        await new Promise((r) => setTimeout(r, delay));
+
+        return apiClient(originalRequest);
+      }
+
+      // Hết số lần retry — báo lỗi rõ ràng cho user
+      return Promise.reject(
+        new Error("Dữ liệu đang được cập nhật bởi người khác, vui lòng thử lại sau"),
+      );
+    }
+
+    // ── 401 — Silent refresh ─────────────────────────────────────────
     if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
