@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { cn, formatPrice } from '@shared/lib'
+import { cn, formatPrice, resolveImageUrl } from '@shared/lib'
 import { Button, Spinner, EmptyState } from '@shared/ui'
 import { ROUTES } from '@shared/config'
 import { useCartStore } from '@features/cart/model/cartStore'
@@ -85,7 +85,7 @@ export function CartDrawer() {
                     className="flex-shrink-0"
                   >
                     <img
-                      src={item.imageUrl ?? `https://placehold.co/80x96/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`}
+                      src={resolveImageUrl(item.imageUrl) ?? `https://placehold.co/80x96/f5f0eb/999999?text=${encodeURIComponent(item.productName[0] ?? '?')}`}
                       alt={item.productName}
                       className="w-20 h-24 object-cover bg-brand-cream"
                       onError={(e) => {
