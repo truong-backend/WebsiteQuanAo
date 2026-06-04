@@ -25,7 +25,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         className,
       )}
     >
-      {/* Image */}
+      {/* Image */ }
       <Link
         to={ROUTES.productPath(product.slug)}
         className="relative block overflow-hidden aspect-[3/4] bg-brand-cream"
