@@ -56,26 +56,3 @@ export function toast(message: string, type: ToastType = 'success', duration = 3
     setTimeout(() => el.remove(), 300)
   }, duration)
 }
-
-// ─── Rewrite MinIO internal URL → public URL ──────────────────────────────────
-/**
- * Nếu VITE_MINIO_PUBLIC_URL được set, rewrite phần host của imageUrl
- * từ internal MinIO URL (VD: http://minio:9000) → public URL (VD: https://cdn.example.com).
- * Nếu không set thì trả về nguyên URL.
- */
-export function resolveImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  const publicBase = import.meta.env.VITE_MINIO_PUBLIC_URL as string | undefined
-  if (!publicBase) return url
-  // Thay thế phần origin của URL (http://minio:9000 → publicBase)
-  try {
-    const parsed = new URL(url)
-    const pub    = new URL(publicBase)
-    parsed.protocol = pub.protocol
-    parsed.hostname  = pub.hostname
-    parsed.port      = pub.port
-    return parsed.toString()
-  } catch {
-    return url
-  }
-}
