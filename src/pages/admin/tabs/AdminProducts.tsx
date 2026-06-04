@@ -204,6 +204,7 @@ function CreateProductModal({ open, onClose, onCreated }: { open: boolean; onClo
 }
 
 function EditProductModal({ productId, open, onClose, onUpdated }: { productId: string; open: boolean; onClose: () => void; onUpdated: () => void }) {
+  const queryClient = useQueryClient()
   const { data: cats } = useQuery({ queryKey: ['categories'], queryFn: () => fetchCategories() })
   const { data: product, isLoading } = useQuery<ProductDetailDto>({
     queryKey: ['product-detail', productId],
@@ -221,9 +222,14 @@ function EditProductModal({ productId, open, onClose, onUpdated }: { productId: 
     })
   }
 
-  const mutation = useMutation({
+const mutation = useMutation({
     mutationFn: () => adminUpdateProduct(productId, form!),
-    onSuccess:  () => { toast('Đã cập nhật sản phẩm'); onUpdated() },
+    onSuccess:  () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] })
+      queryClient.invalidateQueries({ queryKey: ['product-detail', productId] })
+      toast('Đã cập nhật sản phẩm')
+      onUpdated()
+    },
     onError:    (err: unknown) => toast((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Cập nhật thất bại', 'error'),
   })
 
