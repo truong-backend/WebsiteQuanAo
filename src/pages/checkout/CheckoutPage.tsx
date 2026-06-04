@@ -23,7 +23,7 @@ export default function CheckoutPage() {
   const user      = useAuthStore((s) => s.user)
 
   const [form, setForm] = useState({
-    phone:   user?.phone  ?? '',
+    phone:   user?.email ?? '',
     address: '',
     note:    '',
   })
