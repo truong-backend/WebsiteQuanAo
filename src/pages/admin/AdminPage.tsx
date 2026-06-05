@@ -13,10 +13,11 @@ import { AdminCategories } from './tabs/AdminCategories'
 import { AdminColors }     from './tabs/AdminColors'
 import { AdminSizes }      from './tabs/AdminSizes'
 import { AdminInventoryTab } from './AdminInventoryTab'
+import { AdminBanners }     from './tabs/AdminBanners'
 
-type Tab = 'dashboard' | 'users' | 'products' | 'orders' | 'vouchers' | 'reviews' | 'inventory' | 'categories' | 'colors' | 'sizes'
+type Tab = 'dashboard' | 'users' | 'products' | 'orders' | 'vouchers' | 'reviews' | 'inventory' | 'categories' | 'colors' | 'sizes' | 'banners'
 
-const VALID_TABS: Tab[] = ['dashboard', 'users', 'products', 'orders', 'vouchers', 'reviews', 'inventory', 'categories', 'colors', 'sizes']
+const VALID_TABS: Tab[] = ['dashboard', 'users', 'products', 'orders', 'vouchers', 'reviews', 'inventory', 'categories', 'colors', 'sizes', 'banners']
 
 export default function AdminPage() {
   const user = useAuthStore((s) => s.user)
@@ -40,6 +41,7 @@ export default function AdminPage() {
     { key: 'categories', label: 'Danh mục' },
     { key: 'colors',     label: 'Màu sắc' },
     { key: 'sizes',      label: 'Kích cỡ' },
+    { key: 'banners',    label: 'Banner' },
   ]
 
   return (
@@ -74,6 +76,7 @@ export default function AdminPage() {
       {tab === 'categories' && <AdminCategories />}
       {tab === 'colors'     && <AdminColors />}
       {tab === 'sizes'      && <AdminSizes />}
+      {tab === 'banners'    && <AdminBanners />}
     </main>
   )
 }

@@ -554,3 +554,46 @@ export interface AddressRequest {
   address:        string
   defaultAddress: boolean
 }
+
+// ─── Banner ──────────────────────────────────────────────────────────────────
+export type BannerType =
+  | 'HERO' | 'PROMOTION' | 'CATEGORY' | 'COLLECTION'
+  | 'BRAND' | 'FEATURED' | 'EVENT' | 'SERVICE' | 'POPUP' | 'COUNTDOWN'
+
+export interface BannerDto {
+  id:                 number
+  type:               BannerType
+  title:              string
+  subtitle:           string | null
+  imageUrl:           string
+  linkUrl:            string | null
+  ctaText:            string | null
+  discountPercent:    number | null
+  startDate:          string | null
+  endDate:            string | null
+  active:             boolean
+  sortOrder:          number
+  impressions:        number
+  clicks:             number
+  ctr:                number
+  popupDelaySeconds:  number | null
+  voucherCode:        string | null
+  createdAt:          string
+  updatedAt:          string
+}
+
+export interface BannerRequest {
+  type:               BannerType
+  title:              string
+  subtitle?:          string
+  imageUrl:           string
+  linkUrl?:           string
+  ctaText?:           string
+  discountPercent?:   number
+  startDate?:         string
+  endDate?:           string
+  active?:            boolean
+  sortOrder?:         number
+  popupDelaySeconds?: number
+  voucherCode?:       string
+}
