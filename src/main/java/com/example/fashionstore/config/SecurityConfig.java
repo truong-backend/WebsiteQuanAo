@@ -154,6 +154,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay/return").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay/ipn").permitAll()
 
+                        // Banners — public read + tracking
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/banners/active").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/banners/*/impression").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/banners/*/click").permitAll()
+
                         // ════════════════════════════════════════════════════════
                         //  ADMIN ONLY
                         // ════════════════════════════════════════════════════════
