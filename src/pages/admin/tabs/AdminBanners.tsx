@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { cn, toast } from '@shared/lib'
-// import { Button, Badge, Input, Select, Spinner, Modal, EmptyState } from '@shared/ui'
 import { Button, Input, Spinner, Modal, EmptyState } from '@shared/ui'
+import { ImageUploader } from '@features/upload/ui/ImageUploader'
 import {
   adminFetchBanners, adminCreateBanner, adminUpdateBanner,
   adminToggleBanner, adminDeleteBanner, adminReorderBanners,
@@ -25,19 +25,19 @@ const BANNER_TYPE_LABEL: Record<BannerType, string> = {
 const BANNER_TYPES = Object.keys(BANNER_TYPE_LABEL) as BannerType[]
 
 const EMPTY_FORM: BannerRequest = {
-  type:             'HERO',
-  title:            '',
-  subtitle:         '',
-  imageUrl:         '',
-  linkUrl:          '',
-  ctaText:          '',
-  discountPercent:  undefined,
-  startDate:        '',
-  endDate:          '',
-  active:           true,
-  sortOrder:        0,
+  type:              'HERO',
+  title:             '',
+  subtitle:          '',
+  imageUrl:          '',
+  linkUrl:           '',
+  ctaText:           '',
+  discountPercent:   undefined,
+  startDate:         '',
+  endDate:           '',
+  active:            true,
+  sortOrder:         0,
   popupDelaySeconds: undefined,
-  voucherCode:      '',
+  voucherCode:       '',
 }
 
 // ── Reorder drag helpers ─────────────────────────────────────────────────────
@@ -97,20 +97,15 @@ function BannerForm({
 
       <Input label="Tiêu đề *" value={form.title} onChange={(e) => set('title', e.target.value)} />
       <Input label="Mô tả ngắn" value={form.subtitle ?? ''} onChange={(e) => set('subtitle', e.target.value)} />
-      <Input label="URL hình ảnh *" value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} />
 
-      {/* Preview */}
-      {form.imageUrl && (
-        <div className="border border-brand-light p-2">
-          <p className="text-[10px] uppercase tracking-wider text-brand-mid mb-2">Xem trước</p>
-          <img
-            src={form.imageUrl}
-            alt="preview"
-            className="w-full max-h-40 object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
-        </div>
-      )}
+      {/* ── Ảnh desktop — upload lên MinIO ── */}
+      <ImageUploader
+        label="Ảnh banner *"
+        folder="banners"
+        value={form.imageUrl || null}
+        onChange={(url) => set('imageUrl', url)}
+        variant="card"
+      />
 
       <Input label="URL liên kết" value={form.linkUrl ?? ''} onChange={(e) => set('linkUrl', e.target.value)} />
       <Input label="Nút CTA (vd: Mua ngay)" value={form.ctaText ?? ''} onChange={(e) => set('ctaText', e.target.value)} />
@@ -180,7 +175,12 @@ function BannerForm({
       </label>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={() => onSubmit(form)} loading={loading} className="flex-1">
+        <Button
+          onClick={() => onSubmit(form)}
+          loading={loading}
+          disabled={!form.imageUrl}
+          className="flex-1"
+        >
           Lưu banner
         </Button>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
@@ -249,7 +249,6 @@ export function AdminBanners() {
         <div className="flex items-center gap-4 flex-wrap">
           <p className="text-sm text-brand-mid">{banners?.length ?? 0} banner</p>
 
-          {/* Filter by type */}
           <select
             className="border border-brand-light px-3 py-1.5 text-xs focus:outline-none focus:border-brand-black"
             value={filterType}
@@ -268,10 +267,10 @@ export function AdminBanners() {
       {banners && banners.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Tổng banner',  value: banners.length },
-            { label: 'Đang bật',     value: banners.filter((b) => b.active).length },
+            { label: 'Tổng banner',   value: banners.length },
+            { label: 'Đang bật',      value: banners.filter((b) => b.active).length },
             { label: 'Tổng hiển thị', value: banners.reduce((s, b) => s + b.impressions, 0).toLocaleString() },
-            { label: 'Tổng click',   value: banners.reduce((s, b) => s + b.clicks, 0).toLocaleString() },
+            { label: 'Tổng click',    value: banners.reduce((s, b) => s + b.clicks, 0).toLocaleString() },
           ].map((stat) => (
             <div key={stat.label} className="border border-brand-light p-4">
               <p className="text-[10px] uppercase tracking-wider text-brand-mid">{stat.label}</p>
@@ -314,10 +313,7 @@ export function AdminBanners() {
                     banner.active ? 'hover:bg-brand-cream/50' : 'opacity-50 bg-gray-50',
                   )}
                 >
-                  {/* Drag handle */}
                   <td className="py-3 pr-2 text-brand-mid text-lg">⠿</td>
-
-                  {/* Thumbnail */}
                   <td className="py-3 pr-4">
                     <img
                       src={banner.imageUrl}
@@ -329,8 +325,6 @@ export function AdminBanners() {
                       }}
                     />
                   </td>
-
-                  {/* Title */}
                   <td className="py-3 pr-4">
                     <p className="font-medium truncate max-w-[160px]">{banner.title}</p>
                     {banner.subtitle && (
@@ -340,15 +334,11 @@ export function AdminBanners() {
                       <p className="text-[10px] text-brand-gold mt-0.5">{banner.ctaText}</p>
                     )}
                   </td>
-
-                  {/* Type */}
                   <td className="py-3 pr-4">
                     <span className="text-[10px] uppercase tracking-wider border border-brand-light px-2 py-0.5 whitespace-nowrap">
                       {BANNER_TYPE_LABEL[banner.type]}
                     </span>
                   </td>
-
-                  {/* End date */}
                   <td className="py-3 pr-4 text-brand-mid text-xs">
                     {banner.endDate
                       ? new Date(banner.endDate) < new Date()
@@ -356,16 +346,12 @@ export function AdminBanners() {
                         : new Date(banner.endDate).toLocaleDateString('vi-VN')
                       : <span className="text-brand-mid">—</span>}
                   </td>
-
-                  {/* CTR */}
                   <td className="py-3 pr-4">
                     <p className="text-xs font-medium">{banner.ctr.toFixed(1)}%</p>
                     <p className="text-[10px] text-brand-mid">
                       {banner.impressions.toLocaleString()} imp / {banner.clicks.toLocaleString()} clk
                     </p>
                   </td>
-
-                  {/* Active toggle */}
                   <td className="py-3 pr-4">
                     <button
                       onClick={() => toggleMutation.mutate(banner.id)}
@@ -380,8 +366,6 @@ export function AdminBanners() {
                       )} />
                     </button>
                   </td>
-
-                  {/* Actions */}
                   <td className="py-3">
                     <div className="flex gap-2">
                       <Button size="sm" variant="secondary" onClick={() => setEditBanner(banner)}>
@@ -421,21 +405,19 @@ export function AdminBanners() {
         {editBanner && (
           <BannerForm
             initial={{
-              type:             editBanner.type,
-              title:            editBanner.title,
-              subtitle:         editBanner.subtitle ?? '',
-              imageUrl:         editBanner.imageUrl,
-              linkUrl:          editBanner.linkUrl ?? '',
-              ctaText:          editBanner.ctaText ?? '',
-              discountPercent:  editBanner.discountPercent ?? undefined,
-              startDate:        editBanner.startDate
-                ? editBanner.startDate.substring(0, 16) : '',
-              endDate:          editBanner.endDate
-                ? editBanner.endDate.substring(0, 16) : '',
-              active:           editBanner.active,
-              sortOrder:        editBanner.sortOrder,
+              type:              editBanner.type,
+              title:             editBanner.title,
+              subtitle:          editBanner.subtitle ?? '',
+              imageUrl:          editBanner.imageUrl,
+              linkUrl:           editBanner.linkUrl ?? '',
+              ctaText:           editBanner.ctaText ?? '',
+              discountPercent:   editBanner.discountPercent ?? undefined,
+              startDate:         editBanner.startDate ? editBanner.startDate.substring(0, 16) : '',
+              endDate:           editBanner.endDate   ? editBanner.endDate.substring(0, 16)   : '',
+              active:            editBanner.active,
+              sortOrder:         editBanner.sortOrder,
               popupDelaySeconds: editBanner.popupDelaySeconds ?? undefined,
-              voucherCode:      editBanner.voucherCode ?? '',
+              voucherCode:       editBanner.voucherCode ?? '',
             }}
             onSubmit={(data) => updateMutation.mutate({ id: editBanner.id, data })}
             loading={updateMutation.isPending}
