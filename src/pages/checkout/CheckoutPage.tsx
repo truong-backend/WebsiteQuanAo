@@ -7,13 +7,13 @@ import { ROUTES } from '@shared/config'
 import { useCartStore } from '@features/cart/model/cartStore'
 import { useAuthStore } from '@features/auth/model/authStore'
 import { createOrderApi } from '@features/orders/api/ordersApi'
-import { createVNPayUrl } from '@features/payment/api/paymentApi'
+import { createPayOSLink } from '@features/payment/api/paymentApi'
 import { applyVoucherApi } from '@features/admin/api/adminApi'
 import type { PaymentMethod, ApplyVoucherResponse } from '@shared/types'
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string; desc: string }[] = [
   { value: 'COD',   label: 'Thanh toán khi nhận hàng', icon: '💵', desc: 'Thanh toán bằng tiền mặt khi nhận hàng' },
-  // { value: 'VNPAY', label: 'VNPay',                    icon: '💳', desc: 'Thanh toán qua cổng thanh toán VNPay' },
+  { value: 'PAYOS', label: 'PayOS',  icon: '💳', desc: 'Thanh toán qua PayOS (ATM, Visa, QR Code)' },
 ]
 
 export default function CheckoutPage() {
@@ -23,7 +23,7 @@ export default function CheckoutPage() {
   const user      = useAuthStore((s) => s.user)
 
   const [form, setForm] = useState({
-    phone:   user?.email ?? '',
+    phone:'',
     address: '',
     note:    '',
   })
@@ -67,12 +67,12 @@ export default function CheckoutPage() {
     mutationFn: createOrderApi,
     onSuccess: async (order) => {
       await clearCart()
-      if (paymentMethod === 'VNPAY') {
+      if (paymentMethod === 'PAYOS') {
         try {
           setIsRedirectingVNPay(true)
           toast('Đang chuyển đến trang thanh toán VNPay...')
-          const vnpayRes = await createVNPayUrl(order.id)
-          window.location.href = vnpayRes.paymentUrl
+          const payosRes = await createPayOSLink(order.id)
+          window.location.href = payosRes.paymentUrl
         } catch {
           setIsRedirectingVNPay(false)
           toast('Không thể tạo link thanh toán VNPay', 'error')
@@ -325,7 +325,7 @@ export default function CheckoutPage() {
                 loading={orderMutation.isPending || isRedirectingVNPay}
                 className="w-full"
               >
-                {paymentMethod === 'VNPAY' ? 'Đặt hàng & Thanh toán VNPay' : 'Đặt hàng ngay'}
+                {paymentMethod === 'PAYOS' ? 'Đặt hàng & Thanh toán PayOS' : 'Đặt hàng ngay'}
               </Button>
 
               <p className="text-xs text-center text-brand-mid">

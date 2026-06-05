@@ -276,7 +276,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REFUNDED'
 
-export type PaymentMethod = 'COD' | 'VNPAY'
+export type PaymentMethod = 'COD' | 'PAYOS'
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
 
 export interface OrderItemDto {
@@ -346,11 +346,12 @@ export interface PaymentDto {
   createdAt:     string
 }
 
-export interface VNPayCreateResponse {
+export interface PayOSCreateResponse {
   paymentId:  string
   orderId:    string
   paymentUrl: string
   method:     string
+  orderCode:  number
 }
 
 // ─── Review ──────────────────────────────────────────────────────────────────

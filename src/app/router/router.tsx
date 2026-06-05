@@ -24,7 +24,7 @@ const LoginPage          = lazy(() => import('@pages/auth/AuthPages').then(m => 
 const RegisterPage       = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.RegisterPage })))
 const VerifyEmailPage    = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.VerifyEmailPage })))
 const ForgotPasswordPage = lazy(() => import('@pages/auth/AuthPages').then(m => ({ default: m.ForgotPasswordPage })))
-const VNPayReturnPage    = lazy(() => import('@pages/payment/VNPayReturnPage'))
+const PayOSReturnPage    = lazy(() => import('@pages/payment/PayOSReturnPage'))
 const OAuth2CallbackPage = lazy(() => import('@pages/auth/OAuth2CallbackPage'))
 
 function PageLoader() {
@@ -65,7 +65,7 @@ const router = createBrowserRouter([
       { path: ROUTES.register,          element: <RegisterPage /> },
       { path: '/verify-email',          element: <VerifyEmailPage /> },
       { path: '/forgot-password',       element: <ForgotPasswordPage /> },
-      { path: '/payment/vnpay-return',  element: <VNPayReturnPage /> },
+      { path: '/payment/payos-return',  element: <PayOSReturnPage /> },
       // OAuth2 Google callback
       { path: ROUTES.oauth2Callback,    element: <OAuth2CallbackPage /> },
       { path: ROUTES.checkout,          element: <RequireAuth><CheckoutPage /></RequireAuth> },

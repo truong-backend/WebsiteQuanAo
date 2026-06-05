@@ -1,5 +1,5 @@
 import { apiClient } from '@shared/api/client'
-import type { ApiResponse, PaymentDto, VNPayCreateResponse } from '@shared/types'
+import type { ApiResponse, PaymentDto, PayOSCreateResponse } from '@shared/types'
 
 /** GET /api/v1/payments/order/{orderId} */
 export async function fetchPaymentByOrderId(orderId: string): Promise<PaymentDto> {
@@ -14,12 +14,12 @@ export async function fetchPaymentById(paymentId: string): Promise<PaymentDto> {
 }
 
 /**
- * POST /api/v1/payments/vnpay/create/{orderId}
- * Returns paymentUrl — frontend should redirect user to this URL
+ * POST /api/v1/payments/payos/create/{orderId}
+ * Returns checkoutUrl — frontend redirect user tới PayOS
  */
-export async function createVNPayUrl(orderId: string): Promise<VNPayCreateResponse> {
-  const res = await apiClient.post<ApiResponse<VNPayCreateResponse>>(
-    `/payments/vnpay/create/${orderId}`,
+export async function createPayOSLink(orderId: string): Promise<PayOSCreateResponse> {
+  const res = await apiClient.post<ApiResponse<PayOSCreateResponse>>(
+    `/payments/payos/create/${orderId}`,
   )
   return res.data.data
 }
