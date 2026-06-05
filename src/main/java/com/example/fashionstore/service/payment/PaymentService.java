@@ -4,7 +4,7 @@ import com.example.fashionstore.common.exception.BusinessException;
 import com.example.fashionstore.common.exception.ResourceNotFoundException;
 import com.example.fashionstore.common.util.SecurityUtils;
 import com.example.fashionstore.dto.payment.PaymentDto;
-import com.example.fashionstore.dto.payment.VNPayCreateResponse;
+import com.example.fashionstore.dto.payment.PayOSCreateResponse;
 import com.example.fashionstore.module.order.Order;
 import com.example.fashionstore.module.order.Payment;
 import com.example.fashionstore.module.user.User;
@@ -13,13 +13,21 @@ import com.example.fashionstore.repository.order.OrderRepository;
 import com.example.fashionstore.repository.order.PaymentRepository;
 import com.example.fashionstore.repository.variant.ProductVariantRepository;
 import com.example.fashionstore.service.inventory.InventoryService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
+import vn.payos.type.Webhook;
+import vn.payos.type.WebhookData;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,12 +39,24 @@ public class PaymentService {
 
     private final PaymentRepository        paymentRepository;
     private final OrderRepository          orderRepository;
-    private final VNPayService             vnPayService;
-    private final ProductVariantRepository variantRepository;  // FIX: inject để hoàn kho
-    private final InventoryService         inventoryService;   // FIX: inject để ghi log hoàn kho
+    private final ProductVariantRepository variantRepository;
+    private final InventoryService         inventoryService;
+    private final ObjectMapper             objectMapper;
 
-    @Value("${vnpay.frontendReturnUrl}")
-    private String frontendReturnUrl;
+    @Value("${payos.clientId}")
+    private String clientId;
+
+    @Value("${payos.apiKey}")
+    private String apiKey;
+
+    @Value("${payos.checksumKey}")
+    private String checksumKey;
+
+    @Value("${payos.returnUrl}")
+    private String returnUrl;
+
+    @Value("${payos.cancelUrl}")
+    private String cancelUrl;
 
     // ── Read ────────────────────────────────────────────────────────
 
@@ -55,97 +75,101 @@ public class PaymentService {
         return toDto(payment);
     }
 
-    // ── Create VNPay payment URL ─────────────────────────────────────
+    // ── Create PayOS payment link ────────────────────────────────────
 
-    public VNPayCreateResponse createVNPayUrl(String orderId, String clientIp) {
+    public PayOSCreateResponse createPayOSLink(String orderId) {
         Order order = findOrderOrThrow(orderId);
         authorizeOrderAccess(order);
 
-        Payment payment = getOrCreatePayment(order, Payment.PaymentMethod.VNPAY);
+        Payment payment = getOrCreatePayment(order, Payment.PaymentMethod.PAYOS);
 
         if (payment.getStatus() == Payment.PaymentStatus.PAID)
-            throw new BusinessException("Đơn hàng này đã được thanh toán");
+            throw new BusinessException("Don hang nay da duoc thanh toan");
 
-        String orderInfo = "Thanh toan don hang " + orderId.substring(0, 8).toUpperCase();
-        String paymentUrl = vnPayService.createPaymentUrl(
-                payment.getId(),
-                payment.getAmount(),
-                orderInfo,
-                clientIp
-        );
+        try {
+            PayOS payOS = new PayOS(clientId, apiKey, checksumKey);
 
-        return VNPayCreateResponse.builder()
-                .paymentId(payment.getId())
-                .orderId(orderId)
-                .paymentUrl(paymentUrl)
-                .method("VNPAY")
-                .build();
+            long orderCode = Math.abs((long) payment.getId().hashCode());
+
+            List<ItemData> items = order.getItems().stream()
+                    .map(item -> ItemData.builder()
+                            .name(item.getProductVariant() != null
+                                    ? item.getProductVariant().getSku()
+                                    : "San pham")
+                            .quantity(item.getQuantity())
+                            .price(item.getUnitPrice().intValue())
+                            .build())
+                    .toList();
+
+            PaymentData paymentData = PaymentData.builder()
+                    .orderCode(orderCode)
+                    .amount(payment.getAmount().intValue())
+                    .description("DH " + orderId.substring(0, 8).toUpperCase())
+                    .items(items)
+                    .returnUrl(returnUrl)
+                    .cancelUrl(cancelUrl)
+                    .build();
+
+            CheckoutResponseData response = payOS.createPaymentLink(paymentData);
+
+            payment.setTransactionId("PAYOS-" + orderCode);
+            paymentRepository.save(payment);
+
+            return PayOSCreateResponse.builder()
+                    .paymentId(payment.getId())
+                    .orderId(orderId)
+                    .paymentUrl(response.getCheckoutUrl())
+                    .method("PAYOS")
+                    .orderCode(orderCode)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("PayOS create link error: {}", e.getMessage(), e);
+            throw new BusinessException("Khong the tao link thanh toan PayOS: " + e.getMessage());
+        }
     }
 
-    // ── VNPay Return URL (user redirect back) ───────────────────────
+    // ── PayOS Webhook (server-to-server) ─────────────────────────────
 
-    public String handleVNPayReturn(Map<String, String> params) {
-        boolean validChecksum = vnPayService.verifyChecksum(params);
-        String responseCode   = vnPayService.getResponseCode(params);
-        String txnRef         = vnPayService.getTxnRef(params);
-        String transactionId  = vnPayService.getTransactionId(params);
+    public Map<String, String> handlePayOSWebhook(Map<String, Object> body) {
+        try {
+            PayOS payOS = new PayOS(clientId, apiKey, checksumKey);
 
-        log.info("VNPay return: txnRef={}, responseCode={}, checksum={}", txnRef, responseCode, validChecksum);
+            Webhook webhook = objectMapper.convertValue(body, Webhook.class);
+            WebhookData data = payOS.verifyPaymentWebhookData(webhook);
 
-        if (!validChecksum) {
-            return frontendReturnUrl + "?status=INVALID_CHECKSUM&orderId=";
-        }
+            if (data == null) {
+                log.warn("PayOS webhook: data null sau verify");
+                return Map.of("code", "01", "desc", "invalid signature");
+            }
 
-        paymentRepository.findAll().stream()
-                .filter(p -> p.getId().replace("-", "").toUpperCase()
-                        .startsWith(txnRef.toUpperCase()))
-                .findFirst()
-                .ifPresent(payment -> {
-                    if (payment.getStatus() != Payment.PaymentStatus.PAID) {
-                        if ("00".equals(responseCode)) {
-                            markPaid(payment, transactionId, params.toString());
-                        } else {
-                            // FIX: hoàn kho khi VNPay thất bại (timeout, huỷ, lỗi...)
-                            markFailedAndRestoreStock(payment, params.toString(), responseCode);
+            String orderCode = String.valueOf(data.getOrderCode());
+            String code      = data.getCode() != null ? data.getCode() : "";
+
+            log.info("PayOS webhook: orderCode={}, code={}", orderCode, code);
+
+            paymentRepository.findAll().stream()
+                    .filter(p -> p.getTransactionId() != null &&
+                            p.getTransactionId().equals("PAYOS-" + orderCode))
+                    .findFirst()
+                    .ifPresent(payment -> {
+                        if (payment.getStatus() != Payment.PaymentStatus.PAID) {
+                            if ("00".equals(code)) {
+                                markPaid(payment,
+                                        "PAYOS-" + data.getReference(),
+                                        body.toString());
+                            } else {
+                                markFailedAndRestoreStock(payment, body.toString(), code);
+                            }
                         }
-                    }
-                });
+                    });
 
-        String status = "00".equals(responseCode) ? "SUCCESS" : "FAILED";
-        return frontendReturnUrl + "?status=" + status + "&vnp_ResponseCode=" + responseCode;
-    }
+            return Map.of("code", "00", "desc", "success");
 
-    // ── VNPay IPN (server-to-server callback) ───────────────────────
-
-    public Map<String, String> handleVNPayIpn(Map<String, String> params) {
-        boolean validChecksum = vnPayService.verifyChecksum(params);
-        if (!validChecksum) {
-            log.warn("VNPay IPN invalid checksum");
-            return Map.of("RspCode", "97", "Message", "Invalid Signature");
+        } catch (Exception e) {
+            log.warn("PayOS webhook error: {}", e.getMessage());
+            return Map.of("code", "01", "desc", "fail");
         }
-
-        String txnRef        = vnPayService.getTxnRef(params);
-        String responseCode  = vnPayService.getResponseCode(params);
-        String transactionId = vnPayService.getTransactionId(params);
-
-        return paymentRepository.findAll().stream()
-                .filter(p -> p.getId().replace("-", "").toUpperCase()
-                        .startsWith(txnRef.toUpperCase()))
-                .findFirst()
-                .map(payment -> {
-                    if (payment.getStatus() == Payment.PaymentStatus.PAID) {
-                        return Map.of("RspCode", "02", "Message", "Order already confirmed");
-                    }
-                    if ("00".equals(responseCode)) {
-                        markPaid(payment, transactionId, params.toString());
-                        return Map.of("RspCode", "00", "Message", "Confirm Success");
-                    } else {
-                        // FIX: hoàn kho khi VNPay IPN báo thất bại
-                        markFailedAndRestoreStock(payment, params.toString(), responseCode);
-                        return Map.of("RspCode", "00", "Message", "Confirm Success");
-                    }
-                })
-                .orElse(Map.of("RspCode", "01", "Message", "Order not found"));
     }
 
     // ── COD – confirm payment manually (Admin) ───────────────────────
@@ -156,10 +180,10 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "orderId", orderId));
 
         if (payment.getMethod() != Payment.PaymentMethod.COD)
-            throw new BusinessException("Chỉ áp dụng cho phương thức COD");
+            throw new BusinessException("Chi ap dung cho phuong thuc COD");
 
         if (payment.getStatus() == Payment.PaymentStatus.PAID)
-            throw new BusinessException("Đơn hàng đã được thanh toán");
+            throw new BusinessException("Don hang da duoc thanh toan");
 
         markPaid(payment, "COD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(), null);
 
@@ -178,7 +202,7 @@ public class PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "orderId", orderId));
 
         if (payment.getStatus() != Payment.PaymentStatus.PAID)
-            throw new BusinessException("Chỉ có thể hoàn tiền cho đơn đã thanh toán");
+            throw new BusinessException("Chi co the hoan tien cho don da thanh toan");
 
         payment.setStatus(Payment.PaymentStatus.REFUNDED);
         paymentRepository.save(payment);
@@ -219,14 +243,9 @@ public class PaymentService {
         }
     }
 
-    /**
-     * FIX: Đánh dấu payment FAILED + huỷ order + hoàn lại số lượng kho.
-     * Chỉ thực hiện nếu order vẫn đang PENDING (tránh hoàn kho 2 lần).
-     */
-    private void markFailedAndRestoreStock(Payment payment, String rawResponse, String responseCode) {
-        // Chỉ xử lý nếu chưa từng FAILED trước đó (idempotent — IPN và Return đều có thể gọi)
+    private void markFailedAndRestoreStock(Payment payment, String rawResponse, String code) {
         if (payment.getStatus() == Payment.PaymentStatus.FAILED) {
-            log.info("Payment {} đã FAILED trước đó, bỏ qua hoàn kho", payment.getId());
+            log.info("Payment {} da FAILED truoc do, bo qua hoan kho", payment.getId());
             return;
         }
 
@@ -236,12 +255,10 @@ public class PaymentService {
 
         Order order = payment.getOrder();
 
-        // Chỉ hoàn kho nếu order vẫn PENDING (chưa bị cancel trước đó)
         if (order.getStatus() == Order.OrderStatus.PENDING) {
             order.setStatus(Order.OrderStatus.CANCELLED);
             orderRepository.save(order);
 
-            // Hoàn trả số lượng từng variant + ghi inventory log RETURN
             order.getItems().forEach(item -> {
                 ProductVariant variant = item.getProductVariant();
                 if (variant != null) {
@@ -254,8 +271,8 @@ public class PaymentService {
                             restored,
                             order.getId()
                     );
-                    log.info("Hoàn kho variant={} qty={} (VNPay responseCode={})",
-                            variant.getId(), item.getQuantity(), responseCode);
+                    log.info("Hoan kho variant={} qty={} (PayOS code={})",
+                            variant.getId(), item.getQuantity(), code);
                 }
             });
         }
@@ -264,10 +281,11 @@ public class PaymentService {
     private void authorizePaymentAccess(Payment payment) {
         try {
             User user = SecurityUtils.getCurrentUser();
-            if (user.getRole() == User.Role.ROLE_ADMIN) return;
+            if (user == null) return;
+            if (user.getRole() != null && user.getRole() == User.Role.ROLE_ADMIN) return;
             if (payment.getOrder().getUser() == null ||
                     !payment.getOrder().getUser().getId().equals(user.getId()))
-                throw new BusinessException("Bạn không có quyền xem thông tin thanh toán này");
+                throw new BusinessException("Ban khong co quyen xem thong tin thanh toan nay");
         } catch (BusinessException be) {
             throw be;
         } catch (Exception ignored) {
@@ -276,9 +294,10 @@ public class PaymentService {
 
     private void authorizeOrderAccess(Order order) {
         User user = SecurityUtils.getCurrentUser();
-        if (user.getRole() == User.Role.ROLE_ADMIN) return;
+        if (user == null) throw new BusinessException("Ban chua dang nhap");
+        if (user.getRole() != null && user.getRole() == User.Role.ROLE_ADMIN) return;
         if (order.getUser() == null || !order.getUser().getId().equals(user.getId()))
-            throw new BusinessException("Bạn không có quyền thực hiện thanh toán cho đơn này");
+            throw new BusinessException("Ban khong co quyen thuc hien thanh toan cho don nay");
     }
 
     private Order findOrderOrThrow(String orderId) {

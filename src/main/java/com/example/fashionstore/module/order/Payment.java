@@ -52,6 +52,6 @@ public class Payment {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public enum PaymentMethod { COD, BANKING, MOMO, VNPAY }
+    public enum PaymentMethod { COD, BANKING, MOMO, PAYOS }
     public enum PaymentStatus { PENDING, PAID, FAILED, REFUNDED }
 }
